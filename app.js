@@ -3,7 +3,7 @@
 
 // --- GLOBAL STATE ---
 const appState = {
-  screen: "mainMenu", // mainMenu | playerEntry | setup | match | interview | questionBank
+  screen: "mainMenu", // mainMenu | playerEntry | setup | match | interview | questionBank | roundRobinSetup | roundRobinMatch
   players: [], // Array of {name: string, group: string}
   config: {
     matchType: "matchPlay", // Only matchPlay for v1
@@ -23,6 +23,14 @@ const appState = {
   interview: {
     questions: [],
     currentQuestionIndex: 0
+  },
+  roundRobin: {
+    active: false,
+    groupA: [], // 5 players
+    groupB: [], // 5 players
+    matches: [], // Array of {matchNum, player1, player2, board, winner, score1, score2, completed}
+    currentMatchIndex: 0,
+    completedMatches: [] // Stores results for contextual questions
   }
 };
 
@@ -98,6 +106,15 @@ const questionBank = {
     (data) => `You've beaten ${data.opponent} ${data.matchScore}. What's next for you?`,
     (data) => "How important is this result?",
     (data) => "What does this mean moving forward?"
+  ],
+  roundRobin: [
+    (data) => data.nextOpponent ? `You've just taken a ${data.matchScore} win over ${data.opponent}. You're playing ${data.nextOpponent} on board ${data.nextBoard} next — how does this result set you up for that match?` : null,
+    (data) => data.nextOpponent ? `That's match ${data.matchNumber} done, ${data.matchScore}. With ${data.nextOpponent} coming up in match ${data.nextMatchNum}, how are you feeling about your form?` : null,
+    (data) => data.nextOpponent ? `${data.opponent} is behind you now. Does beating them give you confidence going into ${data.nextOpponent}?` : null,
+    (data) => data.nextBoard === 2 ? `Your next match is on board ${data.nextBoard} against ${data.nextOpponent}. How do you adjust when you're not on the main stage?` : null,
+    (data) => data.nextBoard === 1 ? `You're back on board 1 next against ${data.nextOpponent}. Does playing on the live stream board change your approach?` : null,
+    (data) => data.matchNumber ? `This is match ${data.matchNumber} of the round robin. How are you pacing yourself through this tournament format?` : null,
+    (data) => data.nextOpponent ? `You've got ${data.nextOpponent} waiting for you. What adjustments do you need to make?` : null
   ]
 };
 
@@ -124,6 +141,12 @@ function render() {
     case "questionBank":
       app.appendChild(renderQuestionBank());
       break;
+    case "roundRobinSetup":
+      app.appendChild(renderRoundRobinSetup());
+      break;
+    case "roundRobinMatch":
+      app.appendChild(renderRoundRobinMatch());
+      break;
   }
 }
 
@@ -134,11 +157,25 @@ function renderMainMenu() {
   div.innerHTML = `
     <h1>Darts Interview Assistant</h1>
     <button id="newMatchBtn" class="button">New Match</button>
+    <button id="roundRobinBtn" class="button">Round Robin Setup</button>
     <button id="playerLibraryBtn" class="button">Player Library</button>
     <button id="questionBankBtn" class="button">Interview Questions</button>
   `;
   div.querySelector("#newMatchBtn").onclick = () => {
     appState.screen = "setup";
+    render();
+  };
+  div.querySelector("#roundRobinBtn").onclick = () => {
+    // Reset round robin state
+    appState.roundRobin = {
+      active: true,
+      groupA: [],
+      groupB: [],
+      matches: [],
+      currentMatchIndex: 0,
+      completedMatches: []
+    };
+    appState.screen = "roundRobinSetup";
     render();
   };
   div.querySelector("#playerLibraryBtn").onclick = () => {
@@ -768,7 +805,11 @@ function renderQuestionBank() {
     bigFinish: "[170]",
     highAverage: "[105]",
     lowDartLeg: "[12]",
-    legNumber: "[2]"
+    legNumber: "[2]",
+    nextOpponent: "[Next Opponent]",
+    nextBoard: 2,
+    nextMatchNum: 15,
+    matchNumber: 8
   };
   
   // Category labels
@@ -783,7 +824,8 @@ function renderQuestionBank() {
     upset: "Upset",
     mentalStrength: "Mental Strength",
     turningPoint: "Turning Point",
-    general: "General Questions"
+    general: "General Questions",
+    roundRobin: "Round Robin Tournament Context"
   };
   
   div.innerHTML = `
@@ -815,10 +857,13 @@ function renderQuestionBank() {
     list.style.color = "var(--text)";
     
     questionBank[category].forEach((questionFunc) => {
-      const li = document.createElement("li");
-      li.textContent = questionFunc(sampleData);
-      li.style.marginBottom = "0.5em";
-      list.appendChild(li);
+      const questionText = questionFunc(sampleData);
+      if (questionText) { // Only display non-null questions
+        const li = document.createElement("li");
+        li.textContent = questionText;
+        li.style.marginBottom = "0.5em";
+        list.appendChild(li);
+      }
     });
     
     categoryDiv.appendChild(list);
@@ -830,6 +875,415 @@ function renderQuestionBank() {
     render();
   };
   return div;
+}
+
+// --- ROUND ROBIN SETUP SCREEN ---
+function renderRoundRobinSetup() {
+  const div = document.createElement("div");
+  div.className = "screen";
+  div.innerHTML = `
+    <h2>Round Robin Setup</h2>
+    <p style="color:var(--text-muted);margin-bottom:1em;">10 Players • 2 Groups of 5 • 20 Matches</p>
+    
+    <h3 style="font-size:1.1em;margin-bottom:0.5em;">Group A (5 Players)</h3>
+    <div id="groupAInputs" style="margin-bottom:1.5em;"></div>
+    
+    <h3 style="font-size:1.1em;margin-bottom:0.5em;">Group B (5 Players)</h3>
+    <div id="groupBInputs" style="margin-bottom:1.5em;"></div>
+    
+    <h3 style="font-size:1.1em;margin-bottom:0.5em;">Match Format</h3>
+    <label>Format Type</label>
+    <select id="formatType">
+      <option value="bestOf">Best Of</option>
+      <option value="playAll">Play All (First To)</option>
+    </select>
+    <div id="bestOfFields">
+      <label>Best Of (Legs)</label>
+      <input type="number" id="totalLegs" min="1" max="15" value="5">
+    </div>
+    <div id="playAllFields" style="display:none;">
+      <label>First To (Legs)</label>
+      <input type="number" id="legsToWin" min="1" max="11" value="3">
+    </div>
+    
+    <h3 style="font-size:1.1em;margin-top:1.5em;margin-bottom:0.5em;">Match Schedule (20 Matches)</h3>
+    <div id="matchSchedule" style="margin-bottom:1em;"></div>
+    
+    <div class="sticky-bottom">
+      <button id="startRoundRobinBtn" class="button">Start Round Robin</button>
+      <button id="backBtn" class="button" style="background:var(--panel);margin-top:0.5em;">Back to Menu</button>
+    </div>
+  `;
+  
+  const groupADiv = div.querySelector("#groupAInputs");
+  const groupBDiv = div.querySelector("#groupBInputs");
+  const scheduleDiv = div.querySelector("#matchSchedule");
+  
+  // Initialize groups if empty
+  if (appState.roundRobin.groupA.length === 0) {
+    appState.roundRobin.groupA = ["", "", "", "", ""];
+    appState.roundRobin.groupB = ["", "", "", "", ""];
+  }
+  
+  // Render Group A fields
+  appState.roundRobin.groupA.forEach((name, i) => {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = name;
+    input.placeholder = `Group A Player ${i+1}`;
+    input.style.marginBottom = "0.5em";
+    input.oninput = (e) => {
+      appState.roundRobin.groupA[i] = e.target.value;
+      generateMatchSchedule();
+    };
+    groupADiv.appendChild(input);
+  });
+  
+  // Render Group B fields
+  appState.roundRobin.groupB.forEach((name, i) => {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = name;
+    input.placeholder = `Group B Player ${i+1}`;
+    input.style.marginBottom = "0.5em";
+    input.oninput = (e) => {
+      appState.roundRobin.groupB[i] = e.target.value;
+      generateMatchSchedule();
+    };
+    groupBDiv.appendChild(input);
+  });
+  
+  // Format type toggle
+  div.querySelector("#formatType").onchange = (e) => {
+    const bestOfFields = div.querySelector("#bestOfFields");
+    const playAllFields = div.querySelector("#playAllFields");
+    if (e.target.value === "bestOf") {
+      bestOfFields.style.display = "block";
+      playAllFields.style.display = "none";
+    } else {
+      bestOfFields.style.display = "none";
+      playAllFields.style.display = "block";
+    }
+  };
+  
+  // Generate match schedule
+  function generateMatchSchedule() {
+    const allPlayers = [...appState.roundRobin.groupA, ...appState.roundRobin.groupB];
+    const matches = [];
+    let matchNum = 1;
+    
+    // Generate all possible matches (each player plays every other player once)
+    for (let i = 0; i < allPlayers.length; i++) {
+      for (let j = i + 1; j < allPlayers.length; j++) {
+        const board = matchNum <= 10 ? 1 : 2; // First 10 matches on Board 1
+        matches.push({
+          matchNum: matchNum,
+          player1: allPlayers[i] || `Player ${i+1}`,
+          player2: allPlayers[j] || `Player ${j+1}`,
+          board: board,
+          winner: null,
+          score1: 0,
+          score2: 0,
+          completed: false
+        });
+        matchNum++;
+        if (matchNum > 20) break;
+      }
+      if (matchNum > 20) break;
+    }
+    
+    appState.roundRobin.matches = matches.slice(0, 20);
+    renderSchedule();
+  }
+  
+  function renderSchedule() {
+    scheduleDiv.innerHTML = "";
+    appState.roundRobin.matches.forEach((match) => {
+      const matchDiv = document.createElement("div");
+      matchDiv.style.cssText = "padding:0.75em;margin-bottom:0.5em;background:var(--panel);border-radius:8px;display:flex;justify-content:space-between;align-items:center;";
+      matchDiv.innerHTML = `
+        <div>
+          <span style="color:var(--accent);font-weight:bold;">Match ${match.matchNum}</span>
+          <span style="color:var(--text-muted);margin:0 0.5em;">•</span>
+          <span>${match.player1} vs ${match.player2}</span>
+        </div>
+        <span style="color:${match.board === 1 ? 'var(--accent)' : 'var(--text-muted)'};">Board ${match.board}</span>
+      `;
+      scheduleDiv.appendChild(matchDiv);
+    });
+  }
+  
+  generateMatchSchedule();
+  
+  // Start round robin
+  div.querySelector("#startRoundRobinBtn").onclick = () => {
+    const formatType = div.querySelector("#formatType").value;
+    if (formatType === "bestOf") {
+      appState.roundRobin.format = {
+        type: "bestOf",
+        totalLegs: parseInt(div.querySelector("#totalLegs").value)
+      };
+    } else {
+      appState.roundRobin.format = {
+        type: "playAll",
+        legsToWin: parseInt(div.querySelector("#legsToWin").value)
+      };
+    }
+    appState.roundRobin.currentMatchIndex = 0;
+    appState.screen = "roundRobinMatch";
+    render();
+  };
+  
+  div.querySelector("#backBtn").onclick = () => {
+    appState.screen = "mainMenu";
+    render();
+  };
+  
+  return div;
+}
+
+// --- ROUND ROBIN MATCH SCREEN ---
+function renderRoundRobinMatch() {
+  const currentMatch = appState.roundRobin.matches[appState.roundRobin.currentMatchIndex];
+  
+  // If no more matches, end
+  if (!currentMatch) {
+    appState.screen = "mainMenu";
+    render();
+    return document.createElement("div");
+  }
+  
+  // Initialize match state
+  if (!appState.roundRobin.currentMatchState) {
+    appState.roundRobin.currentMatchState = {
+      player1: currentMatch.player1,
+      player2: currentMatch.player2,
+      score1: 0,
+      score2: 0,
+      currentLeg: 1,
+      legs: []
+    };
+  }
+  
+  const div = document.createElement("div");
+  div.className = "screen";
+  div.innerHTML = `
+    <h2>Match ${currentMatch.matchNum} - Board ${currentMatch.board}</h2>
+    <div class="score-panel">
+      <div class="player-score">
+        <span class="name">${currentMatch.player1}</span>
+        <span class="score">${appState.roundRobin.currentMatchState.score1}</span>
+      </div>
+      <div class="vs">vs</div>
+      <div class="player-score">
+        <span class="name">${currentMatch.player2}</span>
+        <span class="score">${appState.roundRobin.currentMatchState.score2}</span>
+      </div>
+    </div>
+    <h3>Leg ${appState.roundRobin.currentMatchState.currentLeg}</h3>
+    <label>Leg Winner</label>
+    <div class="row">
+      <button class="button" id="p1WinBtn">${currentMatch.player1}</button>
+      <button class="button" id="p2WinBtn">${currentMatch.player2}</button>
+    </div>
+    <div id="momentButtons" style="display:none;">
+      <h4>Memorable Moments (Optional)</h4>
+      <div class="col-2">
+        ${momentCategories.map(m => `<button class="button moment-btn" data-moment="${m}">${m.replace(/([A-Z])/g, ' $1').trim()}</button>`).join('')}
+      </div>
+      <div id="momentInputs"></div>
+      <button class="button" id="nextLegBtn" style="margin-top:1em;">Confirm Leg</button>
+    </div>
+    <div class="sticky-bottom">
+      <button id="skipMatchBtn" class="button" style="background:var(--panel);">Skip Match</button>
+    </div>
+  `;
+  
+  const state = appState.roundRobin.currentMatchState;
+  const format = appState.roundRobin.format;
+  
+  div.querySelector("#p1WinBtn").onclick = () => recordLegWinner(currentMatch.player1);
+  div.querySelector("#p2WinBtn").onclick = () => recordLegWinner(currentMatch.player2);
+  
+  function recordLegWinner(winner) {
+    const leg = {
+      winner: winner,
+      moments: [],
+      momentValues: {},
+      legNumber: state.currentLeg
+    };
+    state.legs.push(leg);
+    
+    if (winner === currentMatch.player1) state.score1++;
+    else state.score2++;
+    
+    // Show moment buttons
+    div.querySelector("#momentButtons").style.display = "block";
+    div.querySelectorAll(".moment-btn").forEach(btn => {
+      btn.onclick = () => {
+        const moment = btn.dataset.moment;
+        if (!leg.moments.includes(moment)) {
+          leg.moments.push(moment);
+          btn.style.background = "var(--accent)";
+          showMomentInput(moment, leg);
+        }
+      };
+    });
+    
+    div.querySelector("#nextLegBtn").onclick = () => checkMatchEnd();
+  }
+  
+  function showMomentInput(moment, leg) {
+    const inputDiv = div.querySelector("#momentInputs");
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = `Enter value for ${moment}`;
+    input.style.marginTop = "0.5em";
+    input.oninput = (e) => {
+      leg.momentValues[moment] = e.target.value;
+    };
+    inputDiv.appendChild(input);
+  }
+  
+  function checkMatchEnd() {
+    let matchOver = false;
+    if (format.type === "bestOf") {
+      const needed = Math.ceil(format.totalLegs / 2);
+      if (state.score1 >= needed || state.score2 >= needed) matchOver = true;
+    } else {
+      if (state.score1 >= format.legsToWin || state.score2 >= format.legsToWin) matchOver = true;
+    }
+    
+    if (matchOver) {
+      finishMatch();
+    } else {
+      state.currentLeg++;
+      render();
+    }
+  }
+  
+  function finishMatch() {
+    currentMatch.completed = true;
+    currentMatch.score1 = state.score1;
+    currentMatch.score2 = state.score2;
+    currentMatch.winner = state.score1 > state.score2 ? currentMatch.player1 : currentMatch.player2;
+    currentMatch.legs = state.legs;
+    
+    appState.roundRobin.completedMatches.push({...currentMatch});
+    
+    // Only interview if on Board 1 (live stream board)
+    if (currentMatch.board === 1) {
+      // Generate interview questions with round robin context
+      generateRoundRobinInterview(currentMatch);
+      appState.screen = "interview";
+    } else {
+      // Skip interview for Board 2 matches
+      moveToNextMatch();
+    }
+    
+    appState.roundRobin.currentMatchState = null;
+    render();
+  }
+  
+  div.querySelector("#skipMatchBtn").onclick = () => {
+    currentMatch.completed = true;
+    moveToNextMatch();
+  };
+  
+  function moveToNextMatch() {
+    appState.roundRobin.currentMatchIndex++;
+    appState.roundRobin.currentMatchState = null;
+    appState.screen = "roundRobinMatch";
+    render();
+  }
+  
+  return div;
+}
+
+// --- GENERATE ROUND ROBIN INTERVIEW ---
+function generateRoundRobinInterview(match) {
+  const winner = match.winner;
+  const loser = winner === match.player1 ? match.player2 : match.player1;
+  const winnerScore = winner === match.player1 ? match.score1 : match.score2;
+  const loserScore = winner === match.player1 ? match.score2 : match.score1;
+  const matchScore = `${winnerScore}-${loserScore}`;
+  
+  const data = {
+    playerName: winner,
+    opponent: loser,
+    matchScore: matchScore,
+    matchNumber: match.matchNum,
+    board: match.board
+  };
+  
+  // Find next match for this player
+  const nextMatch = appState.roundRobin.matches.find((m, idx) => 
+    idx > appState.roundRobin.currentMatchIndex && 
+    (m.player1 === winner || m.player2 === winner)
+  );
+  
+  if (nextMatch) {
+    data.nextOpponent = nextMatch.player1 === winner ? nextMatch.player2 : nextMatch.player1;
+    data.nextBoard = nextMatch.board;
+    data.nextMatchNum = nextMatch.matchNum;
+  }
+  
+  // Collect moment data
+  const momentData = {};
+  const momentLegNumbers = {};
+  match.legs.forEach((leg) => {
+    if (leg.winner === winner) {
+      leg.moments.forEach((m) => {
+        const cat = m;
+        if (!momentData[cat]) momentData[cat] = [];
+        if (!momentLegNumbers[cat]) momentLegNumbers[cat] = [];
+        momentData[cat].push(leg.momentValues[m] || "");
+        momentLegNumbers[cat].push(leg.legNumber);
+      });
+    }
+  });
+  
+  const questions = [];
+  const usedQuestions = new Set();
+  
+  // Add round robin specific questions first
+  if (questionBank.roundRobin) {
+    questionBank.roundRobin.forEach((q) => {
+      const question = q(data);
+      if (question && !usedQuestions.has(q.toString())) {
+        questions.push(question);
+        usedQuestions.add(q.toString());
+      }
+    });
+  }
+  
+  // Add standard moment-based questions
+  Object.keys(momentData).forEach((cat) => {
+    if (questionBank[cat]) {
+      momentData[cat].forEach((val, idx) => {
+        data[cat] = val;
+        data.legNumber = momentLegNumbers[cat] ? momentLegNumbers[cat][idx] : undefined;
+        
+        const availableQuestions = questionBank[cat].filter((q) => !usedQuestions.has(q.toString()));
+        if (availableQuestions.length > 0) {
+          const q = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+          questions.push(q(data));
+          usedQuestions.add(q.toString());
+        }
+      });
+    }
+  });
+  
+  // Add general questions
+  const generalAvailable = questionBank.general.filter((q) => !usedQuestions.has(q.toString()));
+  for (let i = 0; i < Math.min(2, generalAvailable.length); i++) {
+    const q = generalAvailable[Math.floor(Math.random() * generalAvailable.length)];
+    questions.push(q(data));
+    usedQuestions.add(q.toString());
+  }
+  
+  appState.interview.questions = questions;
+  appState.interview.currentQuestionIndex = 0;
 }
 
 // --- INIT ---
