@@ -1,0 +1,156 @@
+/*
+  Darts Interview Assistant - Mobile-first SPA
+  Dark theme, large tap targets, responsive, clean sports look
+*/
+
+:root {
+  --bg: #181c22;
+  --panel: #232834;
+  --accent: #1e90ff;
+  --accent2: #ffb300;
+  --text: #f5f6fa;
+  --text-muted: #b0b6c3;
+  --button: #232834;
+  --button-active: #1e90ff;
+  --button-radius: 1.2em;
+  --gap: 1.2em;
+  --font-main: 'Segoe UI', Arial, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 18px;
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+}
+
+.screen {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: var(--gap);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+h1, h2, h3 {
+  color: var(--accent2);
+  margin-bottom: 0.5em;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5em;
+  color: var(--text-muted);
+}
+
+input, select {
+  width: 100%;
+  padding: 0.7em;
+  margin-bottom: var(--gap);
+  border-radius: var(--button-radius);
+  border: none;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 1em;
+}
+
+.button, button {
+  display: block;
+  width: 100%;
+  padding: 1em;
+  margin-bottom: var(--gap);
+  background: var(--button);
+  color: var(--text);
+  border: none;
+  border-radius: var(--button-radius);
+  font-size: 1.1em;
+  font-weight: 600;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.button:active, button:active, .button.selected {
+  background: var(--button-active);
+  color: #fff;
+}
+
+.row {
+  display: flex;
+  gap: var(--gap);
+}
+
+.col-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+
+.sticky-bottom {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  padding-top: var(--gap);
+  z-index: 10;
+}
+
+.scoreboard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--panel);
+  border-radius: var(--button-radius);
+  padding: 1em;
+  margin-bottom: var(--gap);
+  font-size: 1.2em;
+}
+
+.leg-number {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.moment-btn {
+  margin-bottom: 0;
+  font-size: 1em;
+  background: var(--panel);
+  color: var(--text);
+  border: 2px solid var(--panel);
+  transition: border 0.2s, background 0.2s;
+}
+.moment-btn.selected {
+  border: 2px solid var(--accent2);
+  background: var(--accent2);
+  color: #222;
+}
+
+input[type="number"] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  html {
+    font-size: 16px;
+  }
+  .screen {
+    padding: 0.7em;
+  }
+  .scoreboard {
+    font-size: 1em;
+    padding: 0.7em;
+  }
+}
