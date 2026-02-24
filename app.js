@@ -3,15 +3,16 @@
 
 // --- GLOBAL STATE ---
 const appState = {
-  screen: "mainMenu", // mainMenu | playerEntry | setup | match | interview
-  players: [], // All tournament player names
+  screen: "mainMenu", // mainMenu | playerEntry | setup | match | interview | questionBank
+  players: [], // Array of {name: string, group: string}
   config: {
     matchType: "matchPlay", // Only matchPlay for v1
     mode: null, // bestOf | playAll
     totalLegs: null,
     legsToWin: null,
     player1: "",
-    player2: ""
+    player2: "",
+    selectedGroup: null // Filter players by group
   },
   score: {
     player1: 0,
@@ -120,6 +121,9 @@ function render() {
     case "interview":
       app.appendChild(renderInterview());
       break;
+    case "questionBank":
+      app.appendChild(renderQuestionBank());
+      break;
   }
 }
 
@@ -129,11 +133,20 @@ function renderMainMenu() {
   div.className = "screen";
   div.innerHTML = `
     <h1>Darts Interview Assistant</h1>
-    <button id="startTournamentBtn" class="button">Start Tournament</button>
+    <button id="newMatchBtn" class="button">New Match</button>
+    <button id="playerLibraryBtn" class="button">Player Library</button>
+    <button id="questionBankBtn" class="button">Interview Questions</button>
   `;
-  div.querySelector("#startTournamentBtn").onclick = () => {
-    resetState();
+  div.querySelector("#newMatchBtn").onclick = () => {
+    appState.screen = "setup";
+    render();
+  };
+  div.querySelector("#playerLibraryBtn").onclick = () => {
     appState.screen = "playerEntry";
+    render();
+  };
+  div.querySelector("#questionBankBtn").onclick = () => {
+    appState.screen = "questionBank";
     render();
   };
   return div;
@@ -144,31 +157,39 @@ function renderPlayerEntry() {
   const div = document.createElement("div");
   div.className = "screen";
   div.innerHTML = `
-    <h2>Enter All Player Names</h2>
+    <h2>Player Library</h2>
     <form id="playerForm" autocomplete="off">
       <div id="playerInputs"></div>
       <button type="button" id="addPlayerBtn" class="button">Add Player</button>
       <div class="sticky-bottom">
-        <button type="submit" class="button">Continue</button>
+        <button type="button" id="backToMenuBtn" class="button" style="background:var(--panel);">Back to Menu</button>
       </div>
     </form>
   `;
   const playerInputsDiv = div.querySelector("#playerInputs");
   // Save player library to localStorage
   function savePlayerLibrary() {
-    const toSave = appState.players.map((n, i) => n.trim() ? n.trim() : `Player ${i+1}`);
-    localStorage.setItem("dartsPlayerLibrary", JSON.stringify(toSave));
+    localStorage.setItem("dartsPlayerLibrary", JSON.stringify(appState.players));
   }
   // Render current player fields
   function renderInputs() {
     playerInputsDiv.innerHTML = "";
-    appState.players.forEach((name, idx) => {
+    appState.players.forEach((player, idx) => {
       const row = document.createElement("div");
       row.className = "row";
       row.style.marginBottom = "0.5em";
+      row.style.display = "flex";
+      row.style.gap = "0.5em";
       row.innerHTML = `
-        <input type="text" value="${name}" maxlength="20" data-idx="${idx}" placeholder="Player ${idx+1}" style="flex:1;">
-        <button type="button" class="button" data-remove="${idx}" style="width:2.5em;padding:0 0.5em;margin-left:0.5em;">&times;</button>
+        <input type="text" value="${player.name || ''}" maxlength="20" data-idx="${idx}" placeholder="Player ${idx+1}" style="flex:1;">
+        <select data-group="${idx}" style="width:7em;">
+          <option value="">No Group</option>
+          <option value="A" ${player.group === 'A' ? 'selected' : ''}>Group A</option>
+          <option value="B" ${player.group === 'B' ? 'selected' : ''}>Group B</option>
+          <option value="C" ${player.group === 'C' ? 'selected' : ''}>Group C</option>
+          <option value="D" ${player.group === 'D' ? 'selected' : ''}>Group D</option>
+        </select>
+        <button type="button" class="button" data-remove="${idx}" style="width:2.5em;padding:0 0.5em;margin:0;">&times;</button>
       `;
       // Remove player
       row.querySelector("[data-remove]").onclick = (e) => {
@@ -176,9 +197,14 @@ function renderPlayerEntry() {
         renderInputs();
         savePlayerLibrary();
       };
-      // Edit player
+      // Edit player name
       row.querySelector("input").oninput = (e) => {
-        appState.players[idx] = e.target.value;
+        appState.players[idx].name = e.target.value;
+        savePlayerLibrary();
+      };
+      // Edit player group
+      row.querySelector("select").onchange = (e) => {
+        appState.players[idx].group = e.target.value;
         savePlayerLibrary();
       };
       playerInputsDiv.appendChild(row);
@@ -186,29 +212,17 @@ function renderPlayerEntry() {
   }
   // Add player
   div.querySelector("#addPlayerBtn").onclick = () => {
-    appState.players.push("");
+    appState.players.push({name: "", group: ""});
     renderInputs();
     savePlayerLibrary();
   };
-  // Initial: at least 2
-  if (appState.players.length < 2) {
-    appState.players = ["", ""];
-  }
-  renderInputs();
-  // Continue to setup
-  div.querySelector("#playerForm").onsubmit = (e) => {
-    e.preventDefault();
-    // Allow blank names, but require at least 2 players
-    if (appState.players.length < 2) {
-      alert("Enter at least two players.");
-      return;
-    }
-    // Auto-name blanks as Player 1, Player 2, ...
-    appState.players = appState.players.map((n, i) => n.trim() ? n.trim() : `Player ${i+1}`);
+  // Back to menu
+  div.querySelector("#backToMenuBtn").onclick = () => {
     savePlayerLibrary();
-    appState.screen = "setup";
+    appState.screen = "mainMenu";
     render();
   };
+  renderInputs();
   return div;
 }
 
@@ -218,7 +232,15 @@ function renderSetup() {
   div.className = "screen";
   div.innerHTML = `
     <h2>Setup Match</h2>
-    <button id="returnPlayerLibBtn" class="button" style="margin-bottom:1em;background:var(--panel);color:var(--accent2);border:1px solid var(--accent2);">Return to Player Library</button>
+    <button id="returnPlayerLibBtn" class="button" style="margin-bottom:1em;background:var(--panel);color:var(--accent2);border:1px solid var(--accent2);">Player Library</button>
+    <label>Filter by Group (Optional)</label>
+    <select id="groupFilter">
+      <option value="">All Players</option>
+      <option value="A">Group A</option>
+      <option value="B">Group B</option>
+      <option value="C">Group C</option>
+      <option value="D">Group D</option>
+    </select>
     <label>Match Type</label>
     <div class="row">
       <button class="button matchtype-btn selected" data-type="matchPlay">Match Play</button>
@@ -252,22 +274,47 @@ function renderSetup() {
       </select>
     </div>
     <label>Player 1</label>
-    <select id="player1">
-      ${appState.players.map((n, i) => `<option value="${n}">${n || `Player ${i+1}`}</option>`).join("")}
-    </select>
+    <select id="player1"></select>
     <label>Player 2</label>
-    <select id="player2">
-      ${appState.players.map((n, i) => `<option value="${n}">${n || `Player ${i+1}`}</option>`).join("")}
-    </select>
+    <select id="player2"></select>
     <div class="sticky-bottom">
       <button id="beginMatchBtn" class="button">Start Match</button>
     </div>
   `;
-    // Return to player library
-    div.querySelector("#returnPlayerLibBtn").onclick = () => {
-      appState.screen = "playerEntry";
-      render();
-    };
+  // Populate player dropdowns based on group filter
+  function populatePlayerDropdowns() {
+    const selectedGroup = div.querySelector("#groupFilter").value;
+    const filteredPlayers = selectedGroup 
+      ? appState.players.filter(p => p.group === selectedGroup)
+      : appState.players;
+    
+    const p1Select = div.querySelector("#player1");
+    const p2Select = div.querySelector("#player2");
+    
+    p1Select.innerHTML = filteredPlayers.map((p, i) => {
+      const name = p.name || `Player ${i+1}`;
+      return `<option value="${name}">${name}</option>`;
+    }).join("");
+    
+    p2Select.innerHTML = filteredPlayers.map((p, i) => {
+      const name = p.name || `Player ${i+1}`;
+      return `<option value="${name}">${name}</option>`;
+    }).join("");
+  }
+  
+  // Initial population
+  populatePlayerDropdowns();
+  
+  // Update when group filter changes
+  div.querySelector("#groupFilter").onchange = () => {
+    populatePlayerDropdowns();
+  };
+  
+  // Return to player library
+  div.querySelector("#returnPlayerLibBtn").onclick = () => {
+    appState.screen = "playerEntry";
+    render();
+  };
   // Match type selection
   const setPlayFields = div.querySelector('#setPlayFields');
   const matchPlayFields = div.querySelector('#matchPlayFields');
@@ -683,14 +730,23 @@ function resetState() {
   appState.screen = "mainMenu";
   // Restore player library from localStorage if available
   const savedPlayers = localStorage.getItem("dartsPlayerLibrary");
-  appState.players = savedPlayers ? JSON.parse(savedPlayers) : [];
+  if (savedPlayers) {
+    const parsed = JSON.parse(savedPlayers);
+    // Handle legacy format (array of strings) or new format (array of objects)
+    appState.players = parsed.map(p => 
+      typeof p === 'string' ? {name: p, group: ''} : p
+    );
+  } else {
+    appState.players = [];
+  }
   appState.config = {
     matchType: "matchPlay",
     mode: null,
     totalLegs: null,
     legsToWin: null,
     player1: "",
-    player2: ""
+    player2: "",
+    selectedGroup: null
   };
   appState.score = { player1: 0, player2: 0 };
   appState.currentLeg = 1;
@@ -698,12 +754,50 @@ function resetState() {
   appState.interview = { questions: [], currentQuestionIndex: 0 };
 }
 
+// --- QUESTION BANK SCREEN ---
+function renderQuestionBank() {
+  const div = document.createElement("div");
+  div.className = "screen";
+  div.innerHTML = `
+    <h2>Interview Questions</h2>
+    <p style="color:var(--text-muted);">View all available interview question categories and examples.</p>
+    <div style="margin-bottom:1em;">
+      <h3 style="font-size:1.1em;">Question Categories:</h3>
+      <ul style="line-height:1.8;">
+        <li>High Scoring</li>
+        <li>Big Finish</li>
+        <li>High Average</li>
+        <li>Low Dart Leg</li>
+        <li>Comeback</li>
+        <li>Match Dart</li>
+        <li>Doubles Battle</li>
+        <li>Upset</li>
+        <li>Mental Strength</li>
+        <li>Turning Point</li>
+        <li>General Questions</li>
+      </ul>
+    </div>
+    <div class="sticky-bottom">
+      <button id="backBtn" class="button">Back to Menu</button>
+    </div>
+  `;
+  div.querySelector("#backBtn").onclick = () => {
+    appState.screen = "mainMenu";
+    render();
+  };
+  return div;
+}
+
 // --- INIT ---
 window.addEventListener("DOMContentLoaded", () => {
   // Restore player library on load
   const savedPlayers = localStorage.getItem("dartsPlayerLibrary");
   if (savedPlayers) {
-    appState.players = JSON.parse(savedPlayers);
+    const parsed = JSON.parse(savedPlayers);
+    // Handle legacy format (array of strings) or new format (array of objects)
+    appState.players = parsed.map(p => 
+      typeof p === 'string' ? {name: p, group: ''} : p
+    );
   }
   render();
 });
