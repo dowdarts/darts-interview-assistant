@@ -166,7 +166,21 @@ function renderMainMenu() {
     render();
   };
   div.querySelector("#roundRobinBtn").onclick = () => {
-    // Reset round robin state
+    // Check if there's a saved tournament
+    const savedRoundRobin = localStorage.getItem("dartsRoundRobinState");
+    if (savedRoundRobin) {
+      const parsed = JSON.parse(savedRoundRobin);
+      // If there's an active tournament, ask to resume or start new
+      if (parsed.matches && parsed.matches.length > 0 && !parsed.matches[parsed.matches.length - 1].completed) {
+        if (confirm("Resume saved tournament? Click Cancel to start a new one.")) {
+          appState.roundRobin = parsed;
+          appState.screen = "roundRobinSetup";
+          render();
+          return;
+        }
+      }
+    }
+    // Reset round robin state for new tournament
     appState.roundRobin = {
       active: true,
       groupA: [],
@@ -175,6 +189,7 @@ function renderMainMenu() {
       currentMatchIndex: 0,
       completedMatches: []
     };
+    localStorage.removeItem("dartsRoundRobinState");
     appState.screen = "roundRobinSetup";
     render();
   };
@@ -881,9 +896,27 @@ function renderQuestionBank() {
 function renderRoundRobinSetup() {
   const div = document.createElement("div");
   div.className = "screen";
+  
+  // Check if there's saved progress
+  const hasProgress = appState.roundRobin.matches && appState.roundRobin.matches.length > 0;
+  const completedCount = hasProgress ? appState.roundRobin.matches.filter(m => m.completed).length : 0;
+  const totalMatches = hasProgress ? appState.roundRobin.matches.length : 20;
+  
   div.innerHTML = `
     <h2>Round Robin Setup</h2>
     <p style="color:var(--text-muted);margin-bottom:1em;">10 Players • 2 Groups of 5 • 20 Matches</p>
+    
+    ${hasProgress && completedCount > 0 ? `
+    <div style="background:var(--accent);color:#000;padding:1em;border-radius:8px;margin-bottom:1.5em;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <strong>Tournament in Progress</strong>
+          <p style="margin:0.25em 0 0 0;font-size:0.9em;">${completedCount} of ${totalMatches} matches completed</p>
+        </div>
+        <button id="clearProgressBtn" class="button" style="background:#fff;color:#000;padding:0.5em 1em;">Clear</button>
+      </div>
+    </div>
+    ` : ''}
     
     <div style="background:var(--panel);padding:1em;border-radius:8px;margin-bottom:1.5em;">
       <label style="display:block;margin-bottom:0.5em;font-weight:bold;">Quick Setup: Upload JSON</label>
@@ -916,7 +949,7 @@ function renderRoundRobinSetup() {
     <div id="matchSchedule" style="margin-bottom:1em;"></div>
     
     <div class="sticky-bottom">
-      <button id="startRoundRobinBtn" class="button">Start Round Robin</button>
+      <button id="startRoundRobinBtn" class="button">${hasProgress && completedCount > 0 ? 'Resume Tournament' : 'Start Round Robin'}</button>
       <button id="backBtn" class="button" style="background:var(--panel);margin-top:0.5em;">Back to Menu</button>
     </div>
   `;
@@ -1059,6 +1092,9 @@ function renderRoundRobinSetup() {
         
         renderSchedule();
         
+        // Save to localStorage
+        saveRoundRobinState();
+        
         uploadStatus.textContent = "✓ JSON loaded successfully!";
         uploadStatus.style.color = "var(--accent)";
       } catch (error) {
@@ -1103,15 +1139,22 @@ function renderRoundRobinSetup() {
     scheduleDiv.innerHTML = "";
     appState.roundRobin.matches.forEach((match) => {
       const matchDiv = document.createElement("div");
-      matchDiv.style.cssText = "padding:0.75em;margin-bottom:0.5em;background:var(--panel);border-radius:8px;display:flex;justify-content:space-between;align-items:center;";
+      const isCompleted = match.completed;
+      const bgColor = isCompleted ? "rgba(0,255,100,0.1)" : "var(--panel)";
+      const opacity = isCompleted ? "0.7" : "1";
+      matchDiv.style.cssText = `padding:0.75em;margin-bottom:0.5em;background:${bgColor};border-radius:8px;display:flex;justify-content:space-between;align-items:center;opacity:${opacity};`;
       
       const timeDisplay = match.time ? `<span style="color:var(--text-muted);margin:0 0.5em;">•</span><span style="color:var(--text-muted);font-size:0.9em;">${match.time}</span>` : '';
+      const completedBadge = isCompleted ? `<span style="color:#0f0;margin-right:0.5em;">✓</span>` : '';
+      const scoreDisplay = isCompleted && match.score1 !== undefined ? `<span style="color:var(--text-muted);margin:0 0.5em;">${match.score1}-${match.score2}</span>` : '';
       
       matchDiv.innerHTML = `
         <div>
+          ${completedBadge}
           <span style="color:var(--accent);font-weight:bold;">Match ${match.matchNum}</span>
           <span style="color:var(--text-muted);margin:0 0.5em;">•</span>
           <span>${match.player1} vs ${match.player2}</span>
+          ${scoreDisplay}
           ${timeDisplay}
         </div>
         <span style="color:${match.board === 1 ? 'var(--accent)' : 'var(--text-muted)'};">Board ${match.board}</span>
@@ -1136,7 +1179,13 @@ function renderRoundRobinSetup() {
         legsToWin: parseInt(div.querySelector("#legsToWin").value)
       };
     }
-    appState.roundRobin.currentMatchIndex = 0;
+    
+    // Find first incomplete match or start from beginning
+    let startIndex = appState.roundRobin.matches.findIndex(m => !m.completed);
+    if (startIndex === -1) startIndex = 0;
+    appState.roundRobin.currentMatchIndex = startIndex;
+    
+    saveRoundRobinState();
     appState.screen = "roundRobinMatch";
     render();
   };
@@ -1145,6 +1194,25 @@ function renderRoundRobinSetup() {
     appState.screen = "mainMenu";
     render();
   };
+  
+  // Clear progress button (if exists)
+  const clearBtn = div.querySelector("#clearProgressBtn");
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      if (confirm("Clear tournament progress? This cannot be undone.")) {
+        appState.roundRobin = {
+          active: true,
+          groupA: [],
+          groupB: [],
+          matches: [],
+          currentMatchIndex: 0,
+          completedMatches: []
+        };
+        localStorage.removeItem("dartsRoundRobinState");
+        render();
+      }
+    };
+  }
   
   return div;
 }
@@ -1318,6 +1386,9 @@ function renderRoundRobinMatch() {
     
     appState.roundRobin.completedMatches.push({...currentMatch});
     
+    // Save state after match completion
+    saveRoundRobinState();
+    
     // Only interview if on Board 1 (live stream board)
     if (currentMatch.board === 1) {
       // Generate interview questions with round robin context
@@ -1334,6 +1405,7 @@ function renderRoundRobinMatch() {
   
   div.querySelector("#skipMatchBtn").onclick = () => {
     currentMatch.completed = true;
+    saveRoundRobinState();
     moveToNextMatch();
   };
   
@@ -1345,6 +1417,11 @@ function renderRoundRobinMatch() {
   }
   
   return div;
+}
+
+// --- SAVE ROUND ROBIN STATE ---
+function saveRoundRobinState() {
+  localStorage.setItem("dartsRoundRobinState", JSON.stringify(appState.roundRobin));
 }
 
 // --- GENERATE ROUND ROBIN INTERVIEW ---
@@ -1444,6 +1521,25 @@ window.addEventListener("DOMContentLoaded", () => {
       typeof p === 'string' ? {name: p, group: ''} : p
     );
   }
+  
+  // Restore Round Robin state on load
+  const savedRoundRobin = localStorage.getItem("dartsRoundRobinState");
+  if (savedRoundRobin) {
+    try {
+      const parsed = JSON.parse(savedRoundRobin);
+      // Only restore if there's an active tournament
+      if (parsed.matches && parsed.matches.length > 0) {
+        appState.roundRobin = parsed;
+        // If tournament was in progress, go to appropriate screen
+        if (parsed.currentMatchIndex < parsed.matches.length && !parsed.matches[parsed.matches.length - 1].completed) {
+          appState.screen = "roundRobinSetup"; // Show setup screen with restored data
+        }
+      }
+    } catch (e) {
+      console.error("Failed to restore Round Robin state:", e);
+    }
+  }
+  
   render();
 });
 
