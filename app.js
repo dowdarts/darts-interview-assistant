@@ -1174,6 +1174,16 @@ function renderRoundRobinMatch() {
   
   const div = document.createElement("div");
   div.className = "screen";
+  
+  // State for this leg
+  let selectedWinner = null;
+  let currentLeg = {
+    winner: null,
+    moments: [],
+    momentValues: {},
+    legNumber: state.currentLeg
+  };
+  
   div.innerHTML = `
     <h2>Match ${currentMatch.matchNum} - Board ${currentMatch.board}</h2>
     <div class="score-panel">
@@ -1190,67 +1200,97 @@ function renderRoundRobinMatch() {
     <h3>Leg ${appState.roundRobin.currentMatchState.currentLeg}</h3>
     <label>Leg Winner</label>
     <div class="row">
-      <button class="button" id="p1WinBtn">${currentMatch.player1}</button>
-      <button class="button" id="p2WinBtn">${currentMatch.player2}</button>
+      <button class="button winner-btn" data-winner="${currentMatch.player1}">${currentMatch.player1}</button>
+      <button class="button winner-btn" data-winner="${currentMatch.player2}">${currentMatch.player2}</button>
     </div>
-    <div id="momentButtons" style="display:none;">
-      <h4>Memorable Moments (Optional)</h4>
-      <div class="col-2">
-        ${momentCategories.map(m => `<button class="button moment-btn" data-moment="${m.key}">${m.label}</button>`).join('')}
-      </div>
-      <div id="momentInputs"></div>
-      <button class="button" id="nextLegBtn" style="margin-top:1em;">Confirm Leg</button>
-    </div>
+    <label>Memorable Moments (Optional)</label>
+    <div class="col-2" id="momentBtns"></div>
     <div class="sticky-bottom">
-      <button id="skipMatchBtn" class="button" style="background:var(--panel);">Skip Match</button>
+      <button id="nextLegBtn" class="button">Next Leg</button>
+      <button id="skipMatchBtn" class="button" style="background:var(--panel);margin-top:0.5em;">Skip Match</button>
     </div>
   `;
   
   const state = appState.roundRobin.currentMatchState;
   const format = appState.roundRobin.format;
   
-  div.querySelector("#p1WinBtn").onclick = () => recordLegWinner(currentMatch.player1);
-  div.querySelector("#p2WinBtn").onclick = () => recordLegWinner(currentMatch.player2);
-  
-  function recordLegWinner(winner) {
-    const leg = {
-      winner: winner,
-      moments: [],
-      momentValues: {},
-      legNumber: state.currentLeg
+  // Winner selection
+  div.querySelectorAll(".winner-btn").forEach(btn => {
+    btn.onclick = () => {
+      selectedWinner = btn.dataset.winner;
+      currentLeg.winner = selectedWinner;
+      div.querySelectorAll(".winner-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
     };
-    state.legs.push(leg);
+  });
+  
+  // Moment buttons
+  const momentBtnsDiv = div.querySelector("#momentBtns");
+  momentCategories.forEach(cat => {
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "0.5em";
+    const btn = document.createElement("button");
+    btn.className = "moment-btn button";
+    btn.textContent = cat.label;
+    btn.dataset.key = cat.key;
+    wrapper.appendChild(btn);
     
-    if (winner === currentMatch.player1) state.score1++;
+    // Inline input for value moments
+    let input = null;
+    if (["highScoring","bigFinish","highAverage","lowDartLeg"].includes(cat.key)) {
+      input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = cat.key === "lowDartLeg" ? "Darts" : cat.label + " value";
+      input.style.display = "none";
+      input.style.width = "5em";
+      input.style.fontSize = "1em";
+      input.style.background = "#232834";
+      input.style.color = "#fff";
+      input.style.border = "1px solid #444";
+      input.style.borderRadius = "0.7em";
+      input.style.padding = "0.3em 0.7em";
+      input.oninput = (e) => {
+        currentLeg.momentValues[cat.key] = e.target.value;
+      };
+      wrapper.appendChild(input);
+    }
+    
+    btn.onclick = () => {
+      if (currentLeg.moments.includes(cat.key)) {
+        // Deselect
+        currentLeg.moments = currentLeg.moments.filter(m => m !== cat.key);
+        btn.classList.remove("selected");
+        if (input) {
+          input.style.display = "none";
+          delete currentLeg.momentValues[cat.key];
+        }
+      } else {
+        // Select
+        currentLeg.moments.push(cat.key);
+        btn.classList.add("selected");
+        if (input) input.style.display = "inline-block";
+      }
+    };
+    
+    momentBtnsDiv.appendChild(wrapper);
+  });
+  
+  // Next leg button
+  div.querySelector("#nextLegBtn").onclick = () => {
+    if (!selectedWinner) {
+      alert("Please select a leg winner first.");
+      return;
+    }
+    
+    state.legs.push(currentLeg);
+    
+    if (currentLeg.winner === currentMatch.player1) state.score1++;
     else state.score2++;
     
-    // Show moment buttons
-    div.querySelector("#momentButtons").style.display = "block";
-    div.querySelectorAll(".moment-btn").forEach(btn => {
-      btn.onclick = () => {
-        const moment = btn.dataset.moment;
-        if (!leg.moments.includes(moment)) {
-          leg.moments.push(moment);
-          btn.style.background = "var(--accent)";
-          showMomentInput(moment, leg);
-        }
-      };
-    });
-    
-    div.querySelector("#nextLegBtn").onclick = () => checkMatchEnd();
-  }
-  
-  function showMomentInput(moment, leg) {
-    const inputDiv = div.querySelector("#momentInputs");
-    const input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = `Enter value for ${moment}`;
-    input.style.marginTop = "0.5em";
-    input.oninput = (e) => {
-      leg.momentValues[moment] = e.target.value;
-    };
-    inputDiv.appendChild(input);
-  }
+    checkMatchEnd();
+  };
   
   function checkMatchEnd() {
     let matchOver = false;
