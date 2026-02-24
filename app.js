@@ -156,8 +156,7 @@ function renderMainMenu() {
   div.className = "screen";
   div.innerHTML = `
     <h1>Darts Interview Assistant</h1>
-    <button id="roundRobinBtn" class="button">Full Event</button>
-    <button id="playerLibraryBtn" class="button">Player Library</button>
+    <button id="roundRobinBtn" class="button">Knock Out</button>
     <button id="questionBankBtn" class="button">Interview Questions</button>
   `;
   div.querySelector("#roundRobinBtn").onclick = () => {
@@ -186,10 +185,6 @@ function renderMainMenu() {
     };
     localStorage.removeItem("dartsRoundRobinState");
     appState.screen = "roundRobinSetup";
-    render();
-  };
-  div.querySelector("#playerLibraryBtn").onclick = () => {
-    appState.screen = "playerEntry";
     render();
   };
   div.querySelector("#questionBankBtn").onclick = () => {
@@ -898,7 +893,7 @@ function renderRoundRobinSetup() {
   const totalMatches = hasProgress ? appState.roundRobin.matches.length : 20;
   
   div.innerHTML = `
-    <h2>Full Event Setup</h2>
+    <h2>Knock Out Event Setup</h2>
     <p style="color:var(--text-muted);margin-bottom:1em;">10 Players • 2 Groups of 5 • 20 Matches</p>
     
     ${hasProgress && completedCount > 0 ? `
