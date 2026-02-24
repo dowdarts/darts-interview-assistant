@@ -1,0 +1,142 @@
+{
+  "format": {
+    "type": "playAll",
+    "legsToWin": 3
+  },
+  "groupA": [
+    "Player A1",
+    "Player A2",
+    "Player A3",
+    "Player A4",
+    "Player A5"
+  ],
+  "groupB": [
+    "Player B1",
+    "Player B2",
+    "Player B3",
+    "Player B4",
+    "Player B5"
+  ],
+  "matches": [
+    {
+      "matchNum": 1,
+      "player1": "Player A1",
+      "player2": "Player A2",
+      "board": 1
+    },
+    {
+      "matchNum": 2,
+      "player1": "Player A3",
+      "player2": "Player A4",
+      "board": 1
+    },
+    {
+      "matchNum": 3,
+      "player1": "Player A5",
+      "player2": "Player B1",
+      "board": 1
+    },
+    {
+      "matchNum": 4,
+      "player1": "Player B2",
+      "player2": "Player B3",
+      "board": 1
+    },
+    {
+      "matchNum": 5,
+      "player1": "Player B4",
+      "player2": "Player B5",
+      "board": 1
+    },
+    {
+      "matchNum": 6,
+      "player1": "Player A1",
+      "player2": "Player A3",
+      "board": 1
+    },
+    {
+      "matchNum": 7,
+      "player1": "Player A2",
+      "player2": "Player A4",
+      "board": 1
+    },
+    {
+      "matchNum": 8,
+      "player1": "Player A5",
+      "player2": "Player B2",
+      "board": 1
+    },
+    {
+      "matchNum": 9,
+      "player1": "Player B1",
+      "player2": "Player B3",
+      "board": 1
+    },
+    {
+      "matchNum": 10,
+      "player1": "Player B4",
+      "player2": "Player A1",
+      "board": 1
+    },
+    {
+      "matchNum": 11,
+      "player1": "Player B5",
+      "player2": "Player A2",
+      "board": 2
+    },
+    {
+      "matchNum": 12,
+      "player1": "Player A3",
+      "player2": "Player A5",
+      "board": 2
+    },
+    {
+      "matchNum": 13,
+      "player1": "Player A4",
+      "player2": "Player B1",
+      "board": 2
+    },
+    {
+      "matchNum": 14,
+      "player1": "Player B2",
+      "player2": "Player B4",
+      "board": 2
+    },
+    {
+      "matchNum": 15,
+      "player1": "Player B3",
+      "player2": "Player B5",
+      "board": 2
+    },
+    {
+      "matchNum": 16,
+      "player1": "Player A1",
+      "player2": "Player A4",
+      "board": 2
+    },
+    {
+      "matchNum": 17,
+      "player1": "Player A2",
+      "player2": "Player A5",
+      "board": 2
+    },
+    {
+      "matchNum": 18,
+      "player1": "Player A3",
+      "player2": "Player B1",
+      "board": 2
+    },
+    {
+      "matchNum": 19,
+      "player1": "Player B2",
+      "player2": "Player B5",
+      "board": 2
+    },
+    {
+      "matchNum": 20,
+      "player1": "Player B3",
+      "player2": "Player B4",
+      "board": 2
+    }
+  ]
+}

@@ -885,6 +885,12 @@ function renderRoundRobinSetup() {
     <h2>Round Robin Setup</h2>
     <p style="color:var(--text-muted);margin-bottom:1em;">10 Players • 2 Groups of 5 • 20 Matches</p>
     
+    <div style="background:var(--panel);padding:1em;border-radius:8px;margin-bottom:1.5em;">
+      <label style="display:block;margin-bottom:0.5em;font-weight:bold;">Quick Setup: Upload JSON</label>
+      <input type="file" id="jsonUpload" accept=".json" style="margin-bottom:0.5em;">
+      <p id="uploadStatus" style="color:var(--text-muted);font-size:0.9em;margin:0;"></p>
+    </div>
+    
     <h3 style="font-size:1.1em;margin-bottom:0.5em;">Group A (5 Players)</h3>
     <div id="groupAInputs" style="margin-bottom:1.5em;"></div>
     
@@ -918,6 +924,7 @@ function renderRoundRobinSetup() {
   const groupADiv = div.querySelector("#groupAInputs");
   const groupBDiv = div.querySelector("#groupBInputs");
   const scheduleDiv = div.querySelector("#matchSchedule");
+  const uploadStatus = div.querySelector("#uploadStatus");
   
   // Initialize groups if empty
   if (appState.roundRobin.groupA.length === 0) {
@@ -966,6 +973,102 @@ function renderRoundRobinSetup() {
     }
   };
   
+  // JSON Upload Handler
+  div.querySelector("#jsonUpload").onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        
+        // Validate JSON structure
+        if (!data.groupA || !data.groupB || !data.format || !data.matches) {
+          throw new Error("Missing required fields: groupA, groupB, format, or matches");
+        }
+        
+        if (data.groupA.length !== 5 || data.groupB.length !== 5) {
+          throw new Error("Each group must have exactly 5 players");
+        }
+        
+        if (data.matches.length !== 20) {
+          throw new Error("Must have exactly 20 matches");
+        }
+        
+        // Populate groups
+        appState.roundRobin.groupA = data.groupA;
+        appState.roundRobin.groupB = data.groupB;
+        
+        // Populate format
+        const formatSelect = div.querySelector("#formatType");
+        if (data.format.type === "bestOf") {
+          formatSelect.value = "bestOf";
+          div.querySelector("#totalLegs").value = data.format.totalLegs || 5;
+          div.querySelector("#bestOfFields").style.display = "block";
+          div.querySelector("#playAllFields").style.display = "none";
+        } else if (data.format.type === "playAll") {
+          formatSelect.value = "playAll";
+          div.querySelector("#legsToWin").value = data.format.legsToWin || 3;
+          div.querySelector("#bestOfFields").style.display = "none";
+          div.querySelector("#playAllFields").style.display = "block";
+        }
+        
+        // Populate matches
+        appState.roundRobin.matches = data.matches.map((m, idx) => ({
+          matchNum: m.matchNum || idx + 1,
+          player1: m.player1,
+          player2: m.player2,
+          board: m.board || 1,
+          time: m.time || null,
+          winner: null,
+          score1: 0,
+          score2: 0,
+          completed: false
+        }));
+        
+        // Re-render inputs and schedule
+        groupADiv.innerHTML = "";
+        groupBDiv.innerHTML = "";
+        
+        appState.roundRobin.groupA.forEach((name, i) => {
+          const input = document.createElement("input");
+          input.type = "text";
+          input.value = name;
+          input.placeholder = `Group A Player ${i+1}`;
+          input.style.marginBottom = "0.5em";
+          input.oninput = (e) => {
+            appState.roundRobin.groupA[i] = e.target.value;
+            generateMatchSchedule();
+          };
+          groupADiv.appendChild(input);
+        });
+        
+        appState.roundRobin.groupB.forEach((name, i) => {
+          const input = document.createElement("input");
+          input.type = "text";
+          input.value = name;
+          input.placeholder = `Group B Player ${i+1}`;
+          input.style.marginBottom = "0.5em";
+          input.oninput = (e) => {
+            appState.roundRobin.groupB[i] = e.target.value;
+            generateMatchSchedule();
+          };
+          groupBDiv.appendChild(input);
+        });
+        
+        renderSchedule();
+        
+        uploadStatus.textContent = "✓ JSON loaded successfully!";
+        uploadStatus.style.color = "var(--accent)";
+      } catch (error) {
+        uploadStatus.textContent = `✗ Error: ${error.message}`;
+        uploadStatus.style.color = "#ff4444";
+      }
+    };
+    reader.readAsText(file);
+  };
+  
   // Generate match schedule
   function generateMatchSchedule() {
     const allPlayers = [...appState.roundRobin.groupA, ...appState.roundRobin.groupB];
@@ -1001,11 +1104,15 @@ function renderRoundRobinSetup() {
     appState.roundRobin.matches.forEach((match) => {
       const matchDiv = document.createElement("div");
       matchDiv.style.cssText = "padding:0.75em;margin-bottom:0.5em;background:var(--panel);border-radius:8px;display:flex;justify-content:space-between;align-items:center;";
+      
+      const timeDisplay = match.time ? `<span style="color:var(--text-muted);margin:0 0.5em;">•</span><span style="color:var(--text-muted);font-size:0.9em;">${match.time}</span>` : '';
+      
       matchDiv.innerHTML = `
         <div>
           <span style="color:var(--accent);font-weight:bold;">Match ${match.matchNum}</span>
           <span style="color:var(--text-muted);margin:0 0.5em;">•</span>
           <span>${match.player1} vs ${match.player2}</span>
+          ${timeDisplay}
         </div>
         <span style="color:${match.board === 1 ? 'var(--accent)' : 'var(--text-muted)'};">Board ${match.board}</span>
       `;
