@@ -758,29 +758,73 @@ function resetState() {
 function renderQuestionBank() {
   const div = document.createElement("div");
   div.className = "screen";
+  
+  // Sample data for displaying questions
+  const sampleData = {
+    playerName: "[Player Name]",
+    opponent: "[Opponent Name]",
+    matchScore: "[4-2]",
+    highScore: "[180]",
+    bigFinish: "[170]",
+    highAverage: "[105]",
+    lowDartLeg: "[12]",
+    legNumber: "[2]"
+  };
+  
+  // Category labels
+  const categoryLabels = {
+    highScoring: "High Scoring",
+    bigFinish: "Big Finish",
+    highAverage: "High Average",
+    lowDartLeg: "Low Dart Leg",
+    comeback: "Comeback",
+    matchDart: "Match Dart",
+    doublesBattle: "Doubles Battle",
+    upset: "Upset",
+    mentalStrength: "Mental Strength",
+    turningPoint: "Turning Point",
+    general: "General Questions"
+  };
+  
   div.innerHTML = `
     <h2>Interview Questions</h2>
-    <p style="color:var(--text-muted);">View all available interview question categories and examples.</p>
-    <div style="margin-bottom:1em;">
-      <h3 style="font-size:1.1em;">Question Categories:</h3>
-      <ul style="line-height:1.8;">
-        <li>High Scoring</li>
-        <li>Big Finish</li>
-        <li>High Average</li>
-        <li>Low Dart Leg</li>
-        <li>Comeback</li>
-        <li>Match Dart</li>
-        <li>Doubles Battle</li>
-        <li>Upset</li>
-        <li>Mental Strength</li>
-        <li>Turning Point</li>
-        <li>General Questions</li>
-      </ul>
-    </div>
+    <p style="color:var(--text-muted);margin-bottom:1.5em;">All available interview questions organized by category.</p>
+    <div id="questionsContainer"></div>
     <div class="sticky-bottom">
       <button id="backBtn" class="button">Back to Menu</button>
     </div>
   `;
+  
+  const container = div.querySelector("#questionsContainer");
+  
+  // Render each category
+  Object.keys(questionBank).forEach((category) => {
+    const categoryDiv = document.createElement("div");
+    categoryDiv.style.marginBottom = "2em";
+    
+    const heading = document.createElement("h3");
+    heading.textContent = categoryLabels[category] || category;
+    heading.style.fontSize = "1.1em";
+    heading.style.color = "var(--accent)";
+    heading.style.marginBottom = "0.5em";
+    categoryDiv.appendChild(heading);
+    
+    const list = document.createElement("ol");
+    list.style.lineHeight = "1.8";
+    list.style.paddingLeft = "1.5em";
+    list.style.color = "var(--text)";
+    
+    questionBank[category].forEach((questionFunc) => {
+      const li = document.createElement("li");
+      li.textContent = questionFunc(sampleData);
+      li.style.marginBottom = "0.5em";
+      list.appendChild(li);
+    });
+    
+    categoryDiv.appendChild(list);
+    container.appendChild(categoryDiv);
+  });
+  
   div.querySelector("#backBtn").onclick = () => {
     appState.screen = "mainMenu";
     render();
