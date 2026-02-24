@@ -1,0 +1,9 @@
+{
+  "name": "darts-interview-assistant",
+  "version": "1.0.0",
+  "description": "Mobile-first darts interview assistant SPA for live commentary. Vanilla JS, state-driven, GitHub Pages ready.",
+  "main": "index.html",
+  "scripts": {},
+  "author": "dowdarts",
+  "license": "MIT"
+}

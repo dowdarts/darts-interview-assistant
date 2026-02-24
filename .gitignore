@@ -1,0 +1,8 @@
+# GitHub Pages deployment
+
+# Serve from root for SPA
+/
+!index.html
+!app.js
+!style.css
+!package.json
