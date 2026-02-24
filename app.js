@@ -1196,7 +1196,7 @@ function renderRoundRobinMatch() {
     <div id="momentButtons" style="display:none;">
       <h4>Memorable Moments (Optional)</h4>
       <div class="col-2">
-        ${momentCategories.map(m => `<button class="button moment-btn" data-moment="${m}">${m.replace(/([A-Z])/g, ' $1').trim()}</button>`).join('')}
+        ${momentCategories.map(m => `<button class="button moment-btn" data-moment="${m.key}">${m.label}</button>`).join('')}
       </div>
       <div id="momentInputs"></div>
       <button class="button" id="nextLegBtn" style="margin-top:1em;">Confirm Leg</button>
