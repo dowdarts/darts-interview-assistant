@@ -31,12 +31,16 @@ const questionBank = {
     (data) => `Talk us through that ${data.highScore || "big score"} — did it shift momentum?`,
     (data) => `That ${data.highScore || "big score"} was massive, ${data.playerName}. Was that the turning point?`,
     (data) => "Was scoring the key difference tonight?",
-    (data) => `How important were those big scores against ${data.opponent}?`
+    (data) => `How important were those big scores against ${data.opponent}?`,
+    (data) => `That ${data.highScore} in leg ${data.legNumber} — walk us through how that felt going in.`,
+    (data) => `Leg ${data.legNumber}, you hit ${data.highScore}. What was the pressure like at that moment?`
   ],
   bigFinish: [
     (data) => `That ${data.bigFinish} checkout — talk us through it!`,
     (data) => `${data.bigFinish} to finish, what was going through your mind?`,
-    (data) => `How crucial was that ${data.bigFinish} finish in this ${data.matchScore} victory?`
+    (data) => `How crucial was that ${data.bigFinish} finish in this ${data.matchScore} victory?`,
+    (data) => `Leg ${data.legNumber}, ${data.bigFinish} to win it. Walk us through that checkout.`,
+    (data) => `That ${data.bigFinish} in leg ${data.legNumber} — was that under pressure against ${data.opponent}?`
   ],
   highAverage: [
     (data) => `You averaged ${data.highAverage} tonight — is that your best form this season?`,
@@ -47,22 +51,27 @@ const questionBank = {
     (data) => `${data.lowDartLeg} darts to win that leg — that's clinical finishing, ${data.playerName}!`,
     (data) => `A ${data.lowDartLeg}-darter! Talk us through that leg.`,
     (data) => `That ${data.lowDartLeg}-dart leg was crucial in this ${data.matchScore} win. How did you find that rhythm?`,
-    (data) => `${data.lowDartLeg} darts — is that one of your best legs of the season?`
+    (data) => `${data.lowDartLeg} darts — is that one of your best legs of the season?`,
+    (data) => `Leg ${data.legNumber}, you took it in ${data.lowDartLeg} darts. How did you approach that one?`,
+    (data) => `${data.lowDartLeg} darts in leg ${data.legNumber} against ${data.opponent} — that's world-class, ${data.playerName}.`
   ],
   comeback: [
     (data) => `You turned it around for the ${data.matchScore} win. When did momentum shift?`,
     (data) => "What adjustment sparked the comeback?",
-    (data) => `${data.opponent} had you under pressure. How did you fight back?`
+    (data) => `${data.opponent} had you under pressure. How did you fight back?`,
+    (data) => `Leg ${data.legNumber} seemed to be the turning point. What changed for you there?`
   ],
   matchDart: [
     (data) => `Match dart against ${data.opponent} — what goes through your mind?`,
     (data) => "What goes through your mind on match dart?",
-    (data) => `You held your nerve on the big stage. How do you stay so composed?`
+    (data) => `You held your nerve on the big stage. How do you stay so composed?`,
+    (data) => `Leg ${data.legNumber}, match dart to seal it. Talk us through that final moment.`
   ],
   doublesBattle: [
     (data) => `The doubles were tough tonight. How did you stay patient against ${data.opponent}?`,
     (data) => `It was a battle on the doubles. What kept you focused?`,
-    (data) => `You found the doubles when it mattered most in that ${data.matchScore} win. How?`
+    (data) => `You found the doubles when it mattered most in that ${data.matchScore} win. How?`,
+    (data) => `Leg ${data.legNumber} was a real doubles battle. How did you stay composed?`
   ],
   upset: [
     (data) => `A ${data.matchScore} victory over ${data.opponent} — did being the underdog motivate you?`,
@@ -72,12 +81,14 @@ const questionBank = {
   mentalStrength: [
     (data) => `You showed incredible mental strength tonight, ${data.playerName}. Where does that come from?`,
     (data) => `That ${data.matchScore} win required real character. How did you dig deep?`,
-    (data) => "What keeps you mentally strong under pressure?"
+    (data) => "What keeps you mentally strong under pressure?",
+    (data) => `Leg ${data.legNumber} tested your mental game. How did you stay focused?`
   ],
   turningPoint: [
     (data) => `There was a clear turning point in this match. When did you feel it shift?`,
     (data) => `${data.playerName}, what was the key moment in this ${data.matchScore} victory?`,
-    (data) => "When did you know you had this match won?"
+    (data) => "When did you know you had this match won?",
+    (data) => `Was leg ${data.legNumber} the moment that changed everything for you?`
   ],
   general: [
     (data) => `You managed to walk out of that match with a ${data.matchScore} win over ${data.opponent}. How does this win feel for you right now?`,
@@ -586,6 +597,7 @@ function generateInterviewQuestions() {
   // 1. Count frequency of each moment for legs won by match winner
   const freq = {};
   const momentData = {};
+  const momentLegNumbers = {}; // Track which leg each moment occurred in
   appState.legs.forEach(leg => {
     if (leg.winner === matchWinner) {
       leg.moments.forEach(m => {
@@ -593,6 +605,9 @@ function generateInterviewQuestions() {
         // Store value for this moment type (use last occurrence)
         if (!momentData[m]) momentData[m] = [];
         momentData[m].push(leg.momentValues && leg.momentValues[m] ? leg.momentValues[m] : undefined);
+        // Store leg number for this moment
+        if (!momentLegNumbers[m]) momentLegNumbers[m] = [];
+        momentLegNumbers[m].push(leg.legNumber);
       });
     }
   });
@@ -609,7 +624,8 @@ function generateInterviewQuestions() {
       let data = {
         playerName: playerName,
         opponent: opponent,
-        matchScore: matchScore
+        matchScore: matchScore,
+        legNumber: momentLegNumbers[cat] ? momentLegNumbers[cat][momentLegNumbers[cat].length - 1] : undefined
       };
       
       // Add specific moment values
