@@ -1233,6 +1233,9 @@ function renderRoundRobinMatch() {
   const div = document.createElement("div");
   div.className = "screen";
   
+  const state = appState.roundRobin.currentMatchState;
+  const format = appState.roundRobin.format;
+  
   // State for this leg
   let selectedWinner = null;
   let currentLeg = {
@@ -1268,9 +1271,6 @@ function renderRoundRobinMatch() {
       <button id="skipMatchBtn" class="button" style="background:var(--panel);margin-top:0.5em;">Skip Match</button>
     </div>
   `;
-  
-  const state = appState.roundRobin.currentMatchState;
-  const format = appState.roundRobin.format;
   
   // Winner selection
   div.querySelectorAll(".winner-btn").forEach(btn => {
