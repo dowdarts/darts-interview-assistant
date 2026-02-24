@@ -43,6 +43,12 @@ const questionBank = {
     (data) => `A ${data.highAverage} average against ${data.opponent}, are you pleased with that?`,
     (data) => `That ${data.highAverage} average shows real quality. What's clicking for you right now?`
   ],
+  lowDartLeg: [
+    (data) => `${data.lowDartLeg} darts to win that leg — that's clinical finishing, ${data.playerName}!`,
+    (data) => `A ${data.lowDartLeg}-darter! Talk us through that leg.`,
+    (data) => `That ${data.lowDartLeg}-dart leg was crucial in this ${data.matchScore} win. How did you find that rhythm?`,
+    (data) => `${data.lowDartLeg} darts — is that one of your best legs of the season?`
+  ],
   comeback: [
     (data) => `You turned it around for the ${data.matchScore} win. When did momentum shift?`,
     (data) => "What adjustment sparked the comeback?",
@@ -337,7 +343,8 @@ const momentCategories = [
   { key: "mentalStrength", label: "Mental Strength" },
   { key: "upset", label: "Upset" },
   { key: "turningPoint", label: "Turning Point" },
-  { key: "matchDart", label: "Match Dart" }
+  { key: "matchDart", label: "Match Dart" },
+  { key: "lowDartLeg", label: "Low Dart Leg" }
 ];
 
 function renderMatch() {
@@ -403,10 +410,10 @@ function renderMatch() {
     wrapper.appendChild(btn);
     // Inline input for value moments
     let input = null;
-    if (["highScoring","bigFinish","highAverage"].includes(cat.key)) {
+    if (["highScoring","bigFinish","highAverage","lowDartLeg"].includes(cat.key)) {
       input = document.createElement("input");
       input.type = "text";
-      input.placeholder = cat.label + " value";
+      input.placeholder = cat.key === "lowDartLeg" ? "Darts" : cat.label + " value";
       input.style.display = "none";
       input.style.width = "5em";
       input.style.fontSize = "1em";
@@ -617,6 +624,10 @@ function generateInterviewQuestions() {
       if (cat === "highAverage") {
         const vals = momentData[cat] || [];
         data.highAverage = vals.length ? vals[vals.length-1] : undefined;
+      }
+      if (cat === "lowDartLeg") {
+        const vals = momentData[cat] || [];
+        data.lowDartLeg = vals.length ? vals[vals.length-1] : undefined;
       }
       
       const qArr = questionBank[cat];
