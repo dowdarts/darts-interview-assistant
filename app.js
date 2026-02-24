@@ -156,15 +156,10 @@ function renderMainMenu() {
   div.className = "screen";
   div.innerHTML = `
     <h1>Darts Interview Assistant</h1>
-    <button id="newMatchBtn" class="button">New Match</button>
-    <button id="roundRobinBtn" class="button">Round Robin Setup</button>
+    <button id="roundRobinBtn" class="button">Full Event</button>
     <button id="playerLibraryBtn" class="button">Player Library</button>
     <button id="questionBankBtn" class="button">Interview Questions</button>
   `;
-  div.querySelector("#newMatchBtn").onclick = () => {
-    appState.screen = "setup";
-    render();
-  };
   div.querySelector("#roundRobinBtn").onclick = () => {
     // Check if there's a saved tournament
     const savedRoundRobin = localStorage.getItem("dartsRoundRobinState");
@@ -903,7 +898,7 @@ function renderRoundRobinSetup() {
   const totalMatches = hasProgress ? appState.roundRobin.matches.length : 20;
   
   div.innerHTML = `
-    <h2>Round Robin Setup</h2>
+    <h2>Full Event Setup</h2>
     <p style="color:var(--text-muted);margin-bottom:1em;">10 Players • 2 Groups of 5 • 20 Matches</p>
     
     ${hasProgress && completedCount > 0 ? `
@@ -949,7 +944,7 @@ function renderRoundRobinSetup() {
     <div id="matchSchedule" style="margin-bottom:1em;"></div>
     
     <div class="sticky-bottom">
-      <button id="startRoundRobinBtn" class="button">${hasProgress && completedCount > 0 ? 'Resume Tournament' : 'Start Round Robin'}</button>
+      <button id="startRoundRobinBtn" class="button">${hasProgress && completedCount > 0 ? 'Resume Event' : 'Start Event'}</button>
       <button id="backBtn" class="button" style="background:var(--panel);margin-top:0.5em;">Back to Menu</button>
     </div>
   `;
