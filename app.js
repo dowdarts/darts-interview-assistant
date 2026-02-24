@@ -29,21 +29,57 @@ const appState = {
 const questionBank = {
   highScoring: [
     (data) => `Talk us through that ${data.highScore || "big score"} — did it shift momentum?`,
-    () => "Was scoring the key difference tonight?"
+    (data) => `That ${data.highScore || "big score"} was massive, ${data.playerName}. Was that the turning point?`,
+    (data) => "Was scoring the key difference tonight?",
+    (data) => `How important were those big scores against ${data.opponent}?`
+  ],
+  bigFinish: [
+    (data) => `That ${data.bigFinish} checkout — talk us through it!`,
+    (data) => `${data.bigFinish} to finish, what was going through your mind?`,
+    (data) => `How crucial was that ${data.bigFinish} finish in this ${data.matchScore} victory?`
+  ],
+  highAverage: [
+    (data) => `You averaged ${data.highAverage} tonight — is that your best form this season?`,
+    (data) => `A ${data.highAverage} average against ${data.opponent}, are you pleased with that?`,
+    (data) => `That ${data.highAverage} average shows real quality. What's clicking for you right now?`
   ],
   comeback: [
-    () => "When did momentum shift?",
-    () => "What adjustment sparked the comeback?"
+    (data) => `You turned it around for the ${data.matchScore} win. When did momentum shift?`,
+    (data) => "What adjustment sparked the comeback?",
+    (data) => `${data.opponent} had you under pressure. How did you fight back?`
   ],
   matchDart: [
-    () => "What goes through your mind on match dart?"
+    (data) => `Match dart against ${data.opponent} — what goes through your mind?`,
+    (data) => "What goes through your mind on match dart?",
+    (data) => `You held your nerve on the big stage. How do you stay so composed?`
+  ],
+  doublesBattle: [
+    (data) => `The doubles were tough tonight. How did you stay patient against ${data.opponent}?`,
+    (data) => `It was a battle on the doubles. What kept you focused?`,
+    (data) => `You found the doubles when it mattered most in that ${data.matchScore} win. How?`
   ],
   upset: [
-    () => "Did being the underdog motivate you?"
+    (data) => `A ${data.matchScore} victory over ${data.opponent} — did being the underdog motivate you?`,
+    (data) => "Did being the underdog motivate you?",
+    (data) => `You've just beaten ${data.opponent}. What does this win mean to you?`
+  ],
+  mentalStrength: [
+    (data) => `You showed incredible mental strength tonight, ${data.playerName}. Where does that come from?`,
+    (data) => `That ${data.matchScore} win required real character. How did you dig deep?`,
+    (data) => "What keeps you mentally strong under pressure?"
+  ],
+  turningPoint: [
+    (data) => `There was a clear turning point in this match. When did you feel it shift?`,
+    (data) => `${data.playerName}, what was the key moment in this ${data.matchScore} victory?`,
+    (data) => "When did you know you had this match won?"
   ],
   general: [
-    () => "How important is this result?",
-    () => "What does this mean moving forward?"
+    (data) => `You managed to walk out of that match with a ${data.matchScore} win over ${data.opponent}. How does this win feel for you right now?`,
+    (data) => `A ${data.matchScore} victory tonight. How important is this result?`,
+    (data) => `${data.playerName}, brilliant performance. What does this mean moving forward?`,
+    (data) => `You've beaten ${data.opponent} ${data.matchScore}. What's next for you?`,
+    (data) => "How important is this result?",
+    (data) => "What does this mean moving forward?"
   ]
 };
 
@@ -525,11 +561,21 @@ function renderInterview() {
 function generateInterviewQuestions() {
   // Interview only the match winner
   let matchWinner = null;
+  let winnerScore, loserScore;
   if (appState.config.matchType === "setPlay" && appState.setPlay) {
     matchWinner = appState.setPlay.setScores.player1 > appState.setPlay.setScores.player2 ? "player1" : "player2";
+    winnerScore = appState.setPlay.setScores[matchWinner];
+    loserScore = matchWinner === "player1" ? appState.setPlay.setScores.player2 : appState.setPlay.setScores.player1;
   } else {
     matchWinner = appState.score.player1 > appState.score.player2 ? "player1" : "player2";
+    winnerScore = appState.score[matchWinner];
+    loserScore = matchWinner === "player1" ? appState.score.player2 : appState.score.player1;
   }
+  // Get player names
+  const playerName = appState.config[matchWinner];
+  const opponent = matchWinner === "player1" ? appState.config.player2 : appState.config.player1;
+  const matchScore = `${winnerScore}-${loserScore}`;
+  
   // 1. Count frequency of each moment for legs won by match winner
   const freq = {};
   const momentData = {};
@@ -549,34 +595,57 @@ function generateInterviewQuestions() {
   const selectedCats = sortedCats.slice(0, 4);
   // 4. Pull one random question per category, filling in values
   const questions = [];
+  const usedQuestions = new Set(); // Track used questions to avoid duplicates
   selectedCats.forEach(cat => {
     if (questionBank[cat] && questionBank[cat].length) {
-      // Use moment value if available
-      let data = {};
-      if (["highScoring","bigFinish","highAverage"].includes(cat)) {
-        // Use the last value entered for this moment type
-        const vals = momentData[cat] || [];
-        data.value = vals.length ? vals[vals.length-1] : undefined;
-      }
-      // For highScoring, keep backward compatibility
+      // Build data object with all available context
+      let data = {
+        playerName: playerName,
+        opponent: opponent,
+        matchScore: matchScore
+      };
+      
+      // Add specific moment values
       if (cat === "highScoring") {
         const vals = momentData[cat] || [];
         data.highScore = vals.length ? vals[vals.length-1] : undefined;
       }
+      if (cat === "bigFinish") {
+        const vals = momentData[cat] || [];
+        data.bigFinish = vals.length ? vals[vals.length-1] : undefined;
+      }
+      if (cat === "highAverage") {
+        const vals = momentData[cat] || [];
+        data.highAverage = vals.length ? vals[vals.length-1] : undefined;
+      }
+      
       const qArr = questionBank[cat];
-      // Replace blanks in question with value
+      // Select random question and fill in data
       let q = qArr[Math.floor(Math.random() * qArr.length)](data);
-      // Replace any ${data.value} or ${data.highScore} in question
-      if (data.value) q = q.replace(/\$\{data\.value\}/g, data.value);
-      if (data.highScore) q = q.replace(/\$\{data\.highScore\}/g, data.highScore);
       questions.push(q);
+      usedQuestions.add(q);
     }
   });
-  // 5. Fill with general if < 4
+  // 5. Fill with general if < 4, ensuring no duplicates
   while (questions.length < 4) {
     const qArr = questionBank.general;
-    const q = qArr[Math.floor(Math.random() * qArr.length)]();
-    questions.push(q);
+    let attempts = 0;
+    let q;
+    const data = {
+      playerName: playerName,
+      opponent: opponent,
+      matchScore: matchScore
+    };
+    do {
+      q = qArr[Math.floor(Math.random() * qArr.length)](data);
+      attempts++;
+    } while (usedQuestions.has(q) && attempts < 20);
+    if (!usedQuestions.has(q)) {
+      questions.push(q);
+      usedQuestions.add(q);
+    } else {
+      break; // Exit if can't find unique question after 20 attempts
+    }
   }
   appState.interview.questions = questions;
   appState.interview.currentQuestionIndex = 0;
