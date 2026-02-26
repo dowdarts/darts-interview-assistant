@@ -26,13 +26,97 @@ const appState = {
   },
   roundRobin: {
     active: false,
-    groupA: [], // 5 players
+    groupA: [], // 5 players (names as strings for backward compatibility)
     groupB: [], // 5 players
-    matches: [], // Array of {matchNum, player1, player2, board, winner, score1, score2, completed}
+    playerProfiles: {}, // Map of player name -> {province: string}
+    matches: [], // Array of {matchNum, player1, player2, board, winner, score1, score2, completed, legs}
     currentMatchIndex: 0,
     completedMatches: [] // Stores results for contextual questions
   }
 };
+
+// --- PRESET EVENTS ---
+const presetEvents = {
+  event4: {
+    label: "Event 4",
+    format: { type: "bestOf", totalLegs: 5 },
+    groupA: [
+      { name: "Drake Berry",  province: "NS"   },
+      { name: "Cory Wallace", province: "NB"   },
+      { name: "Dana Moss",    province: "NB"   },
+      { name: "Dee Cormier",  province: "NB"   },
+      { name: "Colby Burke",  province: "NFLD" }
+    ],
+    groupB: [
+      { name: "Wayne Champman",   province: "NB" },
+      { name: "Jordan Boyd",      province: "NS" },
+      { name: "Kevin Blanchard",  province: "PE" },
+      { name: "Don Higgins",      province: "NB" },
+      { name: "Mark MacEachern",  province: "PE" }
+    ],
+    matches: [
+      { matchNum: 1,  time: "9:00 AM",  board: 1, player1: "Drake Berry",      player2: "Cory Wallace"    },
+      { matchNum: 2,  time: "9:00 AM",  board: 2, player1: "Wayne Champman",   player2: "Jordan Boyd"     },
+      { matchNum: 3,  time: "9:25 AM",  board: 1, player1: "Drake Berry",      player2: "Dana Moss"       },
+      { matchNum: 4,  time: "9:25 AM",  board: 2, player1: "Wayne Champman",   player2: "Kevin Blanchard" },
+      { matchNum: 5,  time: "9:50 AM",  board: 1, player1: "Jordan Boyd",      player2: "Kevin Blanchard" },
+      { matchNum: 6,  time: "9:50 AM",  board: 2, player1: "Cory Wallace",     player2: "Dana Moss"       },
+      { matchNum: 7,  time: "10:15 AM", board: 1, player1: "Cory Wallace",     player2: "Dee Cormier"     },
+      { matchNum: 8,  time: "10:15 AM", board: 2, player1: "Jordan Boyd",      player2: "Don Higgins"     },
+      { matchNum: 9,  time: "10:40 AM", board: 1, player1: "Mark MacEachern",  player2: "Wayne Champman"  },
+      { matchNum: 10, time: "10:40 AM", board: 2, player1: "Colby Burke",      player2: "Drake Berry"     },
+      { matchNum: 11, time: "11:05 AM", board: 1, player1: "Mark MacEachern",  player2: "Jordan Boyd"     },
+      { matchNum: 12, time: "11:05 AM", board: 2, player1: "Colby Burke",      player2: "Cory Wallace"    },
+      { matchNum: 13, time: "11:30 AM", board: 1, player1: "Colby Burke",      player2: "Dana Moss"       },
+      { matchNum: 14, time: "11:30 AM", board: 2, player1: "Mark MacEachern",  player2: "Kevin Blanchard" },
+      { matchNum: 15, time: "11:55 AM", board: 1, player1: "Kevin Blanchard",  player2: "Don Higgins"     },
+      { matchNum: 16, time: "11:55 AM", board: 2, player1: "Dana Moss",        player2: "Dee Cormier"     },
+      { matchNum: 17, time: "12:20 PM", board: 1, player1: "Don Higgins",      player2: "Wayne Champman"  },
+      { matchNum: 18, time: "12:20 PM", board: 2, player1: "Dee Cormier",      player2: "Drake Berry"     },
+      { matchNum: 19, time: "12:45 PM", board: 1, player1: "Dee Cormier",      player2: "Colby Burke"     },
+      { matchNum: 20, time: "12:45 PM", board: 2, player1: "Don Higgins",      player2: "Mark MacEachern" }
+    ]
+  }
+};
+
+// --- LOAD PRESET EVENT ---
+function loadPresetEvent(eventKey) {
+  const preset = presetEvents[eventKey];
+  if (!preset) return;
+
+  appState.roundRobin.playerProfiles = {};
+
+  appState.roundRobin.groupA = preset.groupA.map(p => {
+    if (p.province) appState.roundRobin.playerProfiles[p.name] = { province: p.province };
+    return p.name;
+  });
+  appState.roundRobin.groupB = preset.groupB.map(p => {
+    if (p.province) appState.roundRobin.playerProfiles[p.name] = { province: p.province };
+    return p.name;
+  });
+
+  appState.roundRobin.format = { ...preset.format };
+
+  appState.roundRobin.matches = preset.matches.map(m => ({
+    matchNum: m.matchNum,
+    player1:  m.player1,
+    player2:  m.player2,
+    board:    m.board,
+    time:     m.time,
+    winner:   null,
+    score1:   0,
+    score2:   0,
+    completed: false,
+    legs:     []
+  }));
+
+  appState.roundRobin.completedMatches = [];
+  appState.roundRobin.currentMatchIndex = 0;
+  appState.roundRobin.currentMatchState = null;
+  appState.roundRobin.active = false;
+
+  saveRoundRobinState();
+}
 
 // --- QUESTION BANK ---
 const questionBank = {
@@ -45,24 +129,24 @@ const questionBank = {
     (data) => `Leg ${data.legNumber}, you hit ${data.highScore}. What was the pressure like at that moment?`
   ],
   bigFinish: [
-    (data) => `That ${data.bigFinish} checkout — talk us through it!`,
-    (data) => `${data.bigFinish} to finish, what was going through your mind?`,
-    (data) => `How crucial was that ${data.bigFinish} finish in this ${data.matchScore} victory?`,
-    (data) => `Leg ${data.legNumber}, ${data.bigFinish} to win it. Walk us through that checkout.`,
-    (data) => `That ${data.bigFinish} in leg ${data.legNumber} — was that under pressure against ${data.opponent}?`
+    (data) => `That ${data.bigFinish || "big finish"} checkout — talk us through it!`,
+    (data) => `${data.bigFinish || "Big finish"} to finish, what was going through your mind?`,
+    (data) => `How crucial was that ${data.bigFinish || "big finish"} finish in this ${data.matchScore} victory?`,
+    (data) => `Leg ${data.legNumber}, ${data.bigFinish || "big finish"} to win it. Walk us through that checkout.`,
+    (data) => `That ${data.bigFinish || "big finish"} in leg ${data.legNumber} — was that under pressure against ${data.opponent}?`
   ],
   highAverage: [
-    (data) => `You averaged ${data.highAverage} tonight — is that your best form this season?`,
-    (data) => `A ${data.highAverage} average against ${data.opponent}, are you pleased with that?`,
-    (data) => `That ${data.highAverage} average shows real quality. What's clicking for you right now?`
+    (data) => `You averaged ${data.highAverage || "well"} tonight — is that your best form this season?`,
+    (data) => `A ${data.highAverage || "strong"} average against ${data.opponent}, are you pleased with that?`,
+    (data) => `That ${data.highAverage || "high"} average shows real quality. What's clicking for you right now?`
   ],
   lowDartLeg: [
-    (data) => `${data.lowDartLeg} darts to win that leg — that's clinical finishing, ${data.playerName}!`,
-    (data) => `A ${data.lowDartLeg}-darter! Talk us through that leg.`,
-    (data) => `That ${data.lowDartLeg}-dart leg was crucial in this ${data.matchScore} win. How did you find that rhythm?`,
-    (data) => `${data.lowDartLeg} darts — is that one of your best legs of the season?`,
-    (data) => `Leg ${data.legNumber}, you took it in ${data.lowDartLeg} darts. How did you approach that one?`,
-    (data) => `${data.lowDartLeg} darts in leg ${data.legNumber} against ${data.opponent} — that's world-class, ${data.playerName}.`
+    (data) => `${data.lowDartLeg || "Quick"} darts to win that leg — that's clinical finishing, ${data.playerName}!`,
+    (data) => `A ${data.lowDartLeg || "quick"}-darter! Talk us through that leg.`,
+    (data) => `That ${data.lowDartLeg || "quick"}-dart leg was crucial in this ${data.matchScore} win. How did you find that rhythm?`,
+    (data) => `${data.lowDartLeg || "Quick"} darts — is that one of your best legs of the season?`,
+    (data) => `Leg ${data.legNumber}, you took it in ${data.lowDartLeg || "quick"} darts. How did you approach that one?`,
+    (data) => `${data.lowDartLeg || "Quick"} darts in leg ${data.legNumber} against ${data.opponent} — that's world-class, ${data.playerName}.`
   ],
   comeback: [
     (data) => `You turned it around for the ${data.matchScore} win. When did momentum shift?`,
@@ -108,13 +192,83 @@ const questionBank = {
     (data) => "What does this mean moving forward?"
   ],
   roundRobin: [
+    // ---- NEXT MATCH context ----
     (data) => data.nextOpponent ? `You've just taken a ${data.matchScore} win over ${data.opponent}. You're playing ${data.nextOpponent} on board ${data.nextBoard} next — how does this result set you up for that match?` : null,
-    (data) => data.nextOpponent ? `That's match ${data.matchNumber} done, ${data.matchScore}. With ${data.nextOpponent} coming up in match ${data.nextMatchNum}, how are you feeling about your form?` : null,
+    (data) => data.nextOpponent ? `That's match ${data.matchNumber} done at ${data.matchScore}. With ${data.nextOpponent} coming up in match ${data.nextMatchNum}, how are you feeling about your form?` : null,
     (data) => data.nextOpponent ? `${data.opponent} is behind you now. Does beating them give you confidence going into ${data.nextOpponent}?` : null,
-    (data) => data.nextBoard === 2 ? `Your next match is on board ${data.nextBoard} against ${data.nextOpponent}. How do you adjust when you're not on the main stage?` : null,
-    (data) => data.nextBoard === 1 ? `You're back on board 1 next against ${data.nextOpponent}. Does playing on the live stream board change your approach?` : null,
-    (data) => data.matchNumber ? `This is match ${data.matchNumber} of the round robin. How are you pacing yourself through this tournament format?` : null,
-    (data) => data.nextOpponent ? `You've got ${data.nextOpponent} waiting for you. What adjustments do you need to make?` : null
+    (data) => data.nextOpponent && data.nextOpponentRecord ? `${data.nextOpponent} is sitting at ${data.nextOpponentRecord} right now. How do you approach that matchup knowing their record?` : null,
+    (data) => data.nextBoard1Opponent ? `Your next board 1 match is against ${data.nextBoard1Opponent}${data.nextBoard1Province ? ` from ${data.nextBoard1Province}` : ''} — what do you know about them?` : null,
+    (data) => data.nextBoard === 1 ? `You're back on the livestream board next against ${data.nextOpponent}. Does being watched by camera change anything for you?` : null,
+    (data) => data.nextBoard === 2 ? `Next up is ${data.nextOpponent} on board ${data.nextBoard}. How do you stay sharp when you're not on the main stage?` : null,
+    (data) => data.nextMatchTime && data.nextOpponent ? `You've got ${data.nextOpponent} at ${data.nextMatchTime}. Is there anything you'll do differently going into that one?` : null,
+
+    // ---- RECORD / STANDINGS context ----
+    (data) => data.tournamentRecord ? `You're sitting at ${data.tournamentRecord} in the round robin. How does that affect you going into your next match?` : null,
+    (data) => data.tournamentRecord && data.nextOpponent ? `With a ${data.tournamentRecord} record, you're facing ${data.nextOpponent} next. How confident are you feeling?` : null,
+    (data) => data.isLastMatch && data.tournamentRecord ? `This brings you to ${data.tournamentRecord} in the round robin — that's your final match done. How do you feel about your day overall?` : null,
+    (data) => data.tournamentRecord ? `${data.tournamentRecord} in round robin play — are you satisfied with how you've performed today?` : null,
+    (data) => data.playerRank && data.totalPlayers ? `You're ranked ${data.playerRank} out of ${data.totalPlayers} right now. Does knowing where you stand affect your mindset?` : null,
+    (data) => data.tournamentWins >= 2 ? `You're on a ${data.tournamentWins}-win run today. Is the momentum building for you?` : null,
+    (data) => data.tournamentLosses >= 1 && data.tournamentWins >= 1 ? `You've had wins and losses today — how do you reset mentally between matches in this format?` : null,
+
+    // ---- ALREADY PLAYED context ----
+    (data) => data.alreadyPlayedCount > 1 ? `You've played ${data.alreadyPlayedCount} matches today. How are you managing your energy and focus through the round robin?` : null,
+    (data) => data.alreadyPlayed && data.alreadyPlayed.length > 1 ? `Coming into this against ${data.opponent} — having already played ${data.alreadyPlayed.map(o => o.name).slice(0, -1).join(', ')} earlier — how did you adjust your game?` : null,
+    (data) => data.alreadyPlayedCount === 1 ? `That was only your second match today — are you starting to find your rhythm in this tournament?` : null,
+
+    // ---- REMAINING MATCHES context ----
+    (data) => data.remainingMatchCount > 1 ? `You've still got ${data.remainingMatchCount} matches left today. How important is it to bank this win for your confidence?` : null,
+    (data) => data.remainingMatchCount === 1 ? `One match left after this. With a ${data.tournamentRecord} record, what do you need to do in that final match?` : null,
+    (data) => data.remainingMatchCount === 0 && data.isLastMatch ? `That was your last match of the day. Looking back, what defines your tournament today?` : null,
+
+    // ---- PROVINCE context ----
+    (data) => data.opponentProvince && data.playerProvince && data.opponentProvince !== data.playerProvince ? `${data.playerProvince} versus ${data.opponentProvince} — does that inter-province rivalry add extra edge to a win like this?` : null,
+    (data) => data.opponentProvince ? `You just beat ${data.opponentProvince}'s ${data.opponent} ${data.matchScore}. How does that feel?` : null,
+    (data) => data.nextOpponentProvince && data.nextOpponent && data.nextOpponentProvince !== data.playerProvince ? `Next up is ${data.nextOpponentProvince}'s ${data.nextOpponent}. Is there any extra motivation when it's another inter-province clash?` : null,
+    (data) => data.playerProvince ? `Representing ${data.playerProvince} here today with that ${data.matchScore} win — how important is it to fly the flag for your province?` : null,
+
+    // ---- FORMAT context ----
+    (data) => data.matchNumber ? `This is match ${data.matchNumber} of the round robin. How are you pacing yourself through this format?` : null,
+    (data) => `In the round robin format, every match matters. How do you keep your head up when you know there's another match right around the corner?`,
+
+    // ---- WHITEWASH / DOMINANT WIN (3-0) ----
+    (data) => data.isWhitewash ? `${data.winnerLegs}-${data.loserLegs} — a clean sweep over ${data.opponent}. Was there ever a moment where you felt them trying to get back into it?` : null,
+    (data) => data.isWhitewash ? `You didn't drop a single leg against ${data.opponent}. How dominant did that feel from the oche?` : null,
+    (data) => data.isWhitewash ? `That's a whitewash — ${data.winnerLegs}-${data.loserLegs}. Does a win like that give you a mental edge for the rest of today's matches?` : null,
+    (data) => data.isWhitewash ? `${data.opponent} couldn't get a leg on the board. What was your mindset going into each leg knowing you had that kind of control?` : null,
+    (data) => data.isWhitewash && data.nextOpponent ? `After a ${data.winnerLegs}-${data.loserLegs} whitewash, you go into the match against ${data.nextOpponent} in great form — is that momentum something you feed off?` : null,
+
+    // ---- 5TH LEG DECIDER (went 2-2) ----
+    (data) => data.isDecider ? `It went all the way to the deciding leg — ${data.winnerLegs}-${data.loserLegs}. What was going through your head stepping up to throw in that final leg?` : null,
+    (data) => data.isDecider ? `You and ${data.opponent} took it to a decider. At 2-2, how did you reset your mindset before that fifth leg?` : null,
+    (data) => data.isDecider ? `The decider — that's the ultimate test. How do you handle the pressure of a final-leg situation?` : null,
+    (data) => data.isDecider ? `When it gets to that fifth leg, is it just pure instinct, or do you have a specific routine to settle yourself?` : null,
+    (data) => data.isDecider && data.nextOpponent ? `You had to dig really deep for that decider win. Does going through a five-legger toughen you up for your next match against ${data.nextOpponent}?` : null,
+
+    // ---- COMEBACK FROM 0-2 ----
+    (data) => data.isComeback ? `You were 0-2 down against ${data.opponent} and came back to win ${data.winnerLegs}-${data.loserLegs}. At two legs down, did you believe you could still win this match?` : null,
+    (data) => data.isComeback ? `Most players would go into their shell at 0-2 — you turned it around. What flipped for you in that third leg?` : null,
+    (data) => data.isComeback ? `That comeback from 0-2 — ${data.winnerLegs}-${data.loserLegs} — is one of the best moments today. Where does that kind of fight come from, ${data.playerName}?` : null,
+    (data) => data.isComeback ? `Two legs down and you still believed. How important is self-belief in a round robin format where momentum can swing so fast?` : null,
+    (data) => data.isComeback && data.opponent ? `${data.opponent} had you on the ropes at 0-2. Was there one shot, one checkout, one moment that turned the tide?` : null,
+
+    // ---- SURRENDERED LEAD BUT STILL WON (2-0 up, went 2-2, still won) ----
+    (data) => data.isSurrender ? `You had ${data.opponent} 2-0, they pulled it back to 2-2, but you took the decider. How did you stay composed when they levelled it?` : null,
+    (data) => data.isSurrender ? `Going 2-0 up and then watching ${data.opponent} claw it back to 2-2 — what was your mental state going into that final leg?` : null,
+    (data) => data.isSurrender ? `You let a 2-0 lead slip to 2-2, but you still won the match. Is a win like that more satisfying or more nerve-wracking?` : null,
+    (data) => data.isSurrender ? `At 2-2, what did you tell yourself before stepping up in the deciding leg? You'd been there before — you were the one leading 2-0.` : null,
+    (data) => data.isSurrender ? `${data.opponent} found a way back from 2-0 down to level it — but you kept your nerve. How important is it not to panic when a lead slips like that?` : null,
+
+    // ---- NAIL-BITER (1-1 and close throughout) ----
+    (data) => data.isNailBiter ? `That was a real nail-biter — you and ${data.opponent} went blow for blow. What separates you when it gets that tight?` : null,
+    (data) => data.isNailBiter ? `${data.winnerLegs}-${data.loserLegs} — every leg was contested. How do you stay focused when the match stays so tight for so long?` : null,
+    (data) => data.isNailBiter ? `You were never more than one leg apart in that match. How do you mentally handle that kind of back-and-forth pressure against ${data.opponent}?` : null,
+    (data) => data.isNailBiter ? `In a close match like that, is it about your own game or reading your opponent's? What was the key for you in getting over the line?` : null,
+    (data) => data.isNailBiter && data.nextOpponent ? `After a tight ${data.winnerLegs}-${data.loserLegs} battle, you roll straight into ${data.nextOpponent} — does grinding out a close win leave anything in the tank?` : null,
+
+    // ---- LEAD CHANGES (back and forth match) ----
+    (data) => data.hadLeadChanges ? `That match had the lead flipping multiple times. How do you stay grounded when a match swings like that?` : null,
+    (data) => data.hadLeadChanges ? `You and ${data.opponent} traded legs back and forth — the momentum kept shifting. What kept you believing you'd come out on top?` : null,
   ]
 };
 
@@ -125,6 +279,9 @@ function render() {
   switch (appState.screen) {
     case "mainMenu":
       app.appendChild(renderMainMenu());
+      break;
+    case "matchList":
+      app.appendChild(renderMatchList());
       break;
     case "playerEntry":
       app.appendChild(renderPlayerEntry());
@@ -147,6 +304,15 @@ function render() {
     case "roundRobinMatch":
       app.appendChild(renderRoundRobinMatch());
       break;
+    case "roundRobinMatchComplete":
+      app.appendChild(renderRoundRobinMatchComplete());
+      break;
+    case "board2Entry":
+      app.appendChild(renderBoard2Entry());
+      break;
+    case "questionLibrary":
+      app.appendChild(renderQuestionLibrary());
+      break;
   }
 }
 
@@ -154,10 +320,17 @@ function render() {
 function renderMainMenu() {
   const div = document.createElement("div");
   div.className = "screen";
+  div.style.justifyContent = "center";
+  div.style.minHeight = "95vh";
+  div.style.textAlign = "center";
   div.innerHTML = `
-    <h1>Darts Interview Assistant</h1>
-    <button id="roundRobinBtn" class="button">Round Robin</button>
-    <button id="questionBankBtn" class="button">Interview Questions</button>
+    <div style="margin-bottom:2.5em;">
+      <div style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.2em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.4em;">AADS Darts</div>
+      <h1 style="font-size:2.2em;margin-bottom:0.1em;">Interview<br>Assistant</h1>
+      <div style="width:70px;height:3px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin:0.6em auto 0;box-shadow:0 0 12px var(--orange);"></div>
+    </div>
+    <button id="roundRobinBtn" class="button" style="max-width:360px;margin:0 auto var(--gap);">Round Robin Event</button>
+    <button id="questionBankBtn" class="button btn-secondary" style="max-width:360px;margin:0 auto;">Interview Questions</button>
   `;
   div.querySelector("#roundRobinBtn").onclick = () => {
     // Check if there's a saved tournament
@@ -191,6 +364,164 @@ function renderMainMenu() {
     appState.screen = "questionBank";
     render();
   };
+  return div;
+}
+
+// --- MATCH LIST (main hub) ---
+function renderMatchList() {
+  const matches = appState.roundRobin.matches || [];
+  const completedCount = matches.filter(m => m.completed).length;
+  const totalCount = matches.length;
+  const allDone = completedCount === totalCount && totalCount > 0;
+
+  // A match is available to start if the previous match is done (or it's the first)
+  function isAvailable(idx) {
+    if (matches[idx].completed) return false; // already done
+    if (idx === 0) return true;
+    return matches[idx - 1].completed === true;
+  }
+
+  const div = document.createElement("div");
+  div.className = "screen";
+
+  // — header —
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.4em;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.2em;">AADS Darts</div>
+        <h1 style="font-size:1.85em;margin:0;">Event 4</h1>
+      </div>
+      <button id="resetBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--divider);color:var(--text-muted);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Reset</button>
+      <button id="qlBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--orange);color:var(--orange);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Questions</button>
+    </div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.1em;box-shadow:0 0 10px var(--orange);"></div>
+
+    ${allDone ? `
+    <div style="background:rgba(76,175,80,0.12);border:1.5px solid #4caf50;border-radius:12px;padding:0.8em 1.2em;margin-bottom:1em;font-family:var(--font-display);font-size:0.9em;color:#4caf50;letter-spacing:0.04em;text-transform:uppercase;">
+      ✓ Event Complete — All ${totalCount} matches done
+    </div>` : `
+    <div style="background:var(--card-black);border:1px solid var(--divider);border-radius:12px;padding:0.65em 1.2em;margin-bottom:1em;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-family:var(--font-display);font-size:0.82em;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Progress</span>
+      <span style="font-family:var(--font-display);font-weight:700;color:var(--orange);">${completedCount} / ${totalCount}</span>
+    </div>`}
+
+    <div id="matchListItems"></div>
+  `;
+
+  // Build match items
+  const listEl = div.querySelector("#matchListItems");
+
+  matches.forEach((match, idx) => {
+    const available = isAvailable(idx);
+    const done = match.completed;
+    const locked = !done && !available;
+    const isBoard1 = match.board === 1;
+
+    const item = document.createElement("div");
+    item.style.cssText = `
+      display:flex; align-items:stretch; background:${done ? '#111' : available ? 'var(--card-black)' : '#0f0f0f'};
+      border-radius:12px; margin-bottom:0.55em;
+      border:1px solid ${done ? '#1e2e1e' : available ? 'var(--divider)' : '#1a1a1a'};
+      border-left:4px solid ${done ? '#2a5a2a' : isBoard1 ? (available ? 'var(--orange)' : '#5a2a00') : (available ? '#555' : '#2a2a2a')};
+      opacity:${locked ? '0.45' : '1'};
+      overflow:hidden; cursor:${(available || done) ? 'pointer' : 'default'};
+      transition:box-shadow 0.15s, transform 0.12s;
+    `;
+
+    const p1Province = getPlayerProvince(match.player1);
+    const p2Province = getPlayerProvince(match.player2);
+    const boardLabel = isBoard1
+      ? `<span style="display:inline-flex;align-items:center;gap:0.3em;background:${available ? 'var(--orange)' : '#3a1800'};color:${available ? '#000' : '#8a4a00'};font-family:var(--font-display);font-size:0.68em;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;padding:0.2em 0.65em;border-radius:20px;">● Board 1 LIVE</span>`
+      : `<span style="display:inline-flex;align-items:center;background:#1a1a1a;color:var(--text-muted);font-family:var(--font-display);font-size:0.68em;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:0.2em 0.65em;border-radius:20px;border:1px solid #2a2a2a;">Board 2</span>`;
+
+    let rightSide = '';
+    if (done) {
+      const wName = match.winner || '';
+      rightSide = `
+        <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:0.7em 0.9em;min-width:70px;gap:0.1em;">
+          <div style="font-family:var(--font-display);font-size:1.4em;font-weight:900;color:#4caf50;line-height:1;">${match.score1}–${match.score2}</div>
+          <div style="font-family:var(--font-display);font-size:0.62em;color:#4caf50;letter-spacing:0.05em;text-transform:uppercase;text-align:right;">${wName.split(' ').pop()}</div>
+          <div style="font-family:var(--font-display);font-size:0.6em;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;margin-top:0.15em;">✎ Edit</div>
+        </div>`;
+    } else if (available) {
+      rightSide = `
+        <div style="display:flex;align-items:center;justify-content:center;padding:0.7em 0.9em;min-width:56px;">
+          <div style="font-family:var(--font-display);font-weight:900;color:var(--orange);font-size:1.5em;line-height:1;">›</div>
+        </div>`;
+    } else {
+      rightSide = `
+        <div style="display:flex;align-items:center;justify-content:center;padding:0.7em 0.9em;min-width:48px;">
+          <div style="color:#333;font-size:1em;">🔒</div>
+        </div>`;
+    }
+
+    item.innerHTML = `
+      <div style="flex:1;padding:0.7em 0.9em;">
+        <div style="display:flex;align-items:center;gap:0.55em;margin-bottom:0.3em;">
+          <span style="font-family:var(--font-display);font-size:0.72em;font-weight:700;color:${available && isBoard1 ? 'var(--orange)' : 'var(--text-muted)'};letter-spacing:0.08em;text-transform:uppercase;">M${match.matchNum}</span>
+          <span style="font-size:0.68em;color:var(--text-muted);">${match.time || ''}</span>
+          ${boardLabel}
+        </div>
+        <div style="font-family:var(--font-display);font-size:0.98em;font-weight:700;color:${done ? '#666' : available ? 'var(--white)' : '#555'};letter-spacing:0.02em;">
+          ${match.player1}${p1Province ? `<span style="font-size:0.72em;color:${available ? 'var(--orange)' : '#555'};margin-left:0.3em;">${p1Province}</span>` : ''}
+          <span style="color:var(--text-muted);font-size:0.8em;margin:0 0.3em;">vs</span>
+          ${match.player2}${p2Province ? `<span style="font-size:0.72em;color:${available ? 'var(--orange)' : '#555'};margin-left:0.3em;">${p2Province}</span>` : ''}
+        </div>
+      </div>
+      ${rightSide}
+    `;
+
+    if (available || done) {
+      item.addEventListener("pointerdown", () => { item.style.transform = "scale(0.98)"; item.style.boxShadow = done ? "0 0 0 2px rgba(76,175,80,0.35)" : "0 0 0 2px rgba(242,101,34,0.4)"; });
+      item.addEventListener("pointerup",   () => { item.style.transform = ""; item.style.boxShadow = ""; });
+      item.addEventListener("pointerleave",() => { item.style.transform = ""; item.style.boxShadow = ""; });
+      item.onclick = () => {
+        appState.roundRobin.currentMatchIndex = idx;
+        if (done && match.board === 1) {
+          // Edit mode: restore legs, un-complete match
+          const originalLegs = JSON.parse(JSON.stringify(match.legs || []));
+          appState.roundRobin.completedMatches = appState.roundRobin.completedMatches
+            .filter(m => !(m.matchNum === match.matchNum && m.board === match.board));
+          match.completed = false;
+          match.winner = null;
+          match.score1 = 0;
+          match.score2 = 0;
+          match.legs = [];
+          appState.roundRobin.currentMatchState = {
+            player1: match.player1, player2: match.player2,
+            score1: 0, score2: 0, currentLeg: 1, legs: [],
+            editMode: true, originalLegs
+          };
+          appState.screen = "roundRobinMatch";
+        } else if (done && match.board === 2) {
+          // Edit mode for board 2 — pre-fill handled in renderBoard2Entry
+          appState.roundRobin.currentMatchState = null;
+          appState.screen = "board2Entry";
+        } else {
+          appState.roundRobin.currentMatchState = null;
+          appState.screen = match.board === 1 ? "roundRobinMatch" : "board2Entry";
+        }
+        render();
+      };
+    }
+
+    listEl.appendChild(item);
+  });
+
+  // Reset button
+  div.querySelector("#resetBtn").onclick = () => {
+    if (confirm("Reset Event 4? All progress will be cleared.")) {
+      localStorage.removeItem("dartsRoundRobinState");
+      loadPresetEvent("event4");
+      render();
+    }
+  };
+  div.querySelector("#qlBtn").onclick = () => {
+    appState._prevScreen = "matchList";
+    appState.screen = "questionLibrary";
+    render();
+  };
+
   return div;
 }
 
@@ -637,32 +968,100 @@ function renderInterview() {
   const idx = appState.interview.currentQuestionIndex;
   const total = questions.length;
   const q = questions[idx];
+  const progressPct = Math.round(((idx + 1) / total) * 100);
+  const isLast = idx === total - 1;
+  const isFirst = idx === 0;
+
+  const legNotes = appState.interview.legNotes || [];
+  const subject = appState.interview.subject || null;
+
+  const subjectHTML = subject ? `
+    <div class="interview-subject-card">
+      <div class="interview-subject-top">
+        <div class="interview-subject-name-block">
+          <div class="interview-subject-name">${subject.name}</div>
+          ${subject.province ? `<div class="interview-subject-province">${subject.province}</div>` : ''}
+        </div>
+        <div class="interview-subject-result">
+          <div class="interview-subject-score">${subject.winnerScore} &ndash; ${subject.loserScore}</div>
+          <div class="interview-subject-vs">def. ${subject.opponent}</div>
+        </div>
+      </div>
+      <div class="interview-subject-stats">
+        <div class="interview-subject-stat"><span class="stat-val">${subject.wins}W</span><span class="stat-lbl">${subject.losses}L</span></div>
+        <div class="interview-subject-stat-divider"></div>
+        <div class="interview-subject-stat"><span class="stat-val">#${subject.rank}</span><span class="stat-lbl">of ${subject.totalPlayers}</span></div>
+        <div class="interview-subject-stat-divider"></div>
+        <div class="interview-subject-stat"><span class="stat-val">M${subject.matchNum}</span><span class="stat-lbl">Match</span></div>
+      </div>
+    </div>` : '';
+
+  const notesHTML = legNotes.length > 0 ? `
+    <div class="leg-notes-panel">
+      <div class="leg-notes-header">Match Notes</div>
+      ${legNotes.map(n => `
+        <div class="leg-note-item">
+          <span class="leg-note-leg">Leg ${n.legNumber}</span>
+          <span class="leg-note-text">${n.note}</span>
+        </div>`).join('')}
+    </div>` : '';
+
   div.innerHTML = `
-    <h2>Interview</h2>
-    <div style="margin-bottom:1em;">Question ${idx + 1} of ${total}</div>
-    <div style="font-size:1.2em; margin-bottom:2em;">${q}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5em;">
+      <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.15em;color:var(--text-muted);text-transform:uppercase;">Interview</div>
+      <div style="font-family:var(--font-display);font-size:0.75em;color:var(--text-muted);">${idx + 1} / ${total}</div>
+    </div>
+    <div class="interview-progress-bar-wrap">
+      <div class="interview-progress-bar-fill" style="width:${progressPct}%"></div>
+    </div>
+    ${subjectHTML}
+    ${notesHTML}
+    <div class="interview-question">${q}</div>
     <div class="sticky-bottom">
-      <button id="nextQBtn" class="button">${idx === total - 1 ? "Finish Interview" : "Next Question"}</button>
-      <button id="endBtn" class="button" style="background:var(--accent2);color:#222;">End Interview</button>
+      <button id="nextQBtn" class="button">${isLast ? "✓ Finish Interview" : "Next Question →"}</button>
+      <div style="display:flex;gap:0.7em;margin-top:0.5em;">
+        <button id="prevQBtn" class="button btn-secondary" style="flex:1;${isFirst ? 'opacity:0.35;pointer-events:none;' : ''}">← Prev</button>
+        <button id="endBtn" class="button btn-accent" style="flex:2;">End Interview</button>
+      </div>
     </div>
   `;
-  div.querySelector("#nextQBtn").onclick = () => {
-    if (idx === total - 1) {
+
+  // Helper: navigate away from interview back to match list
+  function leaveInterview() {
+    if (appState.roundRobin && appState.roundRobin.matches && appState.roundRobin.matches.length > 0) {
+      appState.screen = "matchList";
+    } else {
       resetState();
       appState.screen = "mainMenu";
-      render();
+    }
+    render();
+  }
+
+  div.querySelector("#nextQBtn").onclick = () => {
+    if (isLast) {
+      leaveInterview();
     } else {
       appState.interview.currentQuestionIndex++;
       render();
     }
   };
-  div.querySelector("#endBtn").onclick = () => {
-    resetState();
-    appState.screen = "mainMenu";
-    render();
+
+  // Previous question — go back one
+  div.querySelector("#prevQBtn").onclick = () => {
+    if (!isFirst) {
+      appState.interview.currentQuestionIndex--;
+      render();
+    }
   };
+
+  // End early
+  div.querySelector("#endBtn").onclick = () => {
+    leaveInterview();
+  };
+
   return div;
 }
+
 
 // --- INTERVIEW QUESTION GENERATION ---
 function generateInterviewQuestions() {
@@ -909,7 +1308,11 @@ function renderRoundRobinSetup() {
     ` : ''}
     
     <div style="background:var(--panel);padding:1em;border-radius:8px;margin-bottom:1.5em;">
-      <label style="display:block;margin-bottom:0.5em;font-weight:bold;">Quick Setup: Upload JSON</label>
+      <label style="display:block;margin-bottom:0.75em;font-weight:bold;">Load Preset Event</label>
+      <div style="display:flex;gap:0.5em;flex-wrap:wrap;margin-bottom:1em;">
+        <button class="button preset-btn" data-event="event4" style="padding:0.5em 1.2em;">Event 4</button>
+      </div>
+      <label style="display:block;margin-bottom:0.5em;font-weight:bold;border-top:1px solid #444;padding-top:0.75em;">Or Upload JSON (future events)</label>
       <input type="file" id="jsonUpload" accept=".json" style="margin-bottom:0.5em;">
       <p id="uploadStatus" style="color:var(--text-muted);font-size:0.9em;margin:0;"></p>
     </div>
@@ -955,32 +1358,101 @@ function renderRoundRobinSetup() {
     appState.roundRobin.groupB = ["", "", "", "", ""];
   }
   
+  // Initialize playerProfiles if undefined
+  if (!appState.roundRobin.playerProfiles) {
+    appState.roundRobin.playerProfiles = {};
+  }
+  
   // Render Group A fields
   appState.roundRobin.groupA.forEach((name, i) => {
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = name;
-    input.placeholder = `Group A Player ${i+1}`;
-    input.style.marginBottom = "0.5em";
-    input.oninput = (e) => {
-      appState.roundRobin.groupA[i] = e.target.value;
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.gap = "0.5em";
+    wrapper.style.marginBottom = "0.5em";
+    
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.value = name;
+    nameInput.placeholder = `Group A Player ${i+1}`;
+    nameInput.style.flex = "2";
+    nameInput.oninput = (e) => {
+      const oldName = appState.roundRobin.groupA[i];
+      const newName = e.target.value;
+      appState.roundRobin.groupA[i] = newName;
+      
+      // Update profile key if name changed
+      if (oldName && appState.roundRobin.playerProfiles[oldName]) {
+        appState.roundRobin.playerProfiles[newName] = appState.roundRobin.playerProfiles[oldName];
+        delete appState.roundRobin.playerProfiles[oldName];
+      }
+      
       generateMatchSchedule();
     };
-    groupADiv.appendChild(input);
+    
+    const provinceInput = document.createElement("input");
+    provinceInput.type = "text";
+    provinceInput.value = appState.roundRobin.playerProfiles?.[name]?.province || "";
+    provinceInput.placeholder = "Province";
+    provinceInput.style.flex = "1";
+    provinceInput.oninput = (e) => {
+      const playerName = appState.roundRobin.groupA[i];
+      if (playerName) {
+        if (!appState.roundRobin.playerProfiles[playerName]) {
+          appState.roundRobin.playerProfiles[playerName] = {};
+        }
+        appState.roundRobin.playerProfiles[playerName].province = e.target.value;
+      }
+    };
+    
+    wrapper.appendChild(nameInput);
+    wrapper.appendChild(provinceInput);
+    groupADiv.appendChild(wrapper);
   });
   
   // Render Group B fields
   appState.roundRobin.groupB.forEach((name, i) => {
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = name;
-    input.placeholder = `Group B Player ${i+1}`;
-    input.style.marginBottom = "0.5em";
-    input.oninput = (e) => {
-      appState.roundRobin.groupB[i] = e.target.value;
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.gap = "0.5em";
+    wrapper.style.marginBottom = "0.5em";
+    
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.value = name;
+    nameInput.placeholder = `Group B Player ${i+1}`;
+    nameInput.style.flex = "2";
+    nameInput.oninput = (e) => {
+      const oldName = appState.roundRobin.groupB[i];
+      const newName = e.target.value;
+      appState.roundRobin.groupB[i] = newName;
+      
+      // Update profile key if name changed
+      if (oldName && appState.roundRobin.playerProfiles[oldName]) {
+        appState.roundRobin.playerProfiles[newName] = appState.roundRobin.playerProfiles[oldName];
+        delete appState.roundRobin.playerProfiles[oldName];
+      }
+      
       generateMatchSchedule();
     };
-    groupBDiv.appendChild(input);
+    
+    const provinceInput = document.createElement("input");
+    provinceInput.type = "text";
+    provinceInput.value = appState.roundRobin.playerProfiles?.[name]?.province || "";
+    provinceInput.placeholder = "Province";
+    provinceInput.style.flex = "1";
+    provinceInput.oninput = (e) => {
+      const playerName = appState.roundRobin.groupB[i];
+      if (playerName) {
+        if (!appState.roundRobin.playerProfiles[playerName]) {
+          appState.roundRobin.playerProfiles[playerName] = {};
+        }
+        appState.roundRobin.playerProfiles[playerName].province = e.target.value;
+      }
+    };
+    
+    wrapper.appendChild(nameInput);
+    wrapper.appendChild(provinceInput);
+    groupBDiv.appendChild(wrapper);
   });
   
   // Format type toggle
@@ -996,6 +1468,19 @@ function renderRoundRobinSetup() {
     }
   };
   
+  // Preset Event Buttons
+  div.querySelectorAll(".preset-btn").forEach(btn => {
+    btn.onclick = () => {
+      const eventKey = btn.dataset.event;
+      if (confirm(`Load ${presetEvents[eventKey].label}? This will replace any current setup.`)) {
+        loadPresetEvent(eventKey);
+        // Re-render the full setup screen with loaded data
+        appState.screen = "roundRobinSetup";
+        render();
+      }
+    };
+  });
+
   // JSON Upload Handler
   div.querySelector("#jsonUpload").onchange = (e) => {
     const file = e.target.files[0];
@@ -1019,9 +1504,35 @@ function renderRoundRobinSetup() {
           throw new Error("Must have exactly 20 matches");
         }
         
-        // Populate groups
-        appState.roundRobin.groupA = data.groupA;
-        appState.roundRobin.groupB = data.groupB;
+        // Reset player profiles
+        appState.roundRobin.playerProfiles = {};
+        
+        // Populate groups - support both formats (strings or objects with name/province)
+        appState.roundRobin.groupA = data.groupA.map(player => {
+          if (typeof player === 'string') {
+            return player;
+          } else if (player.name) {
+            // New format with province data
+            if (player.province) {
+              appState.roundRobin.playerProfiles[player.name] = { province: player.province };
+            }
+            return player.name;
+          }
+          return "";
+        });
+        
+        appState.roundRobin.groupB = data.groupB.map(player => {
+          if (typeof player === 'string') {
+            return player;
+          } else if (player.name) {
+            // New format with province data
+            if (player.province) {
+              appState.roundRobin.playerProfiles[player.name] = { province: player.province };
+            }
+            return player.name;
+          }
+          return "";
+        });
         
         // Populate format
         const formatSelect = div.querySelector("#formatType");
@@ -1050,34 +1561,98 @@ function renderRoundRobinSetup() {
           completed: false
         }));
         
-        // Re-render inputs and schedule
+        // Re-render inputs and schedule with province fields
         groupADiv.innerHTML = "";
         groupBDiv.innerHTML = "";
         
         appState.roundRobin.groupA.forEach((name, i) => {
-          const input = document.createElement("input");
-          input.type = "text";
-          input.value = name;
-          input.placeholder = `Group A Player ${i+1}`;
-          input.style.marginBottom = "0.5em";
-          input.oninput = (e) => {
-            appState.roundRobin.groupA[i] = e.target.value;
+          const wrapper = document.createElement("div");
+          wrapper.style.display = "flex";
+          wrapper.style.gap = "0.5em";
+          wrapper.style.marginBottom = "0.5em";
+          
+          const nameInput = document.createElement("input");
+          nameInput.type = "text";
+          nameInput.value = name;
+          nameInput.placeholder = `Group A Player ${i+1}`;
+          nameInput.style.flex = "2";
+          nameInput.oninput = (e) => {
+            const oldName = appState.roundRobin.groupA[i];
+            const newName = e.target.value;
+            appState.roundRobin.groupA[i] = newName;
+            
+            // Update profile key if name changed
+            if (oldName && appState.roundRobin.playerProfiles[oldName]) {
+              appState.roundRobin.playerProfiles[newName] = appState.roundRobin.playerProfiles[oldName];
+              delete appState.roundRobin.playerProfiles[oldName];
+            }
+            
             generateMatchSchedule();
           };
-          groupADiv.appendChild(input);
+          
+          const provinceInput = document.createElement("input");
+          provinceInput.type = "text";
+          provinceInput.value = appState.roundRobin.playerProfiles?.[name]?.province || "";
+          provinceInput.placeholder = "Province";
+          provinceInput.style.flex = "1";
+          provinceInput.oninput = (e) => {
+            const playerName = appState.roundRobin.groupA[i];
+            if (playerName) {
+              if (!appState.roundRobin.playerProfiles[playerName]) {
+                appState.roundRobin.playerProfiles[playerName] = {};
+              }
+              appState.roundRobin.playerProfiles[playerName].province = e.target.value;
+            }
+          };
+          
+          wrapper.appendChild(nameInput);
+          wrapper.appendChild(provinceInput);
+          groupADiv.appendChild(wrapper);
         });
         
         appState.roundRobin.groupB.forEach((name, i) => {
-          const input = document.createElement("input");
-          input.type = "text";
-          input.value = name;
-          input.placeholder = `Group B Player ${i+1}`;
-          input.style.marginBottom = "0.5em";
-          input.oninput = (e) => {
-            appState.roundRobin.groupB[i] = e.target.value;
+          const wrapper = document.createElement("div");
+          wrapper.style.display = "flex";
+          wrapper.style.gap = "0.5em";
+          wrapper.style.marginBottom = "0.5em";
+          
+          const nameInput = document.createElement("input");
+          nameInput.type = "text";
+          nameInput.value = name;
+          nameInput.placeholder = `Group B Player ${i+1}`;
+          nameInput.style.flex = "2";
+          nameInput.oninput = (e) => {
+            const oldName = appState.roundRobin.groupB[i];
+            const newName = e.target.value;
+            appState.roundRobin.groupB[i] = newName;
+            
+            // Update profile key if name changed
+            if (oldName && appState.roundRobin.playerProfiles[oldName]) {
+              appState.roundRobin.playerProfiles[newName] = appState.roundRobin.playerProfiles[oldName];
+              delete appState.roundRobin.playerProfiles[oldName];
+            }
+            
             generateMatchSchedule();
           };
-          groupBDiv.appendChild(input);
+          
+          const provinceInput = document.createElement("input");
+          provinceInput.type = "text";
+          provinceInput.value = appState.roundRobin.playerProfiles?.[name]?.province || "";
+          provinceInput.placeholder = "Province";
+          provinceInput.style.flex = "1";
+          provinceInput.oninput = (e) => {
+            const playerName = appState.roundRobin.groupB[i];
+            if (playerName) {
+              if (!appState.roundRobin.playerProfiles[playerName]) {
+                appState.roundRobin.playerProfiles[playerName] = {};
+              }
+              appState.roundRobin.playerProfiles[playerName].province = e.target.value;
+            }
+          };
+          
+          wrapper.appendChild(nameInput);
+          wrapper.appendChild(provinceInput);
+          groupBDiv.appendChild(wrapper);
         });
         
         renderSchedule();
@@ -1129,25 +1704,28 @@ function renderRoundRobinSetup() {
     scheduleDiv.innerHTML = "";
     appState.roundRobin.matches.forEach((match) => {
       const matchDiv = document.createElement("div");
+      matchDiv.className = "match-item";
       const isCompleted = match.completed;
-      const bgColor = isCompleted ? "rgba(0,255,100,0.1)" : "var(--panel)";
-      const opacity = isCompleted ? "0.7" : "1";
-      matchDiv.style.cssText = `padding:0.75em;margin-bottom:0.5em;background:${bgColor};border-radius:8px;display:flex;justify-content:space-between;align-items:center;opacity:${opacity};`;
       
-      const timeDisplay = match.time ? `<span style="color:var(--text-muted);margin:0 0.5em;">•</span><span style="color:var(--text-muted);font-size:0.9em;">${match.time}</span>` : '';
-      const completedBadge = isCompleted ? `<span style="color:#0f0;margin-right:0.5em;">✓</span>` : '';
-      const scoreDisplay = isCompleted && match.score1 !== undefined ? `<span style="color:var(--text-muted);margin:0 0.5em;">${match.score1}-${match.score2}</span>` : '';
+      if (isCompleted) {
+        matchDiv.style.background = "rgba(0,255,100,0.1)";
+        matchDiv.style.opacity = "0.7";
+      }
+      
+      const timeDisplay = match.time ? `<span style="color:var(--text-muted);margin:0 0.3em;">•</span><span style="color:var(--text-muted);font-size:0.9em;">${match.time}</span>` : '';
+      const completedBadge = isCompleted ? `<span style="color:#0f0;margin-right:0.3em;">✓</span>` : '';
+      const scoreDisplay = isCompleted && match.score1 !== undefined ? `<span style="color:var(--text-muted);margin:0 0.3em;">${match.score1}-${match.score2}</span>` : '';
       
       matchDiv.innerHTML = `
-        <div>
+        <div class="match-item-content">
           ${completedBadge}
-          <span style="color:var(--accent);font-weight:bold;">Match ${match.matchNum}</span>
-          <span style="color:var(--text-muted);margin:0 0.5em;">•</span>
+          <span style="color:var(--accent);font-weight:bold;">M${match.matchNum}</span>
+          <span style="color:var(--text-muted);margin:0 0.2em;">•</span>
           <span>${match.player1} vs ${match.player2}</span>
           ${scoreDisplay}
           ${timeDisplay}
         </div>
-        <span style="color:${match.board === 1 ? 'var(--accent)' : 'var(--text-muted)'};">Board ${match.board}</span>
+        <span class="match-item-board" style="color:${match.board === 1 ? 'var(--accent)' : 'var(--text-muted)'};">B${match.board}</span>
       `;
       scheduleDiv.appendChild(matchDiv);
     });
@@ -1238,27 +1816,44 @@ function renderRoundRobinMatch() {
   
   // State for this leg
   let selectedWinner = null;
+  let legConfirmed = false;
   let currentLeg = {
     winner: null,
     moments: [],
     momentValues: {},
-    legNumber: state.currentLeg
+    legNumber: state.currentLeg,
+    note: ""
   };
   
+  const p1Province = getPlayerProvince(currentMatch.player1);
+  const p2Province = getPlayerProvince(currentMatch.player2);
+  const p1Rec = getPlayerTournamentRecord(currentMatch.player1);
+  const p2Rec = getPlayerTournamentRecord(currentMatch.player2);
+
   div.innerHTML = `
-    <h2>Match ${currentMatch.matchNum} - Board ${currentMatch.board}</h2>
-    <div class="score-panel">
-      <div class="player-score">
-        <span class="name">${currentMatch.player1}</span>
-        <span class="score">${appState.roundRobin.currentMatchState.score1}</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8em;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.12em;color:var(--text-muted);text-transform:uppercase;">Match ${currentMatch.matchNum} · ${currentMatch.time || ''}</div>
       </div>
-      <div class="vs">vs</div>
-      <div class="player-score">
-        <span class="name">${currentMatch.player2}</span>
-        <span class="score">${appState.roundRobin.currentMatchState.score2}</span>
+      <div style="display:flex;gap:0.5em;align-items:center;">
+        ${state.editMode ? '<span style="background:#1a1a00;border:1px solid #888600;color:#ccc000;font-size:0.68em;padding:0.25em 0.7em;border-radius:20px;font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;">✎ Editing</span>' : ''}
+        ${currentMatch.board === 1 ? '<span class="live-badge">LIVE – Board 1</span>' : '<span style="background:#1a1a1a;border:1px solid var(--divider);color:var(--text-muted);font-size:0.72em;padding:0.3em 0.8em;border-radius:20px;font-family:var(--font-display);letter-spacing:0.08em;text-transform:uppercase;">Board 2</span>'}
       </div>
     </div>
-    <h3>Leg ${appState.roundRobin.currentMatchState.currentLeg}</h3>
+    <div class="broadcast-score">
+      <div class="broadcast-player">
+        <div class="broadcast-player-name">${currentMatch.player1}${p1Province ? `<div style="color:var(--orange);font-size:0.72em;letter-spacing:0.1em;margin-top:0.1em;">${p1Province}</div>` : ''}</div>
+        <div class="broadcast-player-score ${state.score1 > state.score2 ? 'leading' : ''}" id="score1Display">${state.score1}</div>
+        <div style="font-size:0.72em;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.06em;">${p1Rec.record}</div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="broadcast-player">
+        <div class="broadcast-player-name">${currentMatch.player2}${p2Province ? `<div style="color:var(--orange);font-size:0.72em;letter-spacing:0.1em;margin-top:0.1em;">${p2Province}</div>` : ''}</div>
+        <div class="broadcast-player-score ${state.score2 > state.score1 ? 'leading' : ''}" id="score2Display">${state.score2}</div>
+        <div style="font-size:0.72em;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.06em;">${p2Rec.record}</div>
+      </div>
+    </div>
+    <div class="leg-badge">Leg ${state.currentLeg} of ${format?.totalLegs || 5}</div>
     <label>Leg Winner</label>
     <div class="row">
       <button class="button winner-btn" data-winner="${currentMatch.player1}">${currentMatch.player1}</button>
@@ -1266,9 +1861,18 @@ function renderRoundRobinMatch() {
     </div>
     <label>Memorable Moments (Optional)</label>
     <div class="col-2" id="momentBtns"></div>
+    <div style="margin-top:0.6em;margin-bottom:0.3em;">
+      <button id="noteToggleBtn" class="button btn-secondary" style="margin-bottom:0.5em;">📝 Add Note for Leg ${state.currentLeg}</button>
+      <div id="noteArea" style="display:none;">
+        <textarea id="legNoteInput" rows="3" placeholder="Type your notes for this leg..." style="width:100%;background:#1a1a1a;color:var(--white);border:1.5px solid var(--divider);border-radius:10px;padding:0.75em 1em;font-family:var(--font-main);font-size:0.95em;line-height:1.5;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+    </div>
     <div class="sticky-bottom">
-      <button id="nextLegBtn" class="button">Next Leg</button>
-      <button id="skipMatchBtn" class="button" style="background:var(--panel);margin-top:0.5em;">Skip Match</button>
+      <button id="nextLegBtn" class="button">Confirm Leg</button>
+      <div style="display:flex;gap:0.6em;margin-top:0.5em;">
+        <button id="undoLegBtn" class="button btn-secondary" style="flex:1;${state.legs.length === 0 ? 'opacity:0.35;pointer-events:none;' : ''}">← Last Leg</button>
+        <button id="skipMatchBtn" class="button btn-secondary" style="flex:1;">Skip Match</button>
+      </div>
     </div>
   `;
   
@@ -1335,19 +1939,116 @@ function renderRoundRobinMatch() {
     momentBtnsDiv.appendChild(wrapper);
   });
   
-  // Next leg button
-  div.querySelector("#nextLegBtn").onclick = () => {
-    if (!selectedWinner) {
-      alert("Please select a leg winner first.");
-      return;
+  // If edit mode: pre-select the previous leg's winner, moments, note
+  if (state.editMode && state.originalLegs) {
+    const prevLeg = state.originalLegs[state.currentLeg - 1];
+    if (prevLeg) {
+      selectedWinner = prevLeg.winner;
+      currentLeg.winner = prevLeg.winner;
+      currentLeg.moments = [...(prevLeg.moments || [])];
+      currentLeg.momentValues = {...(prevLeg.momentValues || {})};
+      currentLeg.note = prevLeg.note || "";
+      div.querySelectorAll(".winner-btn").forEach(btn => {
+        if (btn.dataset.winner === prevLeg.winner) btn.classList.add("selected");
+      });
+      // Pre-select moment buttons + restore value inputs
+      div.querySelectorAll(".moment-btn").forEach(btn => {
+        if (currentLeg.moments.includes(btn.dataset.key)) {
+          btn.classList.add("selected");
+          const inp = btn.parentElement.querySelector("input[type=text]");
+          if (inp && currentLeg.momentValues[btn.dataset.key]) {
+            inp.style.display = "inline-block";
+            inp.value = currentLeg.momentValues[btn.dataset.key];
+          }
+        }
+      });
+      if (currentLeg.note) {
+        const noteArea = div.querySelector("#noteArea");
+        const noteInput = div.querySelector("#legNoteInput");
+        if (noteArea) noteArea.style.display = "block";
+        if (noteInput) noteInput.value = currentLeg.note;
+      }
     }
-    
-    state.legs.push(currentLeg);
-    
-    if (currentLeg.winner === currentMatch.player1) state.score1++;
-    else state.score2++;
-    
-    checkMatchEnd();
+  }
+
+  // Note toggle
+  div.querySelector("#noteToggleBtn").onclick = () => {
+    const noteArea = div.querySelector("#noteArea");
+    const open = noteArea.style.display !== "none";
+    noteArea.style.display = open ? "none" : "block";
+    if (!open) div.querySelector("#legNoteInput").focus();
+  };
+  div.querySelector("#legNoteInput").oninput = (e) => {
+    currentLeg.note = e.target.value;
+  };
+
+  // Undo last leg
+  div.querySelector("#undoLegBtn").onclick = () => {
+    if (state.legs.length === 0) return;
+    const last = state.legs.pop();
+    if (last.winner === currentMatch.player1) state.score1--;
+    else state.score2--;
+    state.currentLeg--;
+    appState.roundRobin.currentMatchState = state;
+    render();
+  };
+
+  // Skip match — return to list without completing
+  div.querySelector("#skipMatchBtn").onclick = () => {
+    if (confirm("Skip this match? It will remain open to complete later.")) {
+      appState.roundRobin.currentMatchState = null;
+      appState.screen = "matchList";
+      render();
+    }
+  };
+
+  // Next leg button with two-step confirmation
+  const nextLegBtn = div.querySelector("#nextLegBtn");
+  nextLegBtn.onclick = () => {
+    if (!legConfirmed) {
+      // First click: Confirm the leg
+      
+      // Check if match is already decided (someone has enough legs to win)
+      let matchAlreadyDecided = false;
+      if (format.type === "bestOf") {
+        const needed = Math.ceil(format.totalLegs / 2);
+        if (state.score1 >= needed || state.score2 >= needed) {
+          matchAlreadyDecided = true;
+        }
+      } else {
+        if (state.score1 >= format.legsToWin || state.score2 >= format.legsToWin) {
+          matchAlreadyDecided = true;
+        }
+      }
+      
+      // If match is already decided and no winner selected, skip remaining legs
+      if (matchAlreadyDecided && !selectedWinner) {
+        finishMatch();
+        return;
+      }
+      
+      if (!selectedWinner) {
+        alert("Please select a leg winner first.");
+        return;
+      }
+      legConfirmed = true;
+      nextLegBtn.textContent = "Next Leg";
+      nextLegBtn.style.background = "linear-gradient(135deg, var(--orange), var(--orange-glow))";
+    } else {
+      // Second click: Process the leg
+      state.legs.push({
+        winner: currentLeg.winner,
+        moments: [...currentLeg.moments],
+        momentValues: {...currentLeg.momentValues},
+        legNumber: currentLeg.legNumber,
+        note: currentLeg.note || ""
+      });
+      
+      if (currentLeg.winner === currentMatch.player1) state.score1++;
+      else state.score2++;
+      
+      checkMatchEnd();
+    }
   };
   
   function checkMatchEnd() {
@@ -1379,25 +2080,12 @@ function renderRoundRobinMatch() {
     // Save state after match completion
     saveRoundRobinState();
     
-    // Only interview if on Board 1 (live stream board)
-    if (currentMatch.board === 1) {
-      // Generate interview questions with round robin context
-      generateRoundRobinInterview(currentMatch);
-      appState.screen = "interview";
-    } else {
-      // Skip interview for Board 2 matches
-      moveToNextMatch();
-    }
-    
+    // Go straight to interview (skip match complete screen)
     appState.roundRobin.currentMatchState = null;
+    generateRoundRobinInterview(currentMatch);
+    appState.screen = "interview";
     render();
   }
-  
-  div.querySelector("#skipMatchBtn").onclick = () => {
-    currentMatch.completed = true;
-    saveRoundRobinState();
-    moveToNextMatch();
-  };
   
   function moveToNextMatch() {
     appState.roundRobin.currentMatchIndex++;
@@ -1409,9 +2097,322 @@ function renderRoundRobinMatch() {
   return div;
 }
 
+// --- RENDER ROUND ROBIN MATCH COMPLETE ---
+function renderRoundRobinMatchComplete() {
+  const matchData = appState.roundRobin.matchCompleteData;
+  const div = document.createElement("div");
+  div.className = "screen";
+
+  // Build quick standings snippet (top 3)
+  const standings = getPlayerStandings();
+  const top3 = standings.slice(0, 3).map((s, i) => 
+    `<div style="display:flex;justify-content:space-between;padding:0.35em 0;border-bottom:1px solid var(--divider);">
+      <span style="color:var(--text-muted);font-size:0.82em;font-family:var(--font-display);letter-spacing:0.03em;">${i+1}. ${s.name}${s.province ? ` <em style="color:var(--orange);font-style:normal;">(${s.province})</em>` : ''}</span>
+      <span style="font-family:var(--font-display);font-weight:700;font-size:0.85em;color:${s.wins > s.losses ? '#4caf50' : 'var(--text-muted)'};">${s.record}</span>
+    </div>`).join('');
+
+  const player1Province = getPlayerProvince(matchData.player1);
+  const player2Province = getPlayerProvince(matchData.player2);
+  
+  div.innerHTML = `
+    <div class="match-complete-card">
+      <div style="font-family:var(--font-display);font-size:0.8em;letter-spacing:0.12em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5em;">Match ${matchData.matchNum} Complete</div>
+      <div class="match-complete-winner">${matchData.winner}</div>
+      <div class="match-complete-score">${matchData.score1} – ${matchData.score2}</div>
+      <div style="color:var(--text-muted);font-size:0.82em;margin-top:0.4em;letter-spacing:0.05em;text-transform:uppercase;">
+        ${matchData.player1}${player1Province ? ` · ${player1Province}` : ''} vs ${matchData.player2}${player2Province ? ` · ${player2Province}` : ''} · Board ${matchData.board}
+      </div>
+    </div>
+    ${standings.length > 0 ? `
+    <div style="background:var(--card-black);border:1px solid var(--divider);border-radius:var(--button-radius);padding:1em 1.2em;margin-bottom:var(--gap);">
+      <div style="font-family:var(--font-display);font-size:0.82em;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.6em;">Current Standings</div>
+      ${top3}
+    </div>` : ''}
+    <div class="sticky-bottom">
+      ${matchData.board === 1 ? 
+        '<button id="continueToInterviewBtn" class="button">Continue to Interview</button>' :
+        '<button id="nextMatchBtn" class="button">Next Match</button>'
+      }
+    </div>
+  `;
+  
+  if (matchData.board === 1) {
+    div.querySelector("#continueToInterviewBtn").onclick = () => {
+      generateRoundRobinInterview(matchData);
+      appState.screen = "interview";
+      render();
+    };
+  } else {
+    div.querySelector("#nextMatchBtn").onclick = () => {
+      moveToNextMatch();
+    };
+  }
+  
+  return div;
+}
+
+// --- RENDER BOARD 2 ENTRY ---
+function renderBoard2Entry() {
+  const div = document.createElement("div");
+  div.className = "screen";
+
+  // The currently selected match IS the board 2 match (user tapped it from matchList)
+  const currentIdx = appState.roundRobin.currentMatchIndex;
+  const board2Match = appState.roundRobin.matches[currentIdx];
+
+  if (!board2Match || board2Match.board !== 2) {
+    appState.screen = "matchList";
+    render();
+    return div;
+  }
+
+  div.innerHTML = `
+    <div class="card">
+      <div style="font-family:var(--font-display);font-size:0.8em;letter-spacing:0.12em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.3em;">Board 2 · Match ${board2Match.matchNum}</div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1.2em;">
+        <span style="font-family:var(--font-display);font-size:1.3em;">${board2Match.player1}</span>
+        <span style="color:var(--text-muted);font-size:0.8em;">vs</span>
+        <span style="font-family:var(--font-display);font-size:1.3em;">${board2Match.player2}</span>
+      </div>
+      <div style="color:var(--text-muted);font-size:0.82em;margin-bottom:1.4em;">${board2Match.time || ''} · Enter legs won by each player</div>
+
+      <div class="b2-score-row">
+        <span class="b2-player-label">${board2Match.player1}</span>
+        <input class="b2-score-num" type="number" id="score1" min="0" max="5" value="${board2Match.completed ? board2Match.score1 : 0}" inputmode="numeric">
+      </div>
+      <div class="b2-score-row">
+        <span class="b2-player-label">${board2Match.player2}</span>
+        <input class="b2-score-num" type="number" id="score2" min="0" max="5" value="${board2Match.completed ? board2Match.score2 : 0}" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="sticky-bottom">
+      <button id="confirmScoreBtn" class="button">Confirm Score</button>
+      <button id="skipBtn" class="button btn-secondary">Skip (Enter Later)</button>
+    </div>
+  `;
+
+  // Clear on focus so typing replaces the value; restore 0 if left empty
+  ["#score1", "#score2"].forEach(id => {
+    const el = div.querySelector(id);
+    el.addEventListener("focus", () => { el.value = ""; });
+    el.addEventListener("blur",  () => { if (el.value === "" || isNaN(parseInt(el.value))) el.value = "0"; });
+  });
+
+  div.querySelector("#confirmScoreBtn").onclick = () => {
+    const score1 = parseInt(div.querySelector("#score1").value);
+    const score2 = parseInt(div.querySelector("#score2").value);
+
+    if (score1 === score2) {
+      alert("Scores cannot be tied. Please enter the correct final score.");
+      return;
+    }
+    if (score1 < 0 || score2 < 0) {
+      alert("Scores must be 0 or greater.");
+      return;
+    }
+
+    board2Match.completed = true;
+    board2Match.score1 = score1;
+    board2Match.score2 = score2;
+    board2Match.winner = score1 > score2 ? board2Match.player1 : board2Match.player2;
+    board2Match.legs = [];
+
+    appState.roundRobin.completedMatches.push({...board2Match});
+    saveRoundRobinState();
+
+    appState.screen = "matchList";
+    render();
+  };
+
+  div.querySelector("#skipBtn").onclick = () => {
+    appState.screen = "matchList";
+    render();
+  };
+
+  return div;
+}
+
+
+// --- QUESTION LIBRARY SCREEN ---
+function renderQuestionLibrary() {
+  const div = document.createElement("div");
+  div.className = "screen";
+
+  const categoryLabels = {
+    highScoring:   "High Scoring",
+    bigFinish:     "Big Finish",
+    highAverage:   "High Average",
+    lowDartLeg:    "Quick Leg",
+    comeback:      "Comeback",
+    matchDart:     "Match Dart",
+    doublesBattle: "Doubles Battle",
+    upset:         "Upset",
+    mentalStrength:"Mental Strength",
+    turningPoint:  "Turning Point",
+    general:       "General",
+    roundRobin:    "Round Robin / Context"
+  };
+
+  // Dummy data so all template functions evaluate to readable strings
+  const d = {
+    playerName:"[Player]", opponent:"[Opponent]", matchScore:"3-1",
+    matchNumber:5, board:1, legNumber:3,
+    highScoring:"180", bigFinish:"121", highAverage:"95.4", lowDartLeg:"9",
+    tournamentRecord:"2-1", tournamentWins:2, tournamentLosses:1,
+    playerProvince:"NS", opponentProvince:"NB",
+    nextOpponent:"[Next Opponent]", nextBoard:1, nextMatchNum:7, nextMatchTime:"10:15 AM",
+    nextOpponentRecord:"1-2", nextOpponentWins:1, nextOpponentProvince:"PE",
+    nextBoard1Opponent:"[Next Opponent]", nextBoard1Province:"PE", nextBoard1Time:"10:15 AM",
+    isLastMatch:true, alreadyPlayedCount:2,
+    alreadyPlayed:[{name:"Player A"},{name:"Player B"}],
+    remainingMatchCount:1, playerRank:2, totalPlayers:10,
+    isWhitewash:true, isDecider:true, isComeback:true,
+    isSurrender:true, isNailBiter:true, hadLeadChanges:true,
+    winnerLegs:3, loserLegs:2
+  };
+
+  // Build sorted category list
+  const sortedCats = Object.keys(questionBank)
+    .sort((a, b) => (categoryLabels[a] || a).localeCompare(categoryLabels[b] || b));
+
+  let sectionsHTML = "";
+  sortedCats.forEach(cat => {
+    const label = categoryLabels[cat] || cat;
+    const qs = questionBank[cat]
+      .map(fn => typeof fn === "function" ? fn(d) : fn)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+    if (!qs.length) return;
+    sectionsHTML += `
+      <div class="ql-category">
+        <div class="ql-category-label">${label}</div>
+        ${qs.map(q => `<div class="ql-question">${q}</div>`).join("")}
+      </div>`;
+  });
+
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:0.75em;margin-bottom:1em;">
+      <button id="qlBackBtn" class="button btn-secondary" style="width:auto;padding:0.4em 1em;margin:0;font-size:0.85em;">← Back</button>
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.15em;color:var(--text-muted);text-transform:uppercase;">Reference</div>
+        <div style="font-family:var(--font-display);font-size:1.1em;font-weight:700;">Question Library</div>
+      </div>
+    </div>
+    ${sectionsHTML}
+  `;
+
+  div.querySelector("#qlBackBtn").onclick = () => {
+    appState.screen = appState._prevScreen || "matchList";
+    render();
+  };
+
+  return div;
+}
+
+// --- MOVE TO NEXT BOARD 1 MATCH ---
+function moveToNextBoard1Match() {
+  const currentIdx = appState.roundRobin.currentMatchIndex;
+  const matches = appState.roundRobin.matches;
+  
+  // Find next Board 1 match that isn't completed
+  let nextBoard1MatchIdx = -1;
+  for (let i = currentIdx + 1; i < matches.length; i++) {
+    if (matches[i].board === 1 && !matches[i].completed) {
+      nextBoard1MatchIdx = i;
+      break;
+    }
+  }
+  
+  if (nextBoard1MatchIdx !== -1) {
+    // Found next Board 1 match
+    appState.roundRobin.currentMatchIndex = nextBoard1MatchIdx;
+    appState.roundRobin.currentMatchState = null;
+    appState.screen = "roundRobinMatch";
+    render();
+  } else {
+    // No more Board 1 matches, return to setup
+    appState.screen = "roundRobinSetup";
+    render();
+  }
+}
+
 // --- SAVE ROUND ROBIN STATE ---
 function saveRoundRobinState() {
   localStorage.setItem("dartsRoundRobinState", JSON.stringify(appState.roundRobin));
+}
+
+// --- CALCULATE PLAYER TOURNAMENT RECORD ---
+function getPlayerTournamentRecord(playerName) {
+  let wins = 0;
+  let losses = 0;
+  
+  appState.roundRobin.completedMatches.forEach(match => {
+    if (match.player1 === playerName) {
+      if (match.winner === playerName) wins++;
+      else losses++;
+    } else if (match.player2 === playerName) {
+      if (match.winner === playerName) wins++;
+      else losses++;
+    }
+  });
+  
+  return { wins, losses, record: `${wins}-${losses}` };
+}
+
+// --- GET PLAYER PROVINCE ---
+function getPlayerProvince(playerName) {
+  return appState.roundRobin.playerProfiles?.[playerName]?.province || null;
+}
+
+// --- CHECK IF LAST MATCH FOR PLAYER ---
+function isLastMatchForPlayer(playerName, currentMatchIndex) {
+  let totalMatches = 0;
+  let completedMatches = 0;
+  appState.roundRobin.matches.forEach((match, idx) => {
+    if (match.player1 === playerName || match.player2 === playerName) {
+      totalMatches++;
+      if (idx <= currentMatchIndex) completedMatches++;
+    }
+  });
+  return completedMatches === totalMatches;
+}
+
+// --- GET OPPONENTS ALREADY PLAYED (for a player, up to and including currentMatchIndex) ---
+function getAlreadyPlayedOpponents(playerName) {
+  const opponents = [];
+  appState.roundRobin.completedMatches.forEach(match => {
+    if (match.player1 === playerName) opponents.push({ name: match.player2, result: match.winner === playerName ? 'W' : 'L', score: `${match.score1}-${match.score2}` });
+    else if (match.player2 === playerName) opponents.push({ name: match.player1, result: match.winner === playerName ? 'W' : 'L', score: `${match.score2}-${match.score1}` });
+  });
+  return opponents;
+}
+
+// --- GET UPCOMING MATCHES FOR A PLAYER (board 1 only, not yet played) ---
+function getUpcomingMatches(playerName, afterIndex) {
+  return appState.roundRobin.matches
+    .filter((m, idx) => idx > afterIndex && !m.completed && (m.player1 === playerName || m.player2 === playerName))
+    .map(m => ({
+      matchNum: m.matchNum,
+      time: m.time,
+      board: m.board,
+      opponent: m.player1 === playerName ? m.player2 : m.player1,
+      opponentProvince: getPlayerProvince(m.player1 === playerName ? m.player2 : m.player1)
+    }));
+}
+
+// --- GET FULL STANDINGS (all players sorted by wins then by losses) ---
+function getPlayerStandings() {
+  const groupA = appState.roundRobin.groupA || [];
+  const groupB = appState.roundRobin.groupB || [];
+  const allPlayers = [...groupA, ...groupB].filter(Boolean);
+  if (!allPlayers.length) return [];
+  const standings = allPlayers.map(name => {
+    const rec = getPlayerTournamentRecord(name);
+    return { name, wins: rec.wins, losses: rec.losses, record: rec.record, province: getPlayerProvince(name) };
+  });
+  standings.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
+  return standings;
 }
 
 // --- GENERATE ROUND ROBIN INTERVIEW ---
@@ -1430,7 +2431,37 @@ function generateRoundRobinInterview(match) {
     board: match.board
   };
   
-  // Find next match for this player
+  // Add tournament record (includes this match)
+  const recordInfo = getPlayerTournamentRecord(winner);
+  data.tournamentRecord = recordInfo.record;
+  data.tournamentWins = recordInfo.wins;
+  data.tournamentLosses = recordInfo.losses;
+  
+  // Add province information
+  data.playerProvince = getPlayerProvince(winner);
+  data.opponentProvince = getPlayerProvince(loser);
+  
+  // Check if this is the last match for this player
+  data.isLastMatch = isLastMatchForPlayer(winner, appState.roundRobin.currentMatchIndex);
+
+  // Opponents already played (with results)
+  const alreadyPlayed = getAlreadyPlayedOpponents(winner);
+  data.alreadyPlayed = alreadyPlayed;
+  data.alreadyPlayedCount = alreadyPlayed.length;
+
+  // All upcoming matches for this player (board 1 + board 2)
+  const upcoming = getUpcomingMatches(winner, appState.roundRobin.currentMatchIndex);
+  data.upcomingMatches = upcoming;
+  data.remainingMatchCount = upcoming.length;
+
+  // Full standings snapshot
+  const standings = getPlayerStandings();
+  data.standings = standings;
+  const selfRank = standings.findIndex(s => s.name === winner) + 1;
+  data.playerRank = selfRank;
+  data.totalPlayers = standings.length;
+
+  // Find next match for this player (any board)
   const nextMatch = appState.roundRobin.matches.find((m, idx) => 
     idx > appState.roundRobin.currentMatchIndex && 
     (m.player1 === winner || m.player2 === winner)
@@ -1440,15 +2471,65 @@ function generateRoundRobinInterview(match) {
     data.nextOpponent = nextMatch.player1 === winner ? nextMatch.player2 : nextMatch.player1;
     data.nextBoard = nextMatch.board;
     data.nextMatchNum = nextMatch.matchNum;
+    data.nextMatchTime = nextMatch.time;
+    data.nextOpponentProvince = getPlayerProvince(data.nextOpponent);
+    // Get next opponent's record so we can reference it
+    const nextOppRecord = getPlayerTournamentRecord(data.nextOpponent);
+    data.nextOpponentRecord = nextOppRecord.record;
+    data.nextOpponentWins = nextOppRecord.wins;
   }
+
+  // First upcoming board 1 match specifically (the livestream match)
+  const nextBoard1 = upcoming.find(m => m.board === 1);
+  if (nextBoard1) {
+    data.nextBoard1Opponent = nextBoard1.opponent;
+    data.nextBoard1Province = nextBoard1.opponentProvince;
+    data.nextBoard1Time = nextBoard1.time;
+  }
+
+  // --- MATCH PATTERN DETECTION ---
+  const legs = match.legs || [];
+  let rWin = 0, rLoss = 0;
+  let wasDown02 = false;   // winner trailed 0-2 at any point
+  let wasUp20 = false;     // winner led 2-0 at any point
+  let tiedAt22 = false;    // match reached 2-2
+  let tiedAt11 = false;    // match reached 1-1
+  let leadChanges = 0;
+  let prevLeader = null;
+
+  legs.forEach(leg => {
+    if (leg.winner === winner) rWin++; else rLoss++;
+    if (rWin === 0 && rLoss === 2) wasDown02 = true;
+    if (rWin === 2 && rLoss === 0) wasUp20 = true;
+    if (rWin === 2 && rLoss === 2) tiedAt22 = true;
+    if (rWin === 1 && rLoss === 1) tiedAt11 = true;
+    const curLeader = rWin > rLoss ? 'W' : rLoss > rWin ? 'L' : null;
+    if (curLeader && curLeader !== prevLeader) { leadChanges++; prevLeader = curLeader; }
+  });
+
+  const totalLegsPlayed = winnerScore + loserScore;
+  const maxLegs = (appState.roundRobin.format && appState.roundRobin.format.totalLegs) || 5;
+
+  data.isWhitewash    = loserScore === 0;                          // 3-0
+  data.isDecider      = tiedAt22 && totalLegsPlayed === maxLegs;   // went 2-2 then a decider
+  data.isComeback     = wasDown02 && winnerScore > loserScore;     // came back from 0-2
+  data.isSurrender    = wasUp20 && tiedAt22 && winnerScore > loserScore; // 2-0 up, let them tie 2-2, still won
+  data.isNailBiter    = tiedAt11 && (winnerScore - loserScore) === 1;     // went 1-1 and close throughout
+  data.hadLeadChanges = leadChanges >= 3;
+  data.winnerLegs     = winnerScore;
+  data.loserLegs      = loserScore;
+  // -----------------------------------------------
   
   // Collect moment data
   const momentData = {};
   const momentLegNumbers = {};
+  const momentFrequency = {};
+  
   match.legs.forEach((leg) => {
     if (leg.winner === winner) {
       leg.moments.forEach((m) => {
         const cat = m;
+        momentFrequency[cat] = (momentFrequency[cat] || 0) + 1;
         if (!momentData[cat]) momentData[cat] = [];
         if (!momentLegNumbers[cat]) momentLegNumbers[cat] = [];
         momentData[cat].push(leg.momentValues[m] || "");
@@ -1457,79 +2538,116 @@ function generateRoundRobinInterview(match) {
     }
   });
   
+  // Sort moment categories by frequency (most frequent first)
+  const sortedMoments = Object.keys(momentFrequency).sort((a, b) => momentFrequency[b] - momentFrequency[a]);
+  
   const questions = [];
+  const usedCategories = new Set();
   const usedQuestions = new Set();
   
-  // Add round robin specific questions first
-  if (questionBank.roundRobin) {
-    questionBank.roundRobin.forEach((q) => {
-      const question = q(data);
-      if (question && !usedQuestions.has(q.toString())) {
-        questions.push(question);
+  // Priority 1: Add moment-based questions (limit to top 4 most frequent)
+  sortedMoments.slice(0, 4).forEach((cat) => {
+    if (questionBank[cat] && questions.length < 4) {
+      // Use the last occurrence of this moment
+      const lastIdx = momentData[cat].length - 1;
+      data[cat] = momentData[cat][lastIdx];
+      data.legNumber = momentLegNumbers[cat][lastIdx];
+      
+      const availableQuestions = questionBank[cat].filter((q) => !usedQuestions.has(q.toString()));
+      if (availableQuestions.length > 0) {
+        const q = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+        questions.push(q(data));
         usedQuestions.add(q.toString());
+        usedCategories.add(cat);
       }
-    });
-  }
-  
-  // Add standard moment-based questions
-  Object.keys(momentData).forEach((cat) => {
-    if (questionBank[cat]) {
-      momentData[cat].forEach((val, idx) => {
-        data[cat] = val;
-        data.legNumber = momentLegNumbers[cat] ? momentLegNumbers[cat][idx] : undefined;
-        
-        const availableQuestions = questionBank[cat].filter((q) => !usedQuestions.has(q.toString()));
-        if (availableQuestions.length > 0) {
-          const q = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
-          questions.push(q(data));
-          usedQuestions.add(q.toString());
-        }
-      });
     }
   });
   
-  // Add general questions
-  const generalAvailable = questionBank.general.filter((q) => !usedQuestions.has(q.toString()));
-  for (let i = 0; i < Math.min(2, generalAvailable.length); i++) {
-    const q = generalAvailable[Math.floor(Math.random() * generalAvailable.length)];
-    questions.push(q(data));
-    usedQuestions.add(q.toString());
+  // Priority 2: Fill remaining slots with round robin specific questions
+  // Filter to questions that produce non-null text AND haven't been used, then shuffle
+  if (questions.length < 4 && questionBank.roundRobin) {
+    const validRR = questionBank.roundRobin
+      .filter(q => !usedQuestions.has(q.toString()))
+      .map(q => ({ q, text: q(data) }))
+      .filter(item => item.text)
+      .sort(() => Math.random() - 0.5); // shuffle
+
+    for (const item of validRR) {
+      if (questions.length >= 4) break;
+      questions.push(item.text);
+      usedQuestions.add(item.q.toString());
+    }
+  }
+  
+  // Priority 3: Fill remaining slots with general questions
+  if (questions.length < 4 && questionBank.general) {
+    const validGeneral = questionBank.general
+      .filter(q => !usedQuestions.has(q.toString()))
+      .sort(() => Math.random() - 0.5);
+
+    for (const q of validGeneral) {
+      if (questions.length >= 4) break;
+      const text = q(data);
+      if (text) { questions.push(text); usedQuestions.add(q.toString()); }
+    }
   }
   
   appState.interview.questions = questions;
   appState.interview.currentQuestionIndex = 0;
-}
 
-// --- INIT ---
+  // Store leg notes for the interview screen
+  appState.interview.legNotes = (match.legs || [])
+    .filter(l => l.note && l.note.trim())
+    .map(l => ({ legNumber: l.legNumber, note: l.note.trim() }));
+
+  // Store subject info for the interview header
+  const subjectRecord = getPlayerTournamentRecord(winner);
+  appState.interview.subject = {
+    name: winner,
+    province: getPlayerProvince(winner),
+    opponent: loser,
+    winnerScore: match.winner === match.player1 ? match.score1 : match.score2,
+    loserScore:  match.winner === match.player1 ? match.score2 : match.score1,
+    wins: subjectRecord.wins,
+    losses: subjectRecord.losses,
+    rank: standings.findIndex(s => s.name === winner) + 1,
+    totalPlayers: standings.length,
+    matchNum: match.matchNum
+  };
+}
 window.addEventListener("DOMContentLoaded", () => {
   // Restore player library on load
   const savedPlayers = localStorage.getItem("dartsPlayerLibrary");
   if (savedPlayers) {
-    const parsed = JSON.parse(savedPlayers);
-    // Handle legacy format (array of strings) or new format (array of objects)
-    appState.players = parsed.map(p => 
-      typeof p === 'string' ? {name: p, group: ''} : p
-    );
+    try {
+      const parsed = JSON.parse(savedPlayers);
+      appState.players = parsed.map(p => typeof p === 'string' ? {name: p, group: ''} : p);
+    } catch(e) {}
   }
-  
-  // Restore Round Robin state on load
+
+  // Restore saved tournament OR auto-load Event 4
   const savedRoundRobin = localStorage.getItem("dartsRoundRobinState");
+  let restored = false;
   if (savedRoundRobin) {
     try {
       const parsed = JSON.parse(savedRoundRobin);
-      // Only restore if there's an active tournament
-      if (parsed.matches && parsed.matches.length > 0) {
+      if (parsed && parsed.matches && parsed.matches.length > 0) {
         appState.roundRobin = parsed;
-        // If tournament was in progress, go to appropriate screen
-        if (parsed.currentMatchIndex < parsed.matches.length && !parsed.matches[parsed.matches.length - 1].completed) {
-          appState.screen = "roundRobinSetup"; // Show setup screen with restored data
-        }
+        // Ensure playerProfiles exists after restore
+        if (!appState.roundRobin.playerProfiles) appState.roundRobin.playerProfiles = {};
+        restored = true;
       }
-    } catch (e) {
+    } catch(e) {
       console.error("Failed to restore Round Robin state:", e);
     }
   }
-  
+
+  if (!restored) {
+    // Auto-load Event 4 as default
+    loadPresetEvent("event4");
+  }
+
+  appState.screen = "matchList";
   render();
 });
 

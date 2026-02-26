@@ -1,0 +1,192 @@
+{
+  "format": {
+    "type": "bestOf",
+    "totalLegs": 5
+  },
+  "groupA": [
+    {
+      "name": "Drake Berry",
+      "province": "NS"
+    },
+    {
+      "name": "Cory Wallace",
+      "province": "NB"
+    },
+    {
+      "name": "Dana Moss",
+      "province": "NB"
+    },
+    {
+      "name": "Dee Cormier",
+      "province": "NB"
+    },
+    {
+      "name": "Colby Burke",
+      "province": "NFLD"
+    }
+  ],
+  "groupB": [
+    {
+      "name": "Wayne Champman",
+      "province": "NB"
+    },
+    {
+      "name": "Jordan Boyd",
+      "province": "NS"
+    },
+    {
+      "name": "Kevin Blanchard",
+      "province": "PE"
+    },
+    {
+      "name": "Don Higgins",
+      "province": "NB"
+    },
+    {
+      "name": "Mark MacEachern",
+      "province": "PE"
+    }
+  ],
+  "matches": [
+    {
+      "matchNum": 1,
+      "time": "9:00 AM",
+      "board": 1,
+      "player1": "Drake Berry",
+      "player2": "Cory Wallace"
+    },
+    {
+      "matchNum": 2,
+      "time": "9:00 AM",
+      "board": 2,
+      "player1": "Wayne Champman",
+      "player2": "Jordan Boyd"
+    },
+    {
+      "matchNum": 3,
+      "time": "9:25 AM",
+      "board": 1,
+      "player1": "Drake Berry",
+      "player2": "Dana Moss"
+    },
+    {
+      "matchNum": 4,
+      "time": "9:25 AM",
+      "board": 2,
+      "player1": "Wayne Champman",
+      "player2": "Kevin Blanchard"
+    },
+    {
+      "matchNum": 5,
+      "time": "9:50 AM",
+      "board": 1,
+      "player1": "Jordan Boyd",
+      "player2": "Kevin Blanchard"
+    },
+    {
+      "matchNum": 6,
+      "time": "9:50 AM",
+      "board": 2,
+      "player1": "Cory Wallace",
+      "player2": "Dana Moss"
+    },
+    {
+      "matchNum": 7,
+      "time": "10:15 AM",
+      "board": 1,
+      "player1": "Cory Wallace",
+      "player2": "Dee Cormier"
+    },
+    {
+      "matchNum": 8,
+      "time": "10:15 AM",
+      "board": 2,
+      "player1": "Jordan Boyd",
+      "player2": "Don Higgins"
+    },
+    {
+      "matchNum": 9,
+      "time": "10:40 AM",
+      "board": 1,
+      "player1": "Mark MacEachern",
+      "player2": "Wayne Champman"
+    },
+    {
+      "matchNum": 10,
+      "time": "10:40 AM",
+      "board": 2,
+      "player1": "Colby Burke",
+      "player2": "Drake Berry"
+    },
+    {
+      "matchNum": 11,
+      "time": "11:05 AM",
+      "board": 1,
+      "player1": "Mark MacEachern",
+      "player2": "Jordan Boyd"
+    },
+    {
+      "matchNum": 12,
+      "time": "11:05 AM",
+      "board": 2,
+      "player1": "Colby Burke",
+      "player2": "Cory Wallace"
+    },
+    {
+      "matchNum": 13,
+      "time": "11:30 AM",
+      "board": 1,
+      "player1": "Colby Burke",
+      "player2": "Dana Moss"
+    },
+    {
+      "matchNum": 14,
+      "time": "11:30 AM",
+      "board": 2,
+      "player1": "Mark MacEachern",
+      "player2": "Kevin Blanchard"
+    },
+    {
+      "matchNum": 15,
+      "time": "11:55 AM",
+      "board": 1,
+      "player1": "Kevin Blanchard",
+      "player2": "Don Higgins"
+    },
+    {
+      "matchNum": 16,
+      "time": "11:55 AM",
+      "board": 2,
+      "player1": "Dana Moss",
+      "player2": "Dee Cormier"
+    },
+    {
+      "matchNum": 17,
+      "time": "12:20 PM",
+      "board": 1,
+      "player1": "Don Higgins",
+      "player2": "Wayne Champman"
+    },
+    {
+      "matchNum": 18,
+      "time": "12:20 PM",
+      "board": 2,
+      "player1": "Dee Cormier",
+      "player2": "Drake Berry"
+    },
+    {
+      "matchNum": 19,
+      "time": "12:45 PM",
+      "board": 1,
+      "player1": "Dee Cormier",
+      "player2": "Colby Burke"
+    },
+    {
+      "matchNum": 20,
+      "time": "12:45 PM",
+      "board": 2,
+      "player1": "Don Higgins",
+      "player2": "Mark MacEachern"
+    }
+  ]
+}

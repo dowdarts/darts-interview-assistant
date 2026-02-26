@@ -4,159 +4,89 @@
     "totalLegs": 5
   },
   "groupA": [
-    "John Smith",
-    "Sarah Johnson",
-    "Mike Williams",
-    "Emily Brown",
-    "David Jones"
+    "Drake Berry",
+    "Cory Wallace",
+    "Dana Moss",
+    "Dee Cormier",
+    "Colby Burke"
   ],
   "groupB": [
-    "Lisa Davis",
-    "Robert Miller",
-    "Jennifer Wilson",
-    "Michael Moore",
-    "Amanda Taylor"
+    "Wayne Champman",
+    "Jordan Boyd",
+    "Kevin Blanchard",
+    "Don Higgins",
+    "Mark MacEachern"
   ],
   "matches": [
     {
       "matchNum": 1,
-      "player1": "John Smith",
-      "player2": "Sarah Johnson",
+      "time": "9:00 AM",
       "board": 1,
-      "time": "10:00 AM"
+      "player1": "Drake Berry",
+      "player2": "Cory Wallace"
     },
     {
       "matchNum": 2,
-      "player1": "Mike Williams",
-      "player2": "Emily Brown",
+      "time": "9:25 AM",
       "board": 1,
-      "time": "10:30 AM"
+      "player1": "Drake Berry",
+      "player2": "Dana Moss"
     },
     {
       "matchNum": 3,
-      "player1": "David Jones",
-      "player2": "Lisa Davis",
+      "time": "9:50 AM",
       "board": 1,
-      "time": "11:00 AM"
+      "player1": "Jordan Boyd",
+      "player2": "Kevin Blanchard"
     },
     {
       "matchNum": 4,
-      "player1": "Robert Miller",
-      "player2": "Jennifer Wilson",
+      "time": "10:15 AM",
       "board": 1,
-      "time": "11:30 AM"
+      "player1": "Cory Wallace",
+      "player2": "Dee Cormier"
     },
     {
       "matchNum": 5,
-      "player1": "Michael Moore",
-      "player2": "Amanda Taylor",
+      "time": "10:40 AM",
       "board": 1,
-      "time": "12:00 PM"
+      "player1": "Mark MacEachern",
+      "player2": "Wayne Champman"
     },
     {
       "matchNum": 6,
-      "player1": "John Smith",
-      "player2": "Mike Williams",
+      "time": "11:05 AM",
       "board": 1,
-      "time": "12:30 PM"
+      "player1": "Mark MacEachern",
+      "player2": "Jordan Boyd"
     },
     {
       "matchNum": 7,
-      "player1": "Sarah Johnson",
-      "player2": "Emily Brown",
+      "time": "11:30 AM",
       "board": 1,
-      "time": "1:00 PM"
+      "player1": "Colby Burke",
+      "player2": "Dana Moss"
     },
     {
       "matchNum": 8,
-      "player1": "David Jones",
-      "player2": "Robert Miller",
+      "time": "11:55 AM",
       "board": 1,
-      "time": "1:30 PM"
+      "player1": "Kevin Blanchard",
+      "player2": "Don Higgins"
     },
     {
       "matchNum": 9,
-      "player1": "Lisa Davis",
-      "player2": "Jennifer Wilson",
+      "time": "12:20 PM",
       "board": 1,
-      "time": "2:00 PM"
+      "player1": "Don Higgins",
+      "player2": "Wayne Champman"
     },
     {
       "matchNum": 10,
-      "player1": "Michael Moore",
-      "player2": "John Smith",
+      "time": "12:45 PM",
       "board": 1,
-      "time": "2:30 PM"
-    },
-    {
-      "matchNum": 11,
-      "player1": "Amanda Taylor",
-      "player2": "Sarah Johnson",
-      "board": 2,
-      "time": "10:00 AM"
-    },
-    {
-      "matchNum": 12,
-      "player1": "Mike Williams",
-      "player2": "David Jones",
-      "board": 2,
-      "time": "10:30 AM"
-    },
-    {
-      "matchNum": 13,
-      "player1": "Emily Brown",
-      "player2": "Lisa Davis",
-      "board": 2,
-      "time": "11:00 AM"
-    },
-    {
-      "matchNum": 14,
-      "player1": "Robert Miller",
-      "player2": "Michael Moore",
-      "board": 2,
-      "time": "11:30 AM"
-    },
-    {
-      "matchNum": 15,
-      "player1": "Jennifer Wilson",
-      "player2": "Amanda Taylor",
-      "board": 2,
-      "time": "12:00 PM"
-    },
-    {
-      "matchNum": 16,
-      "player1": "John Smith",
-      "player2": "Emily Brown",
-      "board": 2,
-      "time": "12:30 PM"
-    },
-    {
-      "matchNum": 17,
-      "player1": "Sarah Johnson",
-      "player2": "David Jones",
-      "board": 2,
-      "time": "1:00 PM"
-    },
-    {
-      "matchNum": 18,
-      "player1": "Mike Williams",
-      "player2": "Lisa Davis",
-      "board": 2,
-      "time": "1:30 PM"
-    },
-    {
-      "matchNum": 19,
-      "player1": "Robert Miller",
-      "player2": "Amanda Taylor",
-      "board": 2,
-      "time": "2:00 PM"
-    },
-    {
-      "matchNum": 20,
-      "player1": "Jennifer Wilson",
-      "player2": "Michael Moore",
-      "board": 2,
-      "time": "2:30 PM"
+      "player1": "Dee Cormier",
+      "player2": "Colby Burke"
     }
   ]
 }
