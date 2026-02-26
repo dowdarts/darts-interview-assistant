@@ -447,10 +447,25 @@ function renderMatchList() {
   // Build match items
   const listEl = div.querySelector("#matchListItems");
 
+  // Separate matches into upcoming and completed
+  const upcomingMatches = [];
+  const completedMatches = [];
+  
   matches.forEach((match, idx) => {
     const available = isAvailable(idx);
     const done = match.completed;
     const locked = !done && !available;
+    
+    if (done) {
+      completedMatches.push({ match, idx, available, done, locked });
+    } else {
+      upcomingMatches.push({ match, idx, available, done, locked });
+    }
+  });
+
+  // Render function for a match card
+  function renderMatchCard(matchObj) {
+    const { match, idx, available, done, locked } = matchObj;
     const isBoard1 = match.board === 1;
 
     const item = document.createElement("div");
@@ -541,8 +556,50 @@ function renderMatchList() {
       };
     }
 
-    listEl.appendChild(item);
-  });
+    return item;
+  }
+
+  // Render upcoming matches section (if any)
+  if (upcomingMatches.length > 0) {
+    const upcomingHeader = document.createElement("div");
+    upcomingHeader.style.cssText = `
+      font-family:var(--font-display);
+      font-size:0.78em;
+      letter-spacing:0.12em;
+      color:var(--orange);
+      text-transform:uppercase;
+      margin-bottom:0.6em;
+      padding-bottom:0.4em;
+      border-bottom:1px solid var(--divider);
+    `;
+    upcomingHeader.textContent = "Upcoming Matches";
+    listEl.appendChild(upcomingHeader);
+    
+    upcomingMatches.forEach(matchObj => {
+      listEl.appendChild(renderMatchCard(matchObj));
+    });
+  }
+
+  // Render completed matches section (if any)
+  if (completedMatches.length > 0) {
+    const completedHeader = document.createElement("div");
+    completedHeader.style.cssText = `
+      font-family:var(--font-display);
+      font-size:0.78em;
+      letter-spacing:0.12em;
+      color:var(--text-muted);
+      text-transform:uppercase;
+      margin:${upcomingMatches.length > 0 ? '1.2em' : '0'} 0 0.6em;
+      padding-bottom:0.4em;
+      border-bottom:1px solid var(--divider);
+    `;
+    completedHeader.textContent = "Completed Matches";
+    listEl.appendChild(completedHeader);
+    
+    completedMatches.forEach(matchObj => {
+      listEl.appendChild(renderMatchCard(matchObj));
+    });
+  }
 
   // Reset button
   div.querySelector("#resetBtn").onclick = () => {
