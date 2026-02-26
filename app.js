@@ -272,6 +272,31 @@ const questionBank = {
   ]
 };
 
+// --- HELP MODAL ---
+function showHelp(title, body) {
+  const overlay = document.createElement("div");
+  overlay.className = "help-overlay";
+  overlay.innerHTML = `
+    <div class="help-modal">
+      <div class="help-modal-title">${title}</div>
+      <div class="help-modal-body">${body}</div>
+      <button class="help-modal-close">Got It</button>
+    </div>
+  `;
+  overlay.querySelector(".help-modal-close").onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  document.getElementById("app").appendChild(overlay);
+}
+
+function bindHelpButtons(container) {
+  container.querySelectorAll(".help-btn").forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      showHelp(btn.dataset.helpTitle, btn.dataset.helpBody);
+    };
+  });
+}
+
 // --- RENDERER ---
 function render() {
   const app = document.getElementById("app");
@@ -389,7 +414,7 @@ function renderMatchList() {
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.4em;">
       <div>
         <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.2em;">AADS Darts</div>
-        <h1 style="font-size:1.85em;margin:0;">Event 4</h1>
+        <h1 style="font-size:1.85em;margin:0;display:flex;align-items:center;gap:0.4em;">Event 4 <button class="help-btn" data-help-title="Match List" data-help-body="Matches unlock one at a time as they complete. Tap an available match to score it live, leg by leg.&lt;br&gt;&lt;br&gt;Tap any &lt;b&gt;completed match&lt;/b&gt; (green) to edit it. Board 2 matches use a quick score-entry screen — enter final legs won by each player.">?</button></h1>
       </div>
       <button id="resetBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--divider);color:var(--text-muted);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Reset</button>
       <button id="qlBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--orange);color:var(--orange);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Questions</button>
@@ -522,6 +547,7 @@ function renderMatchList() {
     render();
   };
 
+  bindHelpButtons(div);
   return div;
 }
 
@@ -1008,7 +1034,7 @@ function renderInterview() {
 
   div.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5em;">
-      <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.15em;color:var(--text-muted);text-transform:uppercase;">Interview</div>
+      <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.15em;color:var(--text-muted);text-transform:uppercase;display:flex;align-items:center;gap:0.4em;">Interview <button class="help-btn" data-help-title="Interview Guide" data-help-body="Read each question to the player. The card at the top shows their result and current standing.&lt;br&gt;&lt;br&gt;Match notes below serve as talking points. Tap &lt;b&gt;Next Question&lt;/b&gt; to advance, &lt;b&gt;Prev&lt;/b&gt; to go back, or &lt;b&gt;End Interview&lt;/b&gt; to return to the match list.">?</button></div>
       <div style="font-family:var(--font-display);font-size:0.75em;color:var(--text-muted);">${idx + 1} / ${total}</div>
     </div>
     <div class="interview-progress-bar-wrap">
@@ -1059,6 +1085,7 @@ function renderInterview() {
     leaveInterview();
   };
 
+  bindHelpButtons(div);
   return div;
 }
 
@@ -1854,15 +1881,18 @@ function renderRoundRobinMatch() {
       </div>
     </div>
     <div class="leg-badge">Leg ${state.currentLeg} of ${format?.totalLegs || 5}</div>
-    <label>Leg Winner</label>
+    <div class="help-label-row"><label>Leg Winner</label><button class="help-btn" data-help-title="Leg Winner" data-help-body="Tap the name of the player who won this leg. A green ring confirms your pick. You must select a winner before confirming the leg.">?</button></div>
     <div class="row">
       <button class="button winner-btn" data-winner="${currentMatch.player1}">${currentMatch.player1}</button>
       <button class="button winner-btn" data-winner="${currentMatch.player2}">${currentMatch.player2}</button>
     </div>
-    <label>Memorable Moments (Optional)</label>
+    <div class="help-label-row"><label>Memorable Moments</label><button class="help-btn" data-help-title="Memorable Moments" data-help-body="Select the tags that best reflect what happened in this leg — only tag what you actually saw during the match.&lt;br&gt;&lt;br&gt;For &lt;b&gt;High Scoring&lt;/b&gt;, &lt;b&gt;Big Finish&lt;/b&gt;, &lt;b&gt;High Average&lt;/b&gt;, or &lt;b&gt;Low Dart Leg&lt;/b&gt; — a value field appears next to the button. Enter the number (e.g. 180, 121 finish, 14 darts).&lt;br&gt;&lt;br&gt;These moments shape the interview questions generated after the match.">?</button></div>
     <div class="col-2" id="momentBtns"></div>
     <div style="margin-top:0.6em;margin-bottom:0.3em;">
-      <button id="noteToggleBtn" class="button btn-secondary" style="margin-bottom:0.5em;">📝 Add Note for Leg ${state.currentLeg}</button>
+      <div style="display:flex;align-items:center;gap:0.5em;margin-bottom:0.5em;">
+        <button id="noteToggleBtn" class="button btn-secondary" style="margin:0;flex:1;">📝 Add Note for Leg ${state.currentLeg}</button>
+        <button class="help-btn" data-help-title="Leg Notes" data-help-body="Add a private note about anything notable in this leg — missed doubles, key checkouts, pressure moments, crowd reaction.&lt;br&gt;&lt;br&gt;Notes appear on the interview screen to help guide your questions.">?</button>
+      </div>
       <div id="noteArea" style="display:none;">
         <textarea id="legNoteInput" rows="3" placeholder="Type your notes for this leg..." style="width:100%;background:#1a1a1a;color:var(--white);border:1.5px solid var(--divider);border-radius:10px;padding:0.75em 1em;font-family:var(--font-main);font-size:0.95em;line-height:1.5;resize:vertical;box-sizing:border-box;"></textarea>
       </div>
@@ -2093,7 +2123,8 @@ function renderRoundRobinMatch() {
     appState.screen = "roundRobinMatch";
     render();
   }
-  
+
+  bindHelpButtons(div);
   return div;
 }
 
@@ -2174,7 +2205,7 @@ function renderBoard2Entry() {
         <span style="color:var(--text-muted);font-size:0.8em;">vs</span>
         <span style="font-family:var(--font-display);font-size:1.3em;">${board2Match.player2}</span>
       </div>
-      <div style="color:var(--text-muted);font-size:0.82em;margin-bottom:1.4em;">${board2Match.time || ''} · Enter legs won by each player</div>
+      <div style="color:var(--text-muted);font-size:0.82em;margin-bottom:1.4em;display:flex;align-items:center;gap:0.5em;">${board2Match.time || ''} · Enter legs won by each player <button class="help-btn" data-help-title="Board 2 Score Entry" data-help-body="Enter the number of legs won by each player. Scores cannot be a tie.&lt;br&gt;&lt;br&gt;Tap &lt;b&gt;Confirm Score&lt;/b&gt; to save the result, or &lt;b&gt;Skip&lt;/b&gt; to come back and enter it later.">?</button></div>
 
       <div class="b2-score-row">
         <span class="b2-player-label">${board2Match.player1}</span>
@@ -2218,6 +2249,8 @@ function renderBoard2Entry() {
     board2Match.winner = score1 > score2 ? board2Match.player1 : board2Match.player2;
     board2Match.legs = [];
 
+    appState.roundRobin.completedMatches = appState.roundRobin.completedMatches
+      .filter(m => !(m.matchNum === board2Match.matchNum && m.board === board2Match.board));
     appState.roundRobin.completedMatches.push({...board2Match});
     saveRoundRobinState();
 
@@ -2230,6 +2263,7 @@ function renderBoard2Entry() {
     render();
   };
 
+  bindHelpButtons(div);
   return div;
 }
 
