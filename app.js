@@ -114,6 +114,7 @@ function loadPresetEvent(eventKey) {
   appState.roundRobin.currentMatchIndex = 0;
   appState.roundRobin.currentMatchState = null;
   appState.roundRobin.active = false;
+  appState.roundRobin.knockout = null;
 
   saveRoundRobinState();
 }
@@ -338,6 +339,15 @@ function render() {
     case "questionLibrary":
       app.appendChild(renderQuestionLibrary());
       break;
+    case "knockoutStandings":
+      app.appendChild(renderKnockoutStandings());
+      break;
+    case "knockoutBracket":
+      app.appendChild(renderKnockoutBracket());
+      break;
+    case "knockoutMatch":
+      app.appendChild(renderKnockoutMatch());
+      break;
   }
 }
 
@@ -422,9 +432,10 @@ function renderMatchList() {
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.1em;box-shadow:0 0 10px var(--orange);"></div>
 
     ${allDone ? `
-    <div style="background:rgba(76,175,80,0.12);border:1.5px solid #4caf50;border-radius:12px;padding:0.8em 1.2em;margin-bottom:1em;font-family:var(--font-display);font-size:0.9em;color:#4caf50;letter-spacing:0.04em;text-transform:uppercase;">
+    <div style="background:rgba(76,175,80,0.12);border:1.5px solid #4caf50;border-radius:12px;padding:0.8em 1.2em;margin-bottom:0.6em;font-family:var(--font-display);font-size:0.9em;color:#4caf50;letter-spacing:0.04em;text-transform:uppercase;">
       ✓ Event Complete — All ${totalCount} matches done
-    </div>` : `
+    </div>
+    <button id="knockoutBtn" class="button" style="margin-bottom:0.8em;background:linear-gradient(135deg,#b8860b,#d4a017);color:#000;">🏆 Knockout Stage →</button>` : `
     <div style="background:var(--card-black);border:1px solid var(--divider);border-radius:12px;padding:0.65em 1.2em;margin-bottom:1em;display:flex;justify-content:space-between;align-items:center;">
       <span style="font-family:var(--font-display);font-size:0.82em;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Progress</span>
       <span style="font-family:var(--font-display);font-weight:700;color:var(--orange);">${completedCount} / ${totalCount}</span>
@@ -541,6 +552,13 @@ function renderMatchList() {
       render();
     }
   };
+  if (allDone) {
+    div.querySelector("#knockoutBtn").onclick = () => {
+      appState.screen = "knockoutStandings";
+      render();
+    };
+  }
+
   div.querySelector("#qlBtn").onclick = () => {
     appState._prevScreen = "matchList";
     appState.screen = "questionLibrary";
@@ -2344,6 +2362,340 @@ function renderQuestionLibrary() {
   return div;
 }
 
+// --- KNOCKOUT STANDINGS SCREEN ---
+function renderKnockoutStandings() {
+  const div = document.createElement("div");
+  div.className = "screen";
+  const groupA = appState.roundRobin.groupA || [];
+  const groupB = appState.roundRobin.groupB || [];
+  const sA = getGroupStandingsByLegs(groupA);
+  const sB = getGroupStandingsByLegs(groupB);
+
+  function rowHTML(p, i) {
+    const q = i < 4;
+    return `
+      <div class="ko-stand-row ${q ? 'ko-qualifies' : ''}">
+        <span class="ko-rank">${i+1}</span>
+        <div class="ko-player-cell">
+          <div class="ko-player-name">${p.name}${q ? '<span class="ko-qual-badge">Q</span>' : ''}</div>
+          ${p.province ? `<div class="ko-prov">${p.province}</div>` : ''}
+        </div>
+        <span class="ko-stat-muted">${p.matchWins+p.matchLosses}</span>
+        <span class="ko-stat-green">${p.matchWins}</span>
+        <span class="ko-legs">${p.legsWon}</span>
+      </div>`;
+  }
+
+  function groupTableHTML(standings, label) {
+    return `
+      <div class="ko-group-block">
+        <div class="ko-group-label">Group ${label}</div>
+        <div class="ko-stand-table">
+          <div class="ko-stand-header">
+            <span class="ko-rank"></span>
+            <span style="font-family:var(--font-display);font-size:0.7em;color:var(--text-muted);text-transform:uppercase;">Player</span>
+            <span class="ko-stat-muted" style="font-size:0.7em;text-transform:uppercase;">P</span>
+            <span class="ko-stat-muted" style="font-size:0.7em;text-transform:uppercase;">MW</span>
+            <span class="ko-legs" style="font-size:0.7em;color:var(--orange);text-transform:uppercase;">Legs</span>
+          </div>
+          ${standings.map((p,i) => rowHTML(p,i)).join('')}
+        </div>
+      </div>`;
+  }
+
+  const ko = appState.roundRobin.knockout;
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1em;">
+      <button id="backBtn" style="background:transparent;border:none;color:var(--text-muted);font-size:1em;padding:0;width:auto;box-shadow:none;margin:0;font-family:var(--font-display);letter-spacing:0.04em;">← Back</button>
+      <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">Knockout Seeding</div>
+    </div>
+    <h2 style="margin:0 0 0.2em;font-size:1.35em;">Group Standings</h2>
+    <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:1.2em;">Ranked by legs won. Top 4 from each group qualify.</div>
+    ${groupTableHTML(sA,'A')}
+    ${groupTableHTML(sB,'B')}
+    <div class="sticky-bottom">
+      <button id="genBracketBtn" class="button" style="background:linear-gradient(135deg,#b8860b,#d4a017);color:#000;">${ko && ko.generated ? '🏆 View Knockout Bracket →' : '🏆 Generate Knockout Bracket →'}</button>
+    </div>
+  `;
+  div.querySelector("#backBtn").onclick = () => { appState.screen = "matchList"; render(); };
+  div.querySelector("#genBracketBtn").onclick = () => {
+    if (!ko || !ko.generated) generateKnockoutBracket();
+    appState.screen = "knockoutBracket";
+    render();
+  };
+  return div;
+}
+
+// --- KNOCKOUT BRACKET SCREEN ---
+function renderKnockoutBracket() {
+  const div = document.createElement("div");
+  div.className = "screen";
+  const ko = appState.roundRobin.knockout;
+  if (!ko || !ko.generated) { appState.screen = "knockoutStandings"; render(); return div; }
+  autoFillKnockoutPlayers();
+  const bracket = ko.bracket;
+
+  function matchCard(m) {
+    const done = m.completed;
+    const canPlay = !done && m.player1 && m.player2;
+    const pending = !done && (!m.player1 || !m.player2);
+    const p1 = m.player1 || m.seedLabel?.split(' vs ')[0] || '?';
+    const p2 = m.player2 || m.seedLabel?.split(' vs ')[1] || '?';
+    const prov1 = m.player1 ? getPlayerProvince(m.player1) : '';
+    const prov2 = m.player2 ? getPlayerProvince(m.player2) : '';
+    const fmtLabel = m.format.setsToWin === 3 ? 'BO5 Sets' : 'BO3 Sets';
+    return `
+      <div class="ko-match-card ${done?'ko-done':canPlay?'ko-available':'ko-pending'}" data-id="${m.id}">
+        <div class="ko-match-label">${m.label} <span class="ko-seed-label">${m.seedLabel}</span> <span class="ko-format-label">${fmtLabel}</span></div>
+        <div class="ko-match-player ${done && m.winner===m.player1?'ko-winner':''}">
+          <span class="ko-match-name">${p1}${prov1?`<span class="ko-match-prov">${prov1}</span>`:''}</span>
+          ${done?`<span class="ko-match-score ${m.winner===m.player1?'ko-score-w':'ko-score-l'}">${m.score1}</span>`:''}
+        </div>
+        <div class="ko-match-player ${done && m.winner===m.player2?'ko-winner':''}">
+          <span class="ko-match-name">${p2}${prov2?`<span class="ko-match-prov">${prov2}</span>`:''}</span>
+          ${done?`<span class="ko-match-score ${m.winner===m.player2?'ko-score-w':'ko-score-l'}">${m.score2}</span>`:''}
+        </div>
+        ${pending?`<div class="ko-match-pending">Awaiting results</div>`:''}
+        ${canPlay?`<div class="ko-match-tap">Tap to score →</div>`:''}
+        ${done?`<div class="ko-match-tap ko-match-tap-edit">✎ Edit result</div>`:''}
+      </div>`;
+  }
+
+  function roundSection(title, ids) {
+    return `<div class="ko-round-section">
+      <div class="ko-round-label">${title}</div>
+      <div>${ids.map(id => matchCard(bracket.find(m=>m.id===id))).join('')}</div>
+    </div>`;
+  }
+
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1em;">
+      <button id="backBtn" style="background:transparent;border:none;color:var(--text-muted);font-size:1em;padding:0;width:auto;box-shadow:none;margin:0;font-family:var(--font-display);letter-spacing:0.04em;">← Back</button>
+      <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">Knockout Stage</div>
+    </div>
+    <h2 style="margin:0 0 0.2em;font-size:1.35em;">🏆 Knockout Bracket</h2>
+    <div style="font-size:0.82em;color:var(--text-muted);margin-bottom:1.2em;">Tap an available match to score it live, leg by leg.</div>
+    ${roundSection('Quarter Finals',['qf1','qf2','qf3','qf4'])}
+    ${roundSection('Semi Finals',['sf1','sf2'])}
+    ${roundSection('Final',['final'])}
+  `;
+
+  div.querySelector("#backBtn").onclick = () => { appState.screen = "knockoutStandings"; render(); };
+
+  div.querySelectorAll(".ko-match-card").forEach(card => {
+    const id = card.dataset.id;
+    const match = bracket.find(m => m.id === id);
+    if (!match) return;
+    const canPlay = !match.completed && match.player1 && match.player2;
+    const done = match.completed;
+    if (!canPlay && !done) return;
+    card.style.cursor = "pointer";
+    card.addEventListener("pointerdown", () => card.style.transform = "scale(0.98)");
+    card.addEventListener("pointerup",   () => card.style.transform = "");
+    card.addEventListener("pointerleave",() => card.style.transform = "");
+    card.onclick = () => {
+      if (done) {
+        // Edit: restore and re-enter
+        match.completed = false; match.winner = null; match.legs = [];
+        match.score1 = 0; match.score2 = 0;
+        ko.currentMatchId = id;
+        ko.currentMatchState = { score1:0, score2:0, currentSet:1, currentLeg:1, legScores:{player1:0,player2:0}, legs:[], editMode:false, originalLegs:null };
+      } else {
+        ko.currentMatchId = id;
+        ko.currentMatchState = { score1:0, score2:0, currentSet:1, currentLeg:1, legScores:{player1:0,player2:0}, legs:[], editMode:false, originalLegs:null };
+      }
+      saveRoundRobinState();
+      appState.screen = "knockoutMatch";
+      render();
+    };
+  });
+
+  return div;
+}
+
+// --- KNOCKOUT MATCH SCREEN (SET PLAY) ---
+function renderKnockoutMatch() {
+  const div = document.createElement("div");
+  div.className = "screen";
+  const ko = appState.roundRobin.knockout;
+  if (!ko || !ko.currentMatchId) { appState.screen = "knockoutBracket"; render(); return div; }
+  const match = ko.bracket.find(m => m.id === ko.currentMatchId);
+  if (!match) { appState.screen = "knockoutBracket"; render(); return div; }
+
+  const state = ko.currentMatchState;
+  const format = match.format;
+  const p1 = match.player1, p2 = match.player2;
+  const p1Province = getPlayerProvince(p1), p2Province = getPlayerProvince(p2);
+  const roundLabels = { qf:'Quarter Final', sf:'Semi Final', final:'Final' };
+  const fmtLabel = `Best of ${format.setsToWin*2-1} Sets · Best of ${format.legsPerSet} Legs per Set`;
+
+  let selectedWinner = null;
+  let currentLeg = { winner:null, moments:[], momentValues:{}, legNumber: state.legs.length+1, setNumber: state.currentSet, note:"" };
+
+  const legsInSetDisplay = `${state.legScores.player1}–${state.legScores.player2}`;
+  const setScoreDisplay  = `${state.score1}–${state.score2}`;
+
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8em;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.12em;color:var(--orange);text-transform:uppercase;">${roundLabels[match.round]||'Knockout'} · ${match.label}</div>
+        <div style="font-size:0.7em;color:var(--text-muted);margin-top:0.1em;">${fmtLabel}</div>
+      </div>
+      <span class="live-badge">LIVE</span>
+    </div>
+    <div class="broadcast-score">
+      <div class="broadcast-player">
+        <div class="broadcast-player-name">${p1}${p1Province?`<div style="color:var(--orange);font-size:0.72em;letter-spacing:0.1em;margin-top:0.1em;">${p1Province}</div>`:''}</div>
+        <div class="broadcast-player-score ${state.score1>state.score2?'leading':''}">${state.score1}</div>
+        <div style="font-size:0.7em;color:var(--text-muted);font-family:var(--font-display);">Sets</div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="broadcast-player">
+        <div class="broadcast-player-name">${p2}${p2Province?`<div style="color:var(--orange);font-size:0.72em;letter-spacing:0.1em;margin-top:0.1em;">${p2Province}</div>`:''}</div>
+        <div class="broadcast-player-score ${state.score2>state.score1?'leading':''}">${state.score2}</div>
+        <div style="font-size:0.7em;color:var(--text-muted);font-family:var(--font-display);">Sets</div>
+      </div>
+    </div>
+    <div class="leg-badge">Set ${state.currentSet} · Leg ${state.currentLeg} of ${format.legsPerSet} &nbsp;|&nbsp; Set Legs: ${legsInSetDisplay} &nbsp;|&nbsp; Sets: ${setScoreDisplay}</div>
+    <div class="help-label-row"><label>Leg Winner</label><button class="help-btn" data-help-title="Leg Winner" data-help-body="Tap the player who won this leg. First to ${format.legsToWinSet} legs wins the set. First to ${format.setsToWin} sets wins the match.\n\nSet score is shown in the scoreboard above.">?</button></div>
+    <div class="row">
+      <button class="button winner-btn" data-winner="${p1}">${p1}</button>
+      <button class="button winner-btn" data-winner="${p2}">${p2}</button>
+    </div>
+    <div class="help-label-row"><label>Memorable Moments</label><button class="help-btn" data-help-title="Memorable Moments" data-help-body="Select the tags that best reflect what happened in this leg. For scored moments enter the value in the field that appears next to the button.">?</button></div>
+    <div class="col-2" id="momentBtns"></div>
+    <div style="margin-top:0.5em;margin-bottom:0.3em;">
+      <div style="display:flex;align-items:center;gap:0.5em;margin-bottom:0.5em;">
+        <button id="noteToggleBtn" class="button btn-secondary" style="margin:0;flex:1;">📝 Add Note</button>
+        <button class="help-btn" data-help-title="Leg Notes" data-help-body="Add a note about this leg — key moments, missed doubles etc. Notes appear on the interview screen.">?</button>
+      </div>
+      <div id="noteArea" style="display:none;">
+        <textarea id="legNoteInput" rows="3" placeholder="Notes for this leg..." style="width:100%;background:#1a1a1a;color:var(--white);border:1.5px solid var(--divider);border-radius:10px;padding:0.75em 1em;font-family:var(--font-main);font-size:0.95em;line-height:1.5;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+    </div>
+    <div class="sticky-bottom">
+      <button id="nextLegBtn" class="button">Confirm Leg</button>
+      <div style="display:flex;gap:0.6em;margin-top:0.5em;">
+        <button id="undoLegBtn" class="button btn-secondary" style="flex:1;${state.legs.length===0?'opacity:0.35;pointer-events:none;':''}">← Undo Leg</button>
+        <button id="abandonBtn" class="button btn-secondary" style="flex:1;">✕ Abandon</button>
+      </div>
+    </div>
+  `;
+
+  // Winner buttons
+  div.querySelectorAll(".winner-btn").forEach(btn => {
+    btn.onclick = () => {
+      selectedWinner = btn.dataset.winner;
+      currentLeg.winner = selectedWinner;
+      div.querySelectorAll(".winner-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+    };
+  });
+
+  // Note toggle
+  div.querySelector("#noteToggleBtn").onclick = () => {
+    const area = div.querySelector("#noteArea");
+    area.style.display = area.style.display === "none" ? "block" : "none";
+  };
+  div.querySelector("#legNoteInput").oninput = (e) => { currentLeg.note = e.target.value; };
+
+  // Moment buttons
+  const momentBtnsDiv = div.querySelector("#momentBtns");
+  momentCategories.forEach(cat => {
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = "display:flex;align-items:center;gap:0.5em;";
+    const btn = document.createElement("button");
+    btn.className = "moment-btn button";
+    btn.textContent = cat.label;
+    btn.dataset.key = cat.key;
+    wrapper.appendChild(btn);
+    let input = null;
+    if (["highScoring","bigFinish","highAverage","lowDartLeg"].includes(cat.key)) {
+      input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = cat.key === "lowDartLeg" ? "Darts" : cat.label + " value";
+      input.style.cssText = "display:none;width:5em;font-size:1em;background:#232834;color:#fff;border:1px solid #444;border-radius:0.7em;padding:0.3em 0.7em;";
+      input.oninput = (e) => { currentLeg.momentValues[cat.key] = e.target.value; };
+      wrapper.appendChild(input);
+    }
+    btn.onclick = () => {
+      if (currentLeg.moments.includes(cat.key)) {
+        currentLeg.moments = currentLeg.moments.filter(m => m !== cat.key);
+        btn.classList.remove("selected");
+        if (input) { input.style.display = "none"; delete currentLeg.momentValues[cat.key]; }
+      } else {
+        currentLeg.moments.push(cat.key);
+        btn.classList.add("selected");
+        if (input) input.style.display = "inline-block";
+      }
+    };
+    momentBtnsDiv.appendChild(wrapper);
+  });
+
+  // Undo last leg
+  div.querySelector("#undoLegBtn").onclick = () => {
+    if (state.legs.length === 0) return;
+    state.legs.pop();
+    recalcKnockoutState(state, format, p1);
+    saveRoundRobinState();
+    render();
+  };
+
+  // Abandon
+  div.querySelector("#abandonBtn").onclick = () => {
+    if (confirm("Abandon this match and return to the bracket?")) {
+      ko.currentMatchId = null;
+      ko.currentMatchState = null;
+      saveRoundRobinState();
+      appState.screen = "knockoutBracket";
+      render();
+    }
+  };
+
+  // Confirm leg
+  div.querySelector("#nextLegBtn").onclick = () => {
+    if (!selectedWinner) { alert("Select a leg winner first."); return; }
+    currentLeg.legNumber = state.legs.length + 1;
+    currentLeg.setNumber = state.currentSet;
+    state.legs.push({ ...currentLeg, moments:[...currentLeg.moments], momentValues:{...currentLeg.momentValues} });
+
+    // Update set legs
+    if (selectedWinner === p1) state.legScores.player1++;
+    else state.legScores.player2++;
+
+    // Check set win
+    if (state.legScores.player1 >= format.legsToWinSet) {
+      state.score1++; state.legScores = { player1:0, player2:0 }; state.currentLeg = 1; state.currentSet++;
+    } else if (state.legScores.player2 >= format.legsToWinSet) {
+      state.score2++; state.legScores = { player1:0, player2:0 }; state.currentLeg = 1; state.currentSet++;
+    } else {
+      state.currentLeg++;
+    }
+
+    // Check match win
+    if (state.score1 >= format.setsToWin || state.score2 >= format.setsToWin) {
+      match.completed = true;
+      match.score1 = state.score1;
+      match.score2 = state.score2;
+      match.winner = state.score1 > state.score2 ? p1 : p2;
+      match.legs = state.legs;
+      ko.currentMatchId = null;
+      ko.currentMatchState = null;
+      autoFillKnockoutPlayers();
+      saveRoundRobinState();
+      generateRoundRobinInterview(match);
+      appState.screen = "interview";
+      render();
+    } else {
+      saveRoundRobinState();
+      render();
+    }
+  };
+
+  bindHelpButtons(div);
+  return div;
+}
+
 // --- MOVE TO NEXT BOARD 1 MATCH ---
 function moveToNextBoard1Match() {
   const currentIdx = appState.roundRobin.currentMatchIndex;
@@ -2447,6 +2799,81 @@ function getPlayerStandings() {
   });
   standings.sort((a, b) => b.wins - a.wins || a.losses - b.losses);
   return standings;
+}
+
+// --- GROUP STANDINGS BY LEGS WON (for knockout seeding) ---
+function getGroupStandingsByLegs(groupPlayers) {
+  return groupPlayers.map(name => {
+    let legsWon = 0, matchWins = 0, matchLosses = 0;
+    appState.roundRobin.completedMatches.forEach(m => {
+      const isP1 = m.player1 === name;
+      const isP2 = m.player2 === name;
+      if (!isP1 && !isP2) return;
+      if (m.winner === name) matchWins++; else matchLosses++;
+      legsWon += isP1 ? (m.score1 || 0) : (m.score2 || 0);
+    });
+    return { name, legsWon, matchWins, matchLosses, province: getPlayerProvince(name) };
+  }).sort((a, b) => b.legsWon - a.legsWon || b.matchWins - a.matchWins);
+}
+
+// --- GENERATE KNOCKOUT BRACKET ---
+function generateKnockoutBracket() {
+  const sA = getGroupStandingsByLegs(appState.roundRobin.groupA || []);
+  const sB = getGroupStandingsByLegs(appState.roundRobin.groupB || []);
+  const qfFmt   = { legsToWinSet: 3, setsToWin: 2, totalSets: 3, legsPerSet: 5 };
+  const finalFmt = { legsToWinSet: 3, setsToWin: 3, totalSets: 5, legsPerSet: 5 };
+  const mk = (id, round, num, label, p1, p2, seedLabel, fmt) => ({
+    id, round, matchNum: num, label, seedLabel,
+    player1: p1 || null, player2: p2 || null,
+    completed: false, winner: null, score1: 0, score2: 0, legs: [],
+    format: { ...fmt }
+  });
+  const bracket = [
+    mk("qf1","qf",1,"QF 1", sA[0]?.name, sB[3]?.name, "A1 vs B4", qfFmt),
+    mk("qf2","qf",2,"QF 2", sA[1]?.name, sB[2]?.name, "A2 vs B3", qfFmt),
+    mk("qf3","qf",3,"QF 3", sA[2]?.name, sB[1]?.name, "A3 vs B2", qfFmt),
+    mk("qf4","qf",4,"QF 4", sA[3]?.name, sB[0]?.name, "A4 vs B1", qfFmt),
+    mk("sf1","sf",1,"SF 1", null, null, "QF1 W vs QF2 W", qfFmt),
+    mk("sf2","sf",2,"SF 2", null, null, "QF3 W vs QF4 W", qfFmt),
+    mk("final","final",1,"Final", null, null, "SF1 W vs SF2 W", finalFmt)
+  ];
+  appState.roundRobin.knockout = {
+    generated: true, bracket,
+    standingsA: sA, standingsB: sB,
+    currentMatchId: null, currentMatchState: null
+  };
+  saveRoundRobinState();
+}
+
+// --- AUTO-FILL KNOCKOUT PLAYERS FROM COMPLETED ROUNDS ---
+function autoFillKnockoutPlayers() {
+  const ko = appState.roundRobin.knockout;
+  if (!ko) return;
+  const b = ko.bracket;
+  const get = id => b.find(m => m.id === id);
+  const qf1 = get("qf1"), qf2 = get("qf2"), sf1 = get("sf1");
+  if (qf1.completed && qf2.completed && !sf1.player1) { sf1.player1 = qf1.winner; sf1.player2 = qf2.winner; }
+  const qf3 = get("qf3"), qf4 = get("qf4"), sf2 = get("sf2");
+  if (qf3.completed && qf4.completed && !sf2.player1) { sf2.player1 = qf3.winner; sf2.player2 = qf4.winner; }
+  const fin = get("final");
+  if (sf1.completed && sf2.completed && !fin.player1) { fin.player1 = sf1.winner; fin.player2 = sf2.winner; }
+}
+
+// --- RECALCULATE KNOCKOUT MATCH STATE FROM LEGS ---
+function recalcKnockoutState(state, format, p1) {
+  state.score1 = 0; state.score2 = 0;
+  state.currentSet = 1;
+  state.legScores = { player1: 0, player2: 0 };
+  state.legs.forEach(leg => {
+    if (leg.winner === p1) state.legScores.player1++;
+    else state.legScores.player2++;
+    if (state.legScores.player1 >= format.legsToWinSet) {
+      state.score1++; state.legScores = { player1: 0, player2: 0 }; state.currentSet++;
+    } else if (state.legScores.player2 >= format.legsToWinSet) {
+      state.score2++; state.legScores = { player1: 0, player2: 0 }; state.currentSet++;
+    }
+  });
+  state.currentLeg = state.legScores.player1 + state.legScores.player2 + 1;
 }
 
 // --- GENERATE ROUND ROBIN INTERVIEW ---

@@ -1057,3 +1057,157 @@ input[type="number"] {
   opacity: 0.85;
   transform: scale(0.98);
 }
+
+/* ---- Knockout Standings ---- */
+.ko-group-block { margin-bottom: 1.4em; }
+.ko-group-label {
+  font-family: var(--font-display);
+  font-size: 0.82em;
+  letter-spacing: 0.14em;
+  color: var(--orange);
+  text-transform: uppercase;
+  margin-bottom: 0.5em;
+}
+.ko-stand-table {
+  background: var(--card-black);
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ko-stand-header,
+.ko-stand-row {
+  display: grid;
+  grid-template-columns: 1.4em 1fr 2.2em 2.2em 3em;
+  gap: 0.4em;
+  padding: 0.55em 0.9em;
+  align-items: center;
+  border-bottom: 1px solid var(--divider);
+}
+.ko-stand-row:last-child { border-bottom: none; }
+.ko-qualifies { background: rgba(242,101,34,0.06); }
+.ko-rank {
+  font-family: var(--font-display);
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+.ko-qualifies .ko-rank { color: var(--orange); }
+.ko-player-cell { min-width: 0; }
+.ko-player-name {
+  font-family: var(--font-display);
+  font-size: 0.9em;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ko-qualifies .ko-player-name { color: var(--white); }
+.ko-qual-badge {
+  font-size: 0.62em;
+  color: var(--orange);
+  background: rgba(242,101,34,0.18);
+  padding: 0.1em 0.45em;
+  border-radius: 6px;
+  margin-left: 0.4em;
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+}
+.ko-prov { font-size: 0.7em; color: var(--text-muted); }
+.ko-stat-muted {
+  font-family: var(--font-display);
+  font-size: 0.85em;
+  color: var(--text-muted);
+  text-align: center;
+}
+.ko-stat-green {
+  font-family: var(--font-display);
+  font-size: 0.85em;
+  color: #4caf50;
+  text-align: center;
+}
+.ko-legs {
+  font-family: var(--font-display);
+  font-size: 1.05em;
+  font-weight: 900;
+  color: var(--text-muted);
+  text-align: right;
+}
+.ko-qualifies .ko-legs { color: var(--orange); }
+
+/* ---- Knockout Bracket ---- */
+.ko-round-section { margin-bottom: 1.4em; }
+.ko-round-label {
+  font-family: var(--font-display);
+  font-size: 0.82em;
+  letter-spacing: 0.14em;
+  color: var(--orange);
+  text-transform: uppercase;
+  margin-bottom: 0.5em;
+}
+.ko-match-card {
+  background: var(--card-black);
+  border: 1px solid var(--divider);
+  border-left: 4px solid var(--divider);
+  border-radius: 12px;
+  padding: 0.75em 0.9em;
+  margin-bottom: 0.6em;
+  transition: transform 0.12s;
+}
+.ko-available { border-left-color: var(--orange); }
+.ko-done      { border-left-color: #2a5a2a; }
+.ko-pending   { opacity: 0.5; }
+.ko-match-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-size: 0.72em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.45em;
+}
+.ko-seed-label  { color: #555; font-size: 0.9em; }
+.ko-format-label { color: #444; font-size: 0.9em; margin-left: auto; }
+.ko-match-player {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.22em 0;
+}
+.ko-match-name {
+  font-family: var(--font-display);
+  font-size: 0.95em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.ko-winner .ko-match-name { color: #4caf50; }
+.ko-match-prov {
+  font-size: 0.7em;
+  color: var(--orange);
+  margin-left: 0.35em;
+  font-weight: 400;
+}
+.ko-match-score {
+  font-family: var(--font-display);
+  font-size: 1.4em;
+  font-weight: 900;
+}
+.ko-score-w { color: #4caf50; }
+.ko-score-l { color: #444; }
+.ko-match-pending {
+  font-size: 0.75em;
+  color: var(--text-muted);
+  margin-top: 0.35em;
+  font-style: italic;
+}
+.ko-match-tap {
+  font-family: var(--font-display);
+  font-size: 0.7em;
+  color: var(--orange);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 0.3em;
+}
+.ko-match-tap-edit { color: var(--text-muted); }
