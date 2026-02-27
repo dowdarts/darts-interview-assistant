@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AADS Darts - Standings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #F26522;
+      --orange-glow: #FF7A2F;
+      --deep-black: #0D0D0D;
+      --card-black: #171717;
+      --divider: #2A2A2A;
+      --white: #FFFFFF;
+      --text-muted: #A0A0A0;
+      --font-main: 'Inter', sans-serif;
+      --font-display: 'Barlow Condensed', sans-serif;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background: transparent;
+      color: var(--white);
+      font-family: var(--font-main);
+      padding: 2em;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 2em;
+    }
+    
+    .logo {
+      font-family: var(--font-display);
+      font-size: 1em;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.5em;
+    }
+    
+    .title {
+      font-family: var(--font-display);
+      font-size: 3em;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--orange), var(--orange-glow));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .groups-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2em;
+      margin-bottom: 2em;
+    }
+    
+    .group-panel {
+      background: var(--card-black);
+      border: 2px solid var(--divider);
+      border-radius: 16px;
+      padding: 1.8em;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    
+    .group-title {
+      font-family: var(--font-display);
+      font-size: 1.5em;
+      letter-spacing: 0.14em;
+      color: var(--orange);
+      text-transform: uppercase;
+      margin-bottom: 1.2em;
+      padding-bottom: 0.8em;
+      border-bottom: 2px solid var(--divider);
+    }
+    
+    .standings-table {
+      width: 100%;
+    }
+    
+    .standings-header,
+    .standings-row {
+      display: grid;
+      grid-template-columns: 2em 1fr 3em 3em 4em;
+      gap: 0.8em;
+      align-items: center;
+      padding: 0.7em 0.5em;
+      border-bottom: 1px solid var(--divider);
+    }
+    
+    .standings-header {
+      font-family: var(--font-display);
+      font-size: 0.85em;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    
+    .standings-row {
+      transition: background 0.2s;
+    }
+    
+    .standings-row:hover {
+      background: rgba(255,255,255,0.03);
+    }
+    
+    .standings-row:last-child {
+      border-bottom: none;
+    }
+    
+    .rank {
+      font-family: var(--font-display);
+      font-size: 1.1em;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    
+    .qualified .rank {
+      color: var(--orange);
+    }
+    
+    .player-cell {
+      min-width: 0;
+    }
+    
+    .player-name {
+      font-family: var(--font-display);
+      font-size: 1.1em;
+      font-weight: 700;
+      color: var(--white);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .qualified .player-name {
+      color: var(--white);
+    }
+    
+    .player-province {
+      font-size: 0.75em;
+      color: var(--orange);
+      margin-top: 0.1em;
+    }
+    
+    .stat {
+      font-family: var(--font-display);
+      font-size: 1em;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    
+    .stat-wins {
+      color: #4caf50;
+      font-weight: 700;
+    }
+    
+    .legs {
+      font-family: var(--font-display);
+      font-size: 1.4em;
+      font-weight: 900;
+      color: var(--text-muted);
+      text-align: right;
+    }
+    
+    .qualified .legs {
+      color: var(--orange);
+    }
+    
+    .qualified-badge {
+      font-size: 0.65em;
+      color: var(--orange);
+      background: rgba(242,101,34,0.15);
+      padding: 0.2em 0.5em;
+      border-radius: 6px;
+      margin-left: 0.5em;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    
+    .recent-matches {
+      background: var(--card-black);
+      border: 2px solid var(--divider);
+      border-radius: 16px;
+      padding: 1.8em;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    
+    .recent-title {
+      font-family: var(--font-display);
+      font-size: 1.3em;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 1.2em;
+      padding-bottom: 0.8em;
+      border-bottom: 2px solid var(--divider);
+      text-align: center;
+    }
+    
+    .recent-list {
+      display: grid;
+      gap: 0.8em;
+    }
+    
+    .recent-match {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 1.5em;
+      align-items: center;
+      padding: 1em 1.2em;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--divider);
+      border-left: 4px solid #2a5a2a;
+      border-radius: 10px;
+    }
+    
+    .recent-meta {
+      font-family: var(--font-display);
+      font-size: 0.85em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      min-width: 6em;
+    }
+    
+    .recent-players {
+      font-family: var(--font-display);
+      font-size: 1.05em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.6em;
+    }
+    
+    .winner-name {
+      color: #4caf50;
+      font-weight: 700;
+    }
+    
+    .loser-name {
+      color: var(--text-muted);
+    }
+    
+    .recent-score {
+      font-family: var(--font-display);
+      font-size: 1.4em;
+      font-weight: 900;
+      color: #4caf50;
+      min-width: 3em;
+      text-align: right;
+    }
+    
+    .no-data {
+      text-align: center;
+      padding: 3em 2em;
+      color: var(--text-muted);
+    }
+    
+    .no-data-text {
+      font-family: var(--font-display);
+      font-size: 1.2em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div class="header">
+      <div class="logo">AADS Darts</div>
+      <div class="title">Group Standings</div>
+    </div>
+    <div class="groups-container" id="groups"></div>
+    <div class="recent-matches" id="recent"></div>
+  </div>
+
+  <script>
+    let eventData = null;
+
+    async function fetchData() {
+      try {
+        const cacheBuster = Date.now();
+        const response = await fetch(`event-data.json?t=${cacheBuster}`);
+        if (response.ok) {
+          eventData = await response.json();
+          updateDisplay();
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+      }
+    }
+
+    function updateDisplay() {
+      if (!eventData) return;
+      renderGroups();
+      renderRecent();
+    }
+
+    function renderGroups() {
+      const groupsEl = document.getElementById('groups');
+      const groupA = eventData.standingsA || [];
+      const groupB = eventData.standingsB || [];
+
+      function renderGroup(players, label) {
+        if (players.length === 0) {
+          return `<div class="group-panel">
+            <div class="group-title">Group ${label}</div>
+            <div class="no-data"><div class="no-data-text">No Data</div></div>
+          </div>`;
+        }
+
+        const rows = players.map((p, i) => {
+          const qualified = i < 4;
+          return `
+            <div class="standings-row ${qualified ? 'qualified' : ''}">
+              <div class="rank">${i + 1}</div>
+              <div class="player-cell">
+                <div class="player-name">
+                  ${p.name}${qualified ? '<span class="qualified-badge">Q</span>' : ''}
+                </div>
+                ${p.province ? `<div class="player-province">${p.province}</div>` : ''}
+              </div>
+              <div class="stat stat-wins">${p.matchWins}</div>
+              <div class="stat">${p.matchLosses}</div>
+              <div class="legs">${p.legsWon}</div>
+            </div>`;
+        }).join('');
+
+        return `
+          <div class="group-panel">
+            <div class="group-title">Group ${label}</div>
+            <div class="standings-table">
+              <div class="standings-header">
+                <div>#</div>
+                <div>Player</div>
+                <div>W</div>
+                <div>L</div>
+                <div>Legs</div>
+              </div>
+              ${rows}
+            </div>
+          </div>`;
+      }
+
+      groupsEl.innerHTML = renderGroup(groupA, 'A') + renderGroup(groupB, 'B');
+    }
+
+    function renderRecent() {
+      const recentEl = document.getElementById('recent');
+      const matches = eventData.recentMatches || [];
+
+      if (matches.length === 0) {
+        recentEl.innerHTML = `
+          <div class="recent-title">Recent Results</div>
+          <div class="no-data"><div class="no-data-text">No Completed Matches</div></div>`;
+        return;
+      }
+
+      const rows = matches.map(m => {
+        const isP1Winner = m.winner === m.player1;
+        return `
+          <div class="recent-match">
+            <div class="recent-meta">M${m.matchNum} · ${m.time || ''}</div>
+            <div class="recent-players">
+              <span class="${isP1Winner ? 'winner-name' : 'loser-name'}">${m.player1}</span>
+              <span style="color:var(--text-muted);">vs</span>
+              <span class="${!isP1Winner ? 'winner-name' : 'loser-name'}">${m.player2}</span>
+            </div>
+            <div class="recent-score">${m.score1}–${m.score2}</div>
+          </div>`;
+      }).join('');
+
+      recentEl.innerHTML = `
+        <div class="recent-title">Recent Results</div>
+        <div class="recent-list">${rows}</div>`;
+    }
+
+    // Fetch data every 3 seconds
+    setInterval(fetchData, 3000);
+    fetchData();
+  </script>
+</body>
+</html>

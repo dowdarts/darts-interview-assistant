@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AADS Darts - TV Display</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #F26522;
+      --orange-glow: #FF7A2F;
+      --deep-black: #0D0D0D;
+      --card-black: #171717;
+      --divider: #2A2A2A;
+      --white: #FFFFFF;
+      --text-muted: #A0A0A0;
+      --font-main: 'Inter', sans-serif;
+      --font-display: 'Barlow Condensed', sans-serif;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background: var(--deep-black);
+      color: var(--white);
+      font-family: var(--font-main);
+      overflow: hidden;
+      padding: 2em;
+    }
+    
+    .screen {
+      max-width: 1600px;
+      margin: 0 auto;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+    }
+    
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 2em;
+    }
+    
+    .logo {
+      font-family: var(--font-display);
+      font-size: 0.9em;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.5em;
+    }
+    
+    .title {
+      font-family: var(--font-display);
+      font-size: 3.5em;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      background: linear-gradient(135deg, var(--orange), var(--orange-glow));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .current-match {
+      background: var(--card-black);
+      border: 2px solid var(--divider);
+      border-left: 6px solid var(--orange);
+      border-radius: 20px;
+      padding: 2.5em;
+      margin-bottom: 2em;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    
+    .match-label {
+      font-family: var(--font-display);
+      font-size: 1.1em;
+      letter-spacing: 0.12em;
+      color: var(--orange);
+      text-transform: uppercase;
+      margin-bottom: 1.5em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .live-badge {
+      background: var(--orange);
+      color: #000;
+      padding: 0.3em 0.9em;
+      border-radius: 20px;
+      font-weight: 900;
+      font-size: 0.9em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+    }
+    
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #000;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    
+    .players {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 2em;
+      align-items: center;
+    }
+    
+    .player {
+      text-align: center;
+    }
+    
+    .player-name {
+      font-family: var(--font-display);
+      font-size: 2.8em;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.2em;
+    }
+    
+    .player-province {
+      font-size: 1.1em;
+      color: var(--orange);
+      font-weight: 600;
+    }
+    
+    .vs {
+      font-family: var(--font-display);
+      font-size: 2em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    
+    .match-details {
+      margin-top: 1.5em;
+      padding-top: 1.5em;
+      border-top: 1px solid var(--divider);
+      display: flex;
+      justify-content: center;
+      gap: 3em;
+      font-size: 1.1em;
+    }
+    
+    .detail-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6em;
+      color: var(--text-muted);
+    }
+    
+    .detail-label {
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.85em;
+    }
+    
+    .detail-value {
+      color: var(--white);
+      font-weight: 700;
+    }
+    
+    .schedule {
+      background: var(--card-black);
+      border: 2px solid var(--divider);
+      border-radius: 20px;
+      padding: 2.5em;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    
+    .schedule-header {
+      font-family: var(--font-display);
+      font-size: 1.3em;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 1.5em;
+      text-align: center;
+    }
+    
+    .schedule-grid {
+      display: grid;
+      gap: 1em;
+    }
+    
+    .schedule-row {
+      display: grid;
+      grid-template-columns: 1fr 3fr 0.8fr 3em;
+      gap: 1.5em;
+      align-items: center;
+      padding: 1.2em 1.5em;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--divider);
+      border-radius: 12px;
+      transition: background 0.2s;
+    }
+    
+    .schedule-row:hover {
+      background: rgba(255,255,255,0.04);
+    }
+    
+    .schedule-time {
+      font-family: var(--font-display);
+      font-size: 1.3em;
+      font-weight: 700;
+      color: var(--orange);
+    }
+    
+    .schedule-players {
+      font-family: var(--font-display);
+      font-size: 1.1em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.8em;
+    }
+    
+    .schedule-vs {
+      color: var(--text-muted);
+      font-size: 0.9em;
+    }
+    
+    .schedule-board {
+      font-family: var(--font-display);
+      font-size: 0.85em;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    
+    .schedule-board.board-1 {
+      color: var(--orange);
+      font-weight: 700;
+    }
+    
+    .schedule-arrow {
+      color: var(--text-muted);
+      font-size: 1.5em;
+    }
+    
+    .no-data {
+      text-align: center;
+      padding: 4em 2em;
+      color: var(--text-muted);
+    }
+    
+    .no-data-icon {
+      font-size: 4em;
+      margin-bottom: 0.5em;
+    }
+    
+    .no-data-text {
+      font-family: var(--font-display);
+      font-size: 1.5em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    
+    .footer {
+      margin-top: 2em;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="screen" id="app">
+    <div class="header">
+      <div class="logo">AADS Darts</div>
+      <div class="title">Live Event Display</div>
+    </div>
+    <div id="content"></div>
+    <div class="footer" id="status">Connecting...</div>
+  </div>
+
+  <script>
+    let eventData = null;
+    let currentView = 'current'; // 'current' or 'schedule'
+    let rotationTimer = null;
+
+    async function fetchData() {
+      try {
+        const cacheBuster = Date.now();
+        const response = await fetch(`event-data.json?t=${cacheBuster}`);
+        if (response.ok) {
+          eventData = await response.json();
+          updateDisplay();
+          document.getElementById('status').textContent = `Last updated: ${new Date(eventData.timestamp || Date.now()).toLocaleTimeString()}`;
+        }
+      } catch (error) {
+        console.error('Fetch error:', error);
+        document.getElementById('status').textContent = 'Waiting for data...';
+      }
+    }
+
+    function updateDisplay() {
+      if (!eventData) return;
+
+      if (currentView === 'current') {
+        renderCurrentMatch();
+      } else {
+        renderSchedule();
+      }
+    }
+
+    function renderCurrentMatch() {
+      const content = document.getElementById('content');
+      const match = eventData.currentMatch;
+
+      if (!match) {
+        content.innerHTML = `
+          <div class="no-data">
+            <div class="no-data-icon">🏆</div>
+            <div class="no-data-text">No Active Match</div>
+          </div>`;
+        return;
+      }
+
+      content.innerHTML = `
+        <div class="current-match">
+          <div class="match-label">
+            <span>Match ${match.matchNum}</span>
+            <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+          </div>
+          <div class="players">
+            <div class="player">
+              <div class="player-name">${match.player1}</div>
+              ${match.player1Province ? `<div class="player-province">${match.player1Province}</div>` : ''}
+            </div>
+            <div class="vs">VS</div>
+            <div class="player">
+              <div class="player-name">${match.player2}</div>
+              ${match.player2Province ? `<div class="player-province">${match.player2Province}</div>` : ''}
+            </div>
+          </div>
+          <div class="match-details">
+            <div class="detail-item">
+              <span class="detail-label">Time:</span>
+              <span class="detail-value">${match.time || 'Now'}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Board:</span>
+              <span class="detail-value">${match.board === 1 ? 'Board 1 (Live Stream)' : 'Board 2'}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Scorekeeper:</span>
+              <span class="detail-value">${match.scorekeeper || 'TBD'}</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderSchedule() {
+      const content = document.getElementById('content');
+      const matches = eventData.upcomingMatches || [];
+
+      if (matches.length === 0) {
+        content.innerHTML = `
+          <div class="no-data">
+            <div class="no-data-icon">✓</div>
+            <div class="no-data-text">All Matches Complete</div>
+          </div>`;
+        return;
+      }
+
+      const rows = matches.slice(0, 8).map(m => `
+        <div class="schedule-row">
+          <div class="schedule-time">${m.time || 'TBD'}</div>
+          <div class="schedule-players">
+            <span>${m.player1}</span>
+            <span class="schedule-vs">vs</span>
+            <span>${m.player2}</span>
+          </div>
+          <div class="schedule-board ${m.board === 1 ? 'board-1' : ''}">
+            ${m.board === 1 ? '● Board 1' : 'Board 2'}
+          </div>
+          <div class="schedule-arrow">›</div>
+        </div>
+      `).join('');
+
+      content.innerHTML = `
+        <div class="schedule">
+          <div class="schedule-header">Upcoming Matches</div>
+          <div class="schedule-grid">${rows}</div>
+        </div>`;
+    }
+
+    function rotateView() {
+      currentView = currentView === 'current' ? 'schedule' : 'current';
+      updateDisplay();
+    }
+
+    // Fetch data every 3 seconds
+    setInterval(fetchData, 3000);
+    fetchData();
+
+    // Rotate views every 20 seconds
+    setInterval(rotateView, 20000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+// GitHub Sync Module for Darts Interview Assistant
+// Pushes event data to GitHub for TV displays to consume
+
+const GitHubSync = {
+  token: null,
+  owner: 'dowdarts',
+  repo: 'darts-interview-assistant',
+  branch: 'main',
+  filePath: 'event-data.json',
+  
+  init() {
+    // Load token from localStorage
+    this.token = localStorage.getItem('githubToken');
+  },
+  
+  setToken(token) {
+    this.token = token;
+    localStorage.setItem('githubToken', token);
+  },
+  
+  hasToken() {
+    return !!this.token;
+  },
+  
+  async pushEventData(eventData) {
+    if (!this.token) {
+      console.warn('No GitHub token set. TV sync disabled.');
+      return;
+    }
+    
+    try {
+      // Get current file SHA (needed for update)
+      const getUrl = `https://api.github.com/repos/${this.owner}/${this.repo}/contents/${this.filePath}`;
+      let sha = null;
+      
+      try {
+        const getResponse = await fetch(getUrl, {
+          headers: {
+            'Authorization': `token ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        if (getResponse.ok) {
+          const data = await getResponse.json();
+          sha = data.sha;
+        }
+      } catch (e) {
+        // File doesn't exist yet, that's ok
+      }
+      
+      // Prepare commit
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(eventData, null, 2))));
+      const message = `Update event data - ${new Date().toLocaleTimeString()}`;
+      
+      const body = {
+        message,
+        content,
+        branch: this.branch
+      };
+      
+      if (sha) body.sha = sha;
+      
+      // Push to GitHub
+      const putResponse = await fetch(getUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      
+      if (putResponse.ok) {
+        console.log('✓ Event data synced to GitHub');
+      } else {
+        console.error('GitHub sync failed:', await putResponse.text());
+      }
+    } catch (error) {
+      console.error('GitHub sync error:', error);
+    }
+  },
+  
+  buildEventData(appState) {
+    const matches = appState.roundRobin.matches || [];
+    const completedMatches = appState.roundRobin.completedMatches || [];
+    const groupA = appState.roundRobin.groupA || [];
+    const groupB = appState.roundRobin.groupB || [];
+    
+    // Calculate standings
+    function getStandings(groupPlayers) {
+      return groupPlayers.map(name => {
+        let legsWon = 0, legsLost = 0, matchWins = 0, matchLosses = 0;
+        completedMatches.forEach(m => {
+          const isP1 = m.player1 === name;
+          const isP2 = m.player2 === name;
+          if (!isP1 && !isP2) return;
+          
+          if (m.winner === name) matchWins++; else matchLosses++;
+          
+          const myLegs = isP1 ? (m.score1 || 0) : (m.score2 || 0);
+          const oppLegs = isP1 ? (m.score2 || 0) : (m.score1 || 0);
+          legsWon += myLegs;
+          legsLost += oppLegs;
+        });
+        
+        const province = appState.roundRobin.playerProfiles?.[name]?.province || null;
+        return { name, province, legsWon, legsLost, matchWins, matchLosses };
+      }).sort((a, b) => b.legsWon - a.legsWon || b.matchWins - a.matchWins);
+    }
+    
+    const standingsA = getStandings(groupA);
+    const standingsB = getStandings(groupB);
+    
+    // Find current match (first incomplete)
+    const currentMatch = matches.find(m => !m.completed) || null;
+    
+    // Recent completed matches (last 5)
+    const recentMatches = completedMatches.slice(-5).reverse();
+    
+    // Upcoming matches (next 8)
+    const upcomingMatches = matches.filter(m => !m.completed).slice(0, 8);
+    
+    return {
+      timestamp: new Date().toISOString(),
+      currentMatch: currentMatch ? {
+        matchNum: currentMatch.matchNum,
+        board: currentMatch.board,
+        time: currentMatch.time,
+        player1: currentMatch.player1,
+        player2: currentMatch.player2,
+        player1Province: appState.roundRobin.playerProfiles?.[currentMatch.player1]?.province || null,
+        player2Province: appState.roundRobin.playerProfiles?.[currentMatch.player2]?.province || null,
+        scorekeeper: currentMatch.scorekeeper || 'TBD'
+      } : null,
+      standingsA,
+      standingsB,
+      recentMatches: recentMatches.map(m => ({
+        matchNum: m.matchNum,
+        board: m.board,
+        time: m.time,
+        player1: m.player1,
+        player2: m.player2,
+        score1: m.score1,
+        score2: m.score2,
+        winner: m.winner
+      })),
+      upcomingMatches: upcomingMatches.map(m => ({
+        matchNum: m.matchNum,
+        board: m.board,
+        time: m.time,
+        player1: m.player1,
+        player2: m.player2,
+        player1Province: appState.roundRobin.playerProfiles?.[m.player1]?.province || null,
+        player2Province: appState.roundRobin.playerProfiles?.[m.player2]?.province || null,
+        scorekeeper: m.scorekeeper || 'TBD'
+      })),
+      knockout: appState.roundRobin.knockout || null
+    };
+  }
+};
+
+// Auto-init on load
+if (typeof window !== 'undefined') {
+  window.GitHubSync = GitHubSync;
+  GitHubSync.init();
+}

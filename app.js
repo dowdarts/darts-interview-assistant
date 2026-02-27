@@ -421,13 +421,16 @@ function renderMatchList() {
 
   // — header —
   div.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.4em;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.4em;flex-wrap:wrap;gap:0.5em;">
       <div>
         <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.2em;">AADS Darts</div>
         <h1 style="font-size:1.85em;margin:0;display:flex;align-items:center;gap:0.4em;">Event 4 <button class="help-btn" data-help-title="Match List" data-help-body="Matches unlock one at a time as they complete. Tap an available match to score it live, leg by leg.&lt;br&gt;&lt;br&gt;Tap any &lt;b&gt;completed match&lt;/b&gt; (green) to edit it. Board 2 matches use a quick score-entry screen — enter final legs won by each player.">?</button></h1>
       </div>
-      <button id="resetBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--divider);color:var(--text-muted);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Reset</button>
-      <button id="qlBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--orange);color:var(--orange);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Questions</button>
+      <div style="display:flex;gap:0.35em;flex-wrap:wrap;">
+        <button id="syncBtn" style="width:auto;padding:0.45em 1em;margin:0;background:${GitHubSync.hasToken()?'#1a3a1a':'#1a1a1a'};border:1px solid ${GitHubSync.hasToken()?'#4caf50':'var(--divider)'};color:${GitHubSync.hasToken()?'#4caf50':'var(--text-muted)'};font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">${GitHubSync.hasToken()?'✓ TV Sync':'TV Sync'}</button>
+        <button id="resetBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--divider);color:var(--text-muted);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Reset</button>
+        <button id="qlBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--orange);color:var(--orange);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Questions</button>
+      </div>
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.1em;box-shadow:0 0 10px var(--orange);"></div>
 
@@ -600,6 +603,29 @@ function renderMatchList() {
       listEl.appendChild(renderMatchCard(matchObj));
     });
   }
+
+  // TV Sync button
+  div.querySelector("#syncBtn").onclick = () => {
+    const currentToken = GitHubSync.token || '';
+    const msg = currentToken 
+      ? `TV Sync is ${GitHubSync.hasToken() ? 'ACTIVE' : 'INACTIVE'}.\n\nGitHub Token: ${currentToken.substring(0,8)}...\n\nTo update or disable, enter a new token below (or leave blank to disable):`
+      : `TV Sync enables live updates on your TV displays and OBS overlays.\n\nYou need a GitHub Personal Access Token:\n1. Go to github.com → Settings → Developer settings\n2. Personal access tokens → Tokens (classic)\n3. Generate new token\n4. Check 'repo' permission\n5. Copy the token and paste it below:`;
+    
+    const token = prompt(msg, currentToken);
+    if (token === null) return; // cancelled
+    if (token.trim() === '') {
+      GitHubSync.setToken('');
+      alert('TV Sync disabled.');
+    } else {
+      GitHubSync.setToken(token.trim());
+      // Immediate sync
+      const eventData = GitHubSync.buildEventData(appState);
+      GitHubSync.pushEventData(eventData)
+        .then(() => alert('✓ TV Sync enabled! Your displays will update automatically.'))
+        .catch(err => alert('Sync failed. Check your token and try again.\n\nError: ' + err.message));
+    }
+    render();
+  };
 
   // Reset button
   div.querySelector("#resetBtn").onclick = () => {
@@ -2783,6 +2809,12 @@ function moveToNextBoard1Match() {
 // --- SAVE ROUND ROBIN STATE ---
 function saveRoundRobinState() {
   localStorage.setItem("dartsRoundRobinState", JSON.stringify(appState.roundRobin));
+  
+  // Sync to GitHub for TV displays
+  if (window.GitHubSync && GitHubSync.hasToken()) {
+    const eventData = GitHubSync.buildEventData(appState);
+    GitHubSync.pushEventData(eventData).catch(err => console.error('GitHub sync failed:', err));
+  }
 }
 
 // --- CALCULATE PLAYER TOURNAMENT RECORD ---
