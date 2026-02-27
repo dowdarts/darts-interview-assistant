@@ -184,6 +184,94 @@ const questionBank = {
     (data) => "When did you know you had this match won?",
     (data) => `Was leg ${data.legNumber} the moment that changed everything for you?`
   ],
+
+  // Pressure & Momentum
+  againstTheThrow: [
+    (data) => `That leg ${data.legNumber} was against the throw — breaking ${data.opponent}'s service is never easy. How did you manage that?`,
+    (data) => `You took leg ${data.legNumber} against the throw. What was the key to breaking ${data.opponent} there?`,
+    (data) => `A break of throw in leg ${data.legNumber}. In darts that's a massive moment — what did it do to your confidence?`,
+    (data) => `${data.playerName}, winning against the throw is the darts equivalent of a break of serve. How did you approach that leg?`,
+    (data) => `You broke ${data.opponent}'s throw in leg ${data.legNumber}. When you get a break like that, does the pressure immediately shift onto you to hold your own throw next?`
+  ],
+  holdOfThrow: [
+    (data) => `You held your throw in leg ${data.legNumber} — when the pressure is on to hold your service, how do you stay composed?`,
+    (data) => `Holding your throw in a tight match like this is easier said than done, ${data.playerName}. What's going through your mind on your own throw?`,
+    (data) => `Leg ${data.legNumber}, solid hold of throw. Is consistency on your own throw something you've been working on?`,
+    (data) => `You kept your throw intact throughout this match. How important is that foundation in a best-of-${data.totalLegs} format?`
+  ],
+  consolidatedBreak: [
+    (data) => `You broke ${data.opponent}'s throw and then held your own — that's the hardest thing in darts. How did you manage to consolidate that break?`,
+    (data) => `Break and hold — leg ${data.legNumber} was the consolidation. In your experience, is that the moment when a match is truly won?`,
+    (data) => `${data.playerName}, you broke and then consolidated. When you held after the break, did you feel the match was yours at that point?`,
+    (data) => `Consolidating the break against ${data.opponent} — that showed real nerve. How do you stay switched on after a big momentum swing?`
+  ],
+  stoppedTheRot: [
+    (data) => `You were under real pressure there but leg ${data.legNumber} stopped the rot. What did you tell yourself to get back into the match?`,
+    (data) => `After a tough run of legs, you finally got one back in leg ${data.legNumber}. What broke the momentum for ${data.opponent}?`,
+    (data) => `${data.playerName}, stopping the rot in a round-robin format is crucial — one leg can change everything. How did you find that?`,
+    (data) => `That win in leg ${data.legNumber} halted ${data.opponent}'s run. In your head, was that the moment you believed you could still win this?`
+  ],
+
+  // Scoring & Accuracy
+  maximumResponse: [
+    (data) => `${data.opponent} hit a massive score and you answered immediately — that maximum response in leg ${data.legNumber} must have sent a message. What were you thinking?`,
+    (data) => `You matched ${data.opponent} blow for blow in the scoring. When you hit that maximum response, could you feel the shift in the match?`,
+    (data) => `The maximum response is one of the most powerful things in darts — you hit one back straightaway. How important was that psychologically?`,
+    (data) => `Leg ${data.legNumber}, massive score answered by a massive score. Is that battle of big throws something you enjoy?`
+  ],
+  groupingExcellence: [
+    (data) => `Your grouping in leg ${data.legNumber} was incredible — consistently tight in the treble. When your darts are grouping like that, how does it feel on the oche?`,
+    (data) => `The grouping was excellent in that leg, ${data.playerName}. Even when it wasn't a 180, you were always dangerous. Is that consistency something you've been practising?`,
+    (data) => `Tight grouping throughout leg ${data.legNumber} — is that the sign of your throw being in a really good place right now?`,
+    (data) => `When your darts are grouping like that — all bunched tight in the treble bed — does that give you massive confidence for the rest of the match?`
+  ],
+  setUpShot: [
+    (data) => `That set-up shot in leg ${data.legNumber} was smart darts — leaving yourself a favourite double. Do you always play to your preferred finishes?`,
+    (data) => `The set-up shot was key there. Talk us through the thinking behind how you managed down to your finishing double.`,
+    (data) => `${data.playerName}, great route management to leave yourself the double you wanted in leg ${data.legNumber}. Is that mental arithmetic something that comes naturally to you?`,
+    (data) => `You played yourself into a lovely position with that set-up — did you plan that from early in the leg or did it just happen?`
+  ],
+  clinicalFinishing: [
+    (data) => `First-dart double in leg ${data.legNumber} — clinical finishing at its finest. Is that something you pride yourself on?`,
+    (data) => `You didn't mess around on the doubles there — first visit, game over. How do you approach the finishing double with such confidence?`,
+    (data) => `Clinical finishing in leg ${data.legNumber}, ${data.playerName}. When you get to a double, are you genuinely expecting to close it out first dart?`,
+    (data) => `One visit at the double and it's done. Against ${data.opponent} tonight, that clinical finishing was the difference. How important is that side of the game?`
+  ],
+
+  // Clutch Factor
+  nerveShredder: [
+    (data) => `Leg ${data.legNumber} was a real nerve-shredder — doubles being missed at both ends. How do you stay patient when the double won't go in?`,
+    (data) => `Both players were struggling on the doubles in that leg. How do you keep your composure when it becomes a real war of attrition?`,
+    (data) => `That was a nerve-shredding leg for everyone watching! When you're in the middle of it, how do you block out the mistakes and focus on the next dart?`,
+    (data) => `${data.playerName}, a scrappy leg but you came out on top. Sometimes winning the ugly legs is just as important as winning the clean ones — do you agree?`
+  ],
+  wireGrazer: [
+    (data) => `There were some big shots that just caught the wire in leg ${data.legNumber}. When you see a dart clip the wire on a big score, how do you react mentally?`,
+    (data) => `The margins were incredibly fine in that leg — centimetres between a massive score and a miss. How do you deal with those wire-grazers?`,
+    (data) => `You had some darts that just shaved the big numbers in leg ${data.legNumber}. Is that frustrating in the moment or do you take it as a sign your throw is in the right area?`,
+    (data) => `Wire-grazers are part of darts, but leg ${data.legNumber} had a few. Did that affect how you approached the rest of the visit?`
+  ],
+  pressureCooker: [
+    (data) => `Leg ${data.legNumber} wasn't about the scoring — it was a pressure cooker, all about the finish. How do you handle that kind of match pressure?`,
+    (data) => `With the match so tight, that leg became a real pressure cooker. When the stakes are that high, what's your mindset at the oche?`,
+    (data) => `The scoring was secondary in that leg — it was all pressure, all tension. How did you stay calm enough to get over the line against ${data.opponent}?`,
+    (data) => `${data.playerName}, you thrived in that pressure-cooker leg. Is that high-stakes environment something you actually enjoy?`
+  ],
+
+  // Technical / Strategic
+  routeManagement: [
+    (data) => `Interesting route management in leg ${data.legNumber} — you took an unusual path down the board. Was that a deliberate tactical call or instinct in the moment?`,
+    (data) => `You went for an unconventional route in that leg rather than the traditional way down. Talk us through that decision.`,
+    (data) => `${data.playerName}, smart route management in leg ${data.legNumber}. Do you have specific preferred routes or is it always about what leaves the double you want?`,
+    (data) => `When you choose a different route to the finish — going for bull or an unusual combination — how much of that is pre-planned versus in-the-moment thinking?`
+  ],
+  powerScoring: [
+    (data) => `Leg ${data.legNumber} was all about power scoring — ${data.opponent} never even got a look at a double. When you're putting up 140s and 180s like that, how locked in do you feel?`,
+    (data) => `You completely dominated the scoring in that leg — power scoring at its best. Does putting up big numbers early in a leg affect how your opponent plays?`,
+    (data) => `That was a masterclass in power scoring, ${data.playerName}. When the 140s and 180s are coming like that, do you ever think about your average?`,
+    (data) => `${data.opponent} couldn't get a shot at the doubles because you scored so heavily. Is making your opponent a spectator one of the most satisfying things in darts?`
+  ],
+
   general: [
     (data) => `You managed to walk out of that match with a ${data.matchScore} win over ${data.opponent}. How does this win feel for you right now?`,
     (data) => `A ${data.matchScore} victory tonight. How important is this result?`,
@@ -902,7 +990,24 @@ const momentCategories = [
   { key: "upset", label: "Upset" },
   { key: "turningPoint", label: "Turning Point" },
   { key: "matchDart", label: "Match Dart" },
-  { key: "lowDartLeg", label: "Low Dart Leg" }
+  { key: "lowDartLeg", label: "Low Dart Leg" },
+  // Pressure & Momentum
+  { key: "againstTheThrow", label: "Against the Throw" },
+  { key: "holdOfThrow", label: "Hold of Throw" },
+  { key: "consolidatedBreak", label: "Consolidated the Break" },
+  { key: "stoppedTheRot", label: "Stopped the Rot" },
+  // Scoring & Accuracy
+  { key: "maximumResponse", label: "Maximum Response" },
+  { key: "groupingExcellence", label: "Grouping Excellence" },
+  { key: "setUpShot", label: "Set-up Shot" },
+  { key: "clinicalFinishing", label: "Clinical Finishing" },
+  // Clutch Factor
+  { key: "nerveShredder", label: "Nerve-Shredder" },
+  { key: "wireGrazer", label: "Wire-Grazer" },
+  { key: "pressureCooker", label: "Pressure Cooker" },
+  // Technical / Strategic
+  { key: "routeManagement", label: "Route Management" },
+  { key: "powerScoring", label: "Power Scoring" }
 ];
 
 function renderMatch() {
@@ -1356,6 +1461,23 @@ function renderQuestionBank() {
     upset: "Upset",
     mentalStrength: "Mental Strength",
     turningPoint: "Turning Point",
+    // Pressure & Momentum
+    againstTheThrow: "Against the Throw",
+    holdOfThrow: "Hold of Throw",
+    consolidatedBreak: "Consolidated the Break",
+    stoppedTheRot: "Stopped the Rot",
+    // Scoring & Accuracy
+    maximumResponse: "Maximum Response",
+    groupingExcellence: "Grouping Excellence",
+    setUpShot: "Set-up Shot",
+    clinicalFinishing: "Clinical Finishing",
+    // Clutch Factor
+    nerveShredder: "Nerve-Shredder",
+    wireGrazer: "Wire-Grazer",
+    pressureCooker: "Pressure Cooker",
+    // Technical / Strategic
+    routeManagement: "Route Management",
+    powerScoring: "Power Scoring",
     general: "General Questions",
     roundRobin: "Round Robin Tournament Context"
   };
