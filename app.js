@@ -1250,7 +1250,9 @@ function renderInterview() {
   const questions = appState.interview.questions;
   const idx = appState.interview.currentQuestionIndex;
   const total = questions.length;
-  const q = questions[idx];
+  const qObj = questions[idx];
+  const q = typeof qObj === 'object' ? qObj.text : qObj;
+  const qLeg = typeof qObj === 'object' ? qObj.legNumber : null;
   const progressPct = Math.round(((idx + 1) / total) * 100);
   const isLast = idx === total - 1;
   const isFirst = idx === 0;
@@ -1299,6 +1301,7 @@ function renderInterview() {
     </div>
     ${subjectHTML}
     ${notesHTML}
+    ${qLeg ? `<div class="interview-question-leg">Leg ${qLeg}</div>` : ''}
     <div class="interview-question">${q}</div>
     <div class="sticky-bottom">
       <button id="nextQBtn" class="button">${isLast ? "✓ Finish Interview" : "Next Question →"}</button>
@@ -1421,7 +1424,7 @@ function generateInterviewQuestions() {
       const qArr = questionBank[cat];
       // Select random question and fill in data
       let q = qArr[Math.floor(Math.random() * qArr.length)](data);
-      questions.push(q);
+      questions.push({ text: q, legNumber: data.legNumber || null });
       usedQuestions.add(q);
     }
   });
@@ -1440,7 +1443,7 @@ function generateInterviewQuestions() {
       attempts++;
     } while (usedQuestions.has(q) && attempts < 20);
     if (!usedQuestions.has(q)) {
-      questions.push(q);
+      questions.push({ text: q, legNumber: null });
       usedQuestions.add(q);
     } else {
       break; // Exit if can't find unique question after 20 attempts
@@ -3195,7 +3198,7 @@ function generateRoundRobinInterview(match) {
       const availableQuestions = questionBank[cat].filter((q) => !usedQuestions.has(q.toString()));
       if (availableQuestions.length > 0) {
         const q = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
-        questions.push(q(data));
+        questions.push({ text: q(data), legNumber: data.legNumber || null });
         usedQuestions.add(q.toString());
         usedCategories.add(cat);
       }
@@ -3213,7 +3216,7 @@ function generateRoundRobinInterview(match) {
 
     for (const item of validRR) {
       if (questions.length >= 4) break;
-      questions.push(item.text);
+      questions.push({ text: item.text, legNumber: null });
       usedQuestions.add(item.q.toString());
     }
   }
@@ -3227,7 +3230,7 @@ function generateRoundRobinInterview(match) {
     for (const q of validGeneral) {
       if (questions.length >= 4) break;
       const text = q(data);
-      if (text) { questions.push(text); usedQuestions.add(q.toString()); }
+      if (text) { questions.push({ text, legNumber: null }); usedQuestions.add(q.toString()); }
     }
   }
   

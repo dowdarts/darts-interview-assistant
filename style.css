@@ -727,6 +727,18 @@ input::placeholder { color: #444; }
   line-height: 1.5;
 }
 
+.interview-question-leg {
+  font-family: var(--font-display);
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--orange);
+  text-align: center;
+  padding: 0.5em 0 0;
+  animation: fadeInQ 0.35s ease;
+}
+
 .interview-question {
   font-family: var(--font-main);
   font-size: 1.3em;
