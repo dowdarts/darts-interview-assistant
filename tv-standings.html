@@ -25,32 +25,26 @@
             background-color: var(--aads-black);
             color: var(--text-main);
             font-family: 'Roboto Condensed', sans-serif;
-            padding: 20px;
             min-height: 100vh;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            padding: 20px;
         }
 
-        /* Header Section */
+        /* Header */
         .main-header {
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 40px;
-        }
-
-        .aads-logo {
-            width: 180px;
-            height: auto;
-            margin-bottom: 15px;
+            margin-bottom: 24px;
         }
 
         .page-title {
             font-family: 'Oswald', sans-serif;
-            font-size: 3.5rem;
+            font-size: 3rem;
             text-transform: uppercase;
             font-weight: 700;
             color: var(--aads-orange);
@@ -58,12 +52,46 @@
             line-height: 1;
         }
 
+        /* Tab Bar */
+        .tab-bar {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 24px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            padding: 12px 28px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.15s;
+        }
+
+        .tab-btn:hover { color: var(--text-main); }
+
+        .tab-btn.active {
+            color: var(--aads-orange);
+            border-bottom-color: var(--aads-orange);
+        }
+
+        /* Tab Panels */
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
         /* Grid Layout */
         .groups-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 25px;
-            margin-bottom: 30px;
         }
 
         @media (max-width: 1000px) {
@@ -100,9 +128,7 @@
             text-align: center;
         }
 
-        thead {
-            background: #000;
-        }
+        thead { background: #000; }
 
         th {
             padding: 12px 10px;
@@ -120,109 +146,146 @@
             font-size: 1.1rem;
         }
 
+        tbody tr:last-child td { border-bottom: none; }
+
         .col-rank { width: 50px; font-weight: 700; color: var(--text-muted); }
         .col-player { text-align: left; padding-left: 20px; }
         .col-stat { width: 60px; font-family: 'Oswald', sans-serif; font-size: 1.3rem; }
         .col-legs { width: 80px; font-family: 'Oswald', sans-serif; font-size: 1.6rem; color: var(--aads-orange); font-weight: 700; }
 
-        /* Row Highlighting */
-        .row-qualify {
-            background: rgba(242, 101, 34, 0.03);
-        }
+        .row-qualify { background: rgba(242, 101, 34, 0.03); }
         .row-qualify .col-rank { color: var(--aads-orange); }
 
         .player-info { display: flex; flex-direction: column; }
         .player-name { font-weight: 700; font-size: 1.2rem; text-transform: uppercase; }
         .player-prov { font-size: 0.75rem; color: var(--aads-orange); font-weight: 700; letter-spacing: 1px; }
-
         .stat-w { color: var(--win-green); }
 
-        /* Recent Results */
-        .recent-panel {
-            margin-top: 20px;
+        /* Results Tab */
+        .results-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .results-list {
-            padding: 10px;
+            padding: 12px;
             display: grid;
             gap: 10px;
         }
 
         .match-row {
             display: grid;
-            grid-template-columns: 100px 1fr 100px;
+            grid-template-columns: 90px 1fr 60px 60px 1fr 90px;
             align-items: center;
             background: var(--row-alt);
-            padding: 15px 20px;
+            padding: 16px 20px;
             border-radius: 8px;
-            border-left: 4px solid var(--border);
+            gap: 8px;
         }
 
-        .match-id { font-size: 0.8rem; color: var(--text-muted); font-weight: 700; }
-        .match-vs { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 15px;
+        .match-id {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .match-player {
+            font-family: 'Oswald', sans-serif;
             font-size: 1.2rem;
             font-weight: 700;
             text-transform: uppercase;
         }
-        .vs-divider { color: var(--aads-orange); font-size: 0.9rem; }
-        .match-score { 
-            text-align: right; 
-            font-family: 'Oswald', sans-serif; 
-            font-size: 1.5rem; 
-            color: var(--win-green);
+
+        .match-player.winner { color: var(--win-green); }
+        .match-player.loser  { color: var(--text-muted); }
+        .match-player.p1     { text-align: right; }
+        .match-player.p2     { text-align: left; }
+
+        .match-score-num {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .match-score-num.winner { color: var(--win-green); }
+        .match-score-num.loser  { color: #444; }
+
+        .match-time {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: right;
         }
 
         .no-data {
-            padding: 40px;
+            padding: 50px;
             text-align: center;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 2px;
+            font-family: 'Oswald', sans-serif;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
         <header class="main-header">
-            <!-- Replacing with local asset name provided in prompt -->
-            <img src="AADS OFFIAL LOGO.png" alt="AADS Logo" class="aads-logo" onerror="this.style.display='none'">
-            <h1 class="page-title">Group Standings</h1>
+            <h1 class="page-title">AADS Darts</h1>
         </header>
 
-        <main class="groups-grid" id="groups-container">
-            <!-- Groups will be injected here -->
-        </main>
+        <nav class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('standings')">Group Standings</button>
+            <button class="tab-btn" onclick="switchTab('results')">Recent Results</button>
+        </nav>
 
-        <section class="panel recent-panel" id="recent-results">
-            <div class="panel-header">
-                <h2>Recent Results</h2>
+        <!-- Standings Tab -->
+        <div class="tab-panel active" id="tab-standings">
+            <div class="groups-grid" id="groups-container"></div>
+        </div>
+
+        <!-- Results Tab -->
+        <div class="tab-panel" id="tab-results">
+            <div class="results-panel">
+                <div class="panel-header"><h2>Recent Results</h2></div>
+                <div id="results-content"></div>
             </div>
-            <div id="results-content">
-                <!-- Results will be injected here -->
-            </div>
-        </section>
+        </div>
     </div>
 
     <script>
-        // Mocking eventData logic as per your previous setup
+        let activeTab = 'standings';
+
+        function switchTab(tab) {
+            activeTab = tab;
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                if (b.textContent.toLowerCase().includes(tab === 'standings' ? 'standing' : 'result')) {
+                    b.classList.add('active');
+                }
+            });
+        }
+
         let eventData = {
             standingsA: [
-                { name: "Drake Berry", province: "NS", matchWins: 0, matchLosses: 0, legsWon: 0 },
-                { name: "Cory Wallace", province: "NB", matchWins: 0, matchLosses: 0, legsWon: 0 },
-                { name: "Dana Moss", province: "NB", matchWins: 0, matchLosses: 0, legsWon: 0 },
-                { name: "Dee Cormier", province: "NB", matchWins: 0, matchLosses: 0, legsWon: 0 },
-                { name: "Colby Burke", province: "NFLD", matchWins: 0, matchLosses: 0, legsWon: 0 }
+                { name: "Drake Berry",    province: "NS",   matchWins: 0, matchLosses: 0, legsWon: 0 },
+                { name: "Cory Wallace",   province: "NB",   matchWins: 0, matchLosses: 0, legsWon: 0 },
+                { name: "Dana Moss",      province: "NB",   matchWins: 0, matchLosses: 0, legsWon: 0 },
+                { name: "Dee Cormier",    province: "NB",   matchWins: 0, matchLosses: 0, legsWon: 0 },
+                { name: "Colby Burke",    province: "NFLD", matchWins: 0, matchLosses: 0, legsWon: 0 }
             ],
             standingsB: [
-                { name: "Wayne Champman", province: "NB", matchWins: 0, matchLosses: 0, legsWon: 0 },
-                { name: "Jordan Boyd", province: "NS", matchWins: 0, matchLosses: 0, legsWon: 0 },
+                { name: "Wayne Champman",  province: "NB", matchWins: 0, matchLosses: 0, legsWon: 0 },
+                { name: "Jordan Boyd",     province: "NS", matchWins: 0, matchLosses: 0, legsWon: 0 },
                 { name: "Kevin Blanchard", province: "PE", matchWins: 0, matchLosses: 0, legsWon: 0 },
-                { name: "Don Higgins", province: "NB", matchWins: 0, matchLosses: 0, legsWon: 0 },
+                { name: "Don Higgins",     province: "NB", matchWins: 0, matchLosses: 0, legsWon: 0 },
                 { name: "Mark MacEachern", province: "PE", matchWins: 0, matchLosses: 0, legsWon: 0 }
             ],
             recentMatches: []
@@ -230,95 +293,84 @@
 
         async function fetchData() {
             try {
-                const response = await fetch(`event-data.json?t=${Date.now()}`);
-                if (response.ok) {
-                    eventData = await response.json();
-                }
-            } catch (e) {
-                console.log("Using internal data or waiting for file...");
-            }
+                const res = await fetch(`event-data.json?t=${Date.now()}`);
+                if (res.ok) eventData = await res.json();
+            } catch (e) {}
             renderUI();
         }
 
         function renderUI() {
-            renderGroup('A', eventData.standingsA);
-            renderGroup('B', eventData.standingsB);
+            renderStandings();
             renderRecent(eventData.recentMatches);
         }
 
-        function renderGroup(id, players) {
+        function renderStandings() {
             const container = document.getElementById('groups-container');
-            if(id === 'A') container.innerHTML = ''; // Clear on first group
-
-            let html = `
-                <div class="panel">
-                    <div class="panel-header"><h2>Group ${id}</h2></div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-rank">#</th>
-                                <th class="col-player">Player</th>
-                                <th class="col-stat">W</th>
-                                <th class="col-stat">L</th>
-                                <th class="col-legs">Legs</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            if (!players || players.length === 0) {
-                html += `<tr><td colspan="5" class="no-data">No Standings Available</td></tr>`;
-            } else {
-                players.forEach((p, i) => {
-                    const isQualifying = i < 4;
-                    html += `
-                        <tr class="${isQualifying ? 'row-qualify' : ''}">
-                            <td class="col-rank">${i + 1}</td>
-                            <td class="col-player">
-                                <div class="player-info">
-                                    <span class="player-name">${p.name}</span>
-                                    <span class="player-prov">${p.province || ''}</span>
-                                </div>
-                            </td>
-                            <td class="col-stat stat-w">${p.matchWins}</td>
-                            <td class="col-stat">${p.matchLosses}</td>
-                            <td class="col-legs">${p.legsWon}</td>
-                        </tr>
-                    `;
-                });
-            }
-
-            html += `</tbody></table></div>`;
-            container.innerHTML += html;
+            container.innerHTML = '';
+            ['A', 'B'].forEach(id => {
+                const players = id === 'A' ? eventData.standingsA : eventData.standingsB;
+                let html = `
+                    <div class="panel">
+                        <div class="panel-header"><h2>Group ${id}</h2></div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="col-rank">#</th>
+                                    <th class="col-player">Player</th>
+                                    <th class="col-stat">W</th>
+                                    <th class="col-stat">L</th>
+                                    <th class="col-legs">Legs</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                if (!players || players.length === 0) {
+                    html += `<tr><td colspan="5" class="no-data">No Standings Available</td></tr>`;
+                } else {
+                    players.forEach((p, i) => {
+                        html += `
+                            <tr class="${i < 4 ? 'row-qualify' : ''}">
+                                <td class="col-rank">${i + 1}</td>
+                                <td class="col-player">
+                                    <div class="player-info">
+                                        <span class="player-name">${p.name}</span>
+                                        <span class="player-prov">${p.province || ''}</span>
+                                    </div>
+                                </td>
+                                <td class="col-stat stat-w">${p.matchWins}</td>
+                                <td class="col-stat">${p.matchLosses}</td>
+                                <td class="col-legs">${p.legsWon}</td>
+                            </tr>`;
+                    });
+                }
+                html += `</tbody></table></div>`;
+                container.innerHTML += html;
+            });
         }
 
         function renderRecent(matches) {
             const content = document.getElementById('results-content');
             if (!matches || matches.length === 0) {
-                content.innerHTML = `<div class="no-data">No Completed Matches</div>`;
+                content.innerHTML = `<div class="no-data">No Completed Matches Yet</div>`;
                 return;
             }
-
             let html = `<div class="results-list">`;
-            matches.forEach(m => {
+            [...matches].reverse().forEach(m => {
+                const p1wins = m.score1 > m.score2;
                 html += `
                     <div class="match-row">
-                        <div class="match-id">MATCH #${m.matchNum || '0'}</div>
-                        <div class="match-vs">
-                            <span>${m.player1}</span>
-                            <span class="vs-divider">VS</span>
-                            <span>${m.player2}</span>
-                        </div>
-                        <div class="match-score">${m.score1} - ${m.score2}</div>
-                    </div>
-                `;
+                        <div class="match-id">Match #${m.matchNum || '—'}</div>
+                        <div class="match-player p1 ${p1wins ? 'winner' : 'loser'}">${m.player1}</div>
+                        <div class="match-score-num ${p1wins ? 'winner' : 'loser'}">${m.score1}</div>
+                        <div class="match-score-num ${!p1wins ? 'winner' : 'loser'}">${m.score2}</div>
+                        <div class="match-player p2 ${!p1wins ? 'winner' : 'loser'}">${m.player2}</div>
+                        <div class="match-time">${m.time || ''}</div>
+                    </div>`;
             });
             html += `</div>`;
             content.innerHTML = html;
         }
 
-        // Initialize and poll
-        renderUI();
+        fetchData();
         setInterval(fetchData, 3000);
     </script>
 </body>
