@@ -1006,130 +1006,65 @@ const momentCategories = [
   { key: "powerScoring", label: "Power Scoring" }
 ];
 
-const momentGroups = [
-  {
-    label: "Highlights",
-    keys: ["highScoring","bigFinish","lowDartLeg","highAverage","doublesBattle","comeback","upset","turningPoint","matchDart","mentalStrength"]
-  },
-  {
-    label: "Pressure & Momentum",
-    keys: ["againstTheThrow","holdOfThrow","consolidatedBreak","stoppedTheRot"]
-  },
-  {
-    label: "Scoring & Accuracy",
-    keys: ["maximumResponse","groupingExcellence","setUpShot","clinicalFinishing"]
-  },
-  {
-    label: "Clutch Factor",
-    keys: ["nerveShredder","wireGrazer","pressureCooker"]
-  },
-  {
-    label: "Technical / Strategic",
-    keys: ["routeManagement","powerScoring"]
-  }
+const momentKeys = [
+  "highScoring","bigFinish","lowDartLeg","highAverage",
+  "doublesBattle","comeback","upset","turningPoint","matchDart","mentalStrength",
+  "againstTheThrow","holdOfThrow","consolidatedBreak","stoppedTheRot"
 ];
 
-// --- MOMENT SELECTOR (shared grouped accordion) ---
+// --- MOMENT SELECTOR (flat grid, no accordion) ---
 // legState = { moments: [], momentValues: {} }
 function buildMomentSelector(container, legState) {
   const valueKeys = ["highScoring","bigFinish","highAverage","lowDartLeg"];
   const valuePlaceholders = { highScoring: "Score (e.g. 180)", bigFinish: "Finish (e.g. 121)", highAverage: "Average", lowDartLeg: "No. of darts" };
 
-  momentGroups.forEach((group) => {
-    const groupEl = document.createElement("div");
-    groupEl.className = "moment-group";
+  const grid = document.createElement("div");
+  grid.className = "moment-flat-grid";
 
-    const countSelected = () => group.keys.filter(k => legState.moments.includes(k)).length;
+  momentKeys.forEach(key => {
+    const cat = momentCategories.find(c => c.key === key);
+    if (!cat) return;
 
-    const header = document.createElement("button");
-    header.className = "moment-group-header";
-    header.type = "button";
+    const cell = document.createElement("div");
+    cell.className = "moment-group-cell";
 
-    const updateHeader = () => {
-      const c = countSelected();
-      header.innerHTML = `
-        <span class="moment-group-label">${group.label}</span>
-        ${c > 0
-          ? `<span class="moment-group-badge">${c} selected</span>`
-          : `<span class="moment-group-arrow">›</span>`
-        }`;
-      header.classList.toggle("moment-group-active", c > 0);
-    };
-    updateHeader();
+    const btn = document.createElement("button");
+    btn.className = "moment-btn button" + (legState.moments.includes(key) ? " selected" : "");
+    btn.textContent = cat.label;
+    btn.dataset.key = key;
+    btn.type = "button";
+    cell.appendChild(btn);
 
-    const body = document.createElement("div");
-    body.className = "moment-group-body";
-    body.style.display = "none";
-
-    const grid = document.createElement("div");
-    grid.className = "moment-group-grid";
-
-    group.keys.forEach(key => {
-      const cat = momentCategories.find(c => c.key === key);
-      if (!cat) return;
-
-      const cell = document.createElement("div");
-      cell.className = "moment-group-cell";
-
-      const btn = document.createElement("button");
-      btn.className = "moment-btn button" + (legState.moments.includes(key) ? " selected" : "");
-      btn.textContent = cat.label;
-      btn.dataset.key = key;
-      btn.type = "button";
-      cell.appendChild(btn);
-
-      let input = null;
-      if (valueKeys.includes(key)) {
-        input = document.createElement("input");
-        input.type = "text";
-        input.placeholder = valuePlaceholders[key] || cat.label;
-        input.className = "moment-value-input";
-        input.style.display = legState.moments.includes(key) ? "block" : "none";
-        if (legState.momentValues && legState.momentValues[key]) {
-          input.value = legState.momentValues[key];
-        }
-        input.oninput = (e) => { legState.momentValues[key] = e.target.value; };
-        cell.appendChild(input);
+    let input = null;
+    if (valueKeys.includes(key)) {
+      input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = valuePlaceholders[key] || cat.label;
+      input.className = "moment-value-input";
+      input.style.display = legState.moments.includes(key) ? "block" : "none";
+      if (legState.momentValues && legState.momentValues[key]) {
+        input.value = legState.momentValues[key];
       }
-
-      btn.onclick = () => {
-        if (legState.moments.includes(key)) {
-          legState.moments = legState.moments.filter(k => k !== key);
-          btn.classList.remove("selected");
-          if (input) { input.style.display = "none"; delete legState.momentValues[key]; }
-        } else {
-          legState.moments.push(key);
-          btn.classList.add("selected");
-          if (input) { input.style.display = "block"; setTimeout(() => input.focus(), 50); }
-        }
-        updateHeader();
-      };
-
-      grid.appendChild(cell);
-    });
-
-    body.appendChild(grid);
-    groupEl.appendChild(header);
-    groupEl.appendChild(body);
-    container.appendChild(groupEl);
-
-    header.onclick = () => {
-      const isOpen = body.style.display !== "none";
-      // close all
-      container.querySelectorAll(".moment-group-body").forEach(b => b.style.display = "none");
-      container.querySelectorAll(".moment-group-header").forEach(h => h.classList.remove("open"));
-      if (!isOpen) {
-        body.style.display = "block";
-        header.classList.add("open");
-      }
-    };
-
-    // Auto-open if group has selected items (e.g. edit mode)
-    if (countSelected() > 0) {
-      body.style.display = "block";
-      header.classList.add("open");
+      input.oninput = (e) => { legState.momentValues[key] = e.target.value; };
+      cell.appendChild(input);
     }
+
+    btn.onclick = () => {
+      if (legState.moments.includes(key)) {
+        legState.moments = legState.moments.filter(k => k !== key);
+        btn.classList.remove("selected");
+        if (input) { input.style.display = "none"; delete legState.momentValues[key]; }
+      } else {
+        legState.moments.push(key);
+        btn.classList.add("selected");
+        if (input) { input.style.display = "block"; setTimeout(() => input.focus(), 50); }
+      }
+    };
+
+    grid.appendChild(cell);
   });
+
+  container.appendChild(grid);
 }
 
 function renderMatch() {

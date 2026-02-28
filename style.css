@@ -912,6 +912,12 @@ input::placeholder { color: #444; }
   gap: 0.5em;
 }
 
+.moment-flat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5em;
+}
+
 .moment-group-cell {
   display: flex;
   flex-direction: column;
