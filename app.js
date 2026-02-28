@@ -991,24 +991,146 @@ const momentCategories = [
   { key: "turningPoint", label: "Turning Point" },
   { key: "matchDart", label: "Match Dart" },
   { key: "lowDartLeg", label: "Low Dart Leg" },
-  // Pressure & Momentum
   { key: "againstTheThrow", label: "Against the Throw" },
   { key: "holdOfThrow", label: "Hold of Throw" },
   { key: "consolidatedBreak", label: "Consolidated the Break" },
   { key: "stoppedTheRot", label: "Stopped the Rot" },
-  // Scoring & Accuracy
   { key: "maximumResponse", label: "Maximum Response" },
   { key: "groupingExcellence", label: "Grouping Excellence" },
   { key: "setUpShot", label: "Set-up Shot" },
   { key: "clinicalFinishing", label: "Clinical Finishing" },
-  // Clutch Factor
   { key: "nerveShredder", label: "Nerve-Shredder" },
   { key: "wireGrazer", label: "Wire-Grazer" },
   { key: "pressureCooker", label: "Pressure Cooker" },
-  // Technical / Strategic
   { key: "routeManagement", label: "Route Management" },
   { key: "powerScoring", label: "Power Scoring" }
 ];
+
+const momentGroups = [
+  {
+    label: "Highlights",
+    keys: ["highScoring","bigFinish","lowDartLeg","highAverage","doublesBattle","comeback","upset","turningPoint","matchDart","mentalStrength"]
+  },
+  {
+    label: "Pressure & Momentum",
+    keys: ["againstTheThrow","holdOfThrow","consolidatedBreak","stoppedTheRot"]
+  },
+  {
+    label: "Scoring & Accuracy",
+    keys: ["maximumResponse","groupingExcellence","setUpShot","clinicalFinishing"]
+  },
+  {
+    label: "Clutch Factor",
+    keys: ["nerveShredder","wireGrazer","pressureCooker"]
+  },
+  {
+    label: "Technical / Strategic",
+    keys: ["routeManagement","powerScoring"]
+  }
+];
+
+// --- MOMENT SELECTOR (shared grouped accordion) ---
+// legState = { moments: [], momentValues: {} }
+function buildMomentSelector(container, legState) {
+  const valueKeys = ["highScoring","bigFinish","highAverage","lowDartLeg"];
+  const valuePlaceholders = { highScoring: "Score (e.g. 180)", bigFinish: "Finish (e.g. 121)", highAverage: "Average", lowDartLeg: "No. of darts" };
+
+  momentGroups.forEach((group) => {
+    const groupEl = document.createElement("div");
+    groupEl.className = "moment-group";
+
+    const countSelected = () => group.keys.filter(k => legState.moments.includes(k)).length;
+
+    const header = document.createElement("button");
+    header.className = "moment-group-header";
+    header.type = "button";
+
+    const updateHeader = () => {
+      const c = countSelected();
+      header.innerHTML = `
+        <span class="moment-group-label">${group.label}</span>
+        ${c > 0
+          ? `<span class="moment-group-badge">${c} selected</span>`
+          : `<span class="moment-group-arrow">›</span>`
+        }`;
+      header.classList.toggle("moment-group-active", c > 0);
+    };
+    updateHeader();
+
+    const body = document.createElement("div");
+    body.className = "moment-group-body";
+    body.style.display = "none";
+
+    const grid = document.createElement("div");
+    grid.className = "moment-group-grid";
+
+    group.keys.forEach(key => {
+      const cat = momentCategories.find(c => c.key === key);
+      if (!cat) return;
+
+      const cell = document.createElement("div");
+      cell.className = "moment-group-cell";
+
+      const btn = document.createElement("button");
+      btn.className = "moment-btn button" + (legState.moments.includes(key) ? " selected" : "");
+      btn.textContent = cat.label;
+      btn.dataset.key = key;
+      btn.type = "button";
+      cell.appendChild(btn);
+
+      let input = null;
+      if (valueKeys.includes(key)) {
+        input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = valuePlaceholders[key] || cat.label;
+        input.className = "moment-value-input";
+        input.style.display = legState.moments.includes(key) ? "block" : "none";
+        if (legState.momentValues && legState.momentValues[key]) {
+          input.value = legState.momentValues[key];
+        }
+        input.oninput = (e) => { legState.momentValues[key] = e.target.value; };
+        cell.appendChild(input);
+      }
+
+      btn.onclick = () => {
+        if (legState.moments.includes(key)) {
+          legState.moments = legState.moments.filter(k => k !== key);
+          btn.classList.remove("selected");
+          if (input) { input.style.display = "none"; delete legState.momentValues[key]; }
+        } else {
+          legState.moments.push(key);
+          btn.classList.add("selected");
+          if (input) { input.style.display = "block"; setTimeout(() => input.focus(), 50); }
+        }
+        updateHeader();
+      };
+
+      grid.appendChild(cell);
+    });
+
+    body.appendChild(grid);
+    groupEl.appendChild(header);
+    groupEl.appendChild(body);
+    container.appendChild(groupEl);
+
+    header.onclick = () => {
+      const isOpen = body.style.display !== "none";
+      // close all
+      container.querySelectorAll(".moment-group-body").forEach(b => b.style.display = "none");
+      container.querySelectorAll(".moment-group-header").forEach(h => h.classList.remove("open"));
+      if (!isOpen) {
+        body.style.display = "block";
+        header.classList.add("open");
+      }
+    };
+
+    // Auto-open if group has selected items (e.g. edit mode)
+    if (countSelected() > 0) {
+      body.style.display = "block";
+      header.classList.add("open");
+    }
+  });
+}
 
 function renderMatch() {
   const div = document.createElement("div");
@@ -1029,8 +1151,7 @@ function renderMatch() {
   }
   // State for this leg
   let selectedWinner = null;
-  let selectedMoments = [];
-  let highScoreValue = "";
+  const currentLeg = { moments: [], momentValues: {} };
 
   div.innerHTML = `
     <div class="scoreboard">
@@ -1043,8 +1164,7 @@ function renderMatch() {
       <button class="button winner-btn" data-winner="player2">${p2}</button>
     </div>
     <label>Memorable Moments</label>
-    <div class="col-2" id="momentBtns"></div>
-    <div id="highScoreInput" style="display:none; margin-bottom:1em;"></div>
+    <div id="momentBtns"></div>
     <div class="sticky-bottom">
       <button id="nextLegBtn" class="button">${setPlayMode ? "Next Leg/Set" : "Next Leg"}</button>
     </div>
@@ -1057,78 +1177,9 @@ function renderMatch() {
       btn.classList.add("selected");
     };
   });
-  // Moment buttons
-  const momentBtnsDiv = div.querySelector("#momentBtns");
-  // Map to store moment values for this leg
-  let momentValues = {};
-  momentCategories.forEach(cat => {
-    const wrapper = document.createElement("div");
-    wrapper.style.display = "flex";
-    wrapper.style.alignItems = "center";
-    wrapper.style.gap = "0.5em";
-    const btn = document.createElement("button");
-    btn.className = "moment-btn button";
-    btn.textContent = cat.label;
-    btn.dataset.key = cat.key;
-    wrapper.appendChild(btn);
-    // Inline input for value moments
-    let input = null;
-    if (["highScoring","bigFinish","highAverage","lowDartLeg"].includes(cat.key)) {
-      input = document.createElement("input");
-      input.type = "text";
-      input.placeholder = cat.key === "lowDartLeg" ? "Darts" : cat.label + " value";
-      input.style.display = "none";
-      input.style.width = "5em";
-      input.style.fontSize = "1em";
-      input.style.background = "#232834";
-      input.style.color = "#fff";
-      input.style.border = "1px solid #444";
-      input.style.borderRadius = "0.7em";
-      input.style.padding = "0.3em 0.7em";
-      input.oninput = (e) => {
-        momentValues[cat.key] = e.target.value;
-      };
-      wrapper.appendChild(input);
-    }
-    btn.onclick = () => {
-      btn.classList.toggle("selected");
-      if (btn.classList.contains("selected")) {
-        selectedMoments.push(cat.key);
-        if (input) {
-          input.style.display = "inline-block";
-          input.focus();
-        }
-      } else {
-        selectedMoments = selectedMoments.filter(k => k !== cat.key);
-        if (input) {
-          input.style.display = "none";
-          input.value = "";
-        }
-        delete momentValues[cat.key];
-      }
-      // Show high score input if highScoring selected (legacy, now handled by inline input)
-      if (selectedMoments.includes("highScoring")) {
-        showHighScoreInput();
-      } else {
-        hideHighScoreInput();
-      }
-    };
-    momentBtnsDiv.appendChild(wrapper);
-  });
-  // High score input
-  function showHighScoreInput() {
-    const el = div.querySelector("#highScoreInput");
-    el.style.display = "block";
-    el.innerHTML = `<input type="number" min="100" max="180" id="highScoreVal" placeholder="High Score (e.g. 180)">`;
-    el.querySelector("#highScoreVal").oninput = (e) => {
-      highScoreValue = e.target.value;
-    };
-  }
-  function hideHighScoreInput() {
-    const el = div.querySelector("#highScoreInput");
-    el.style.display = "none";
-    highScoreValue = "";
-  }
+  // Moment selector
+  buildMomentSelector(div.querySelector("#momentBtns"), currentLeg);
+
   // Next Leg/Set logic
   div.querySelector("#nextLegBtn").onclick = () => {
     if (!selectedWinner) {
@@ -1139,8 +1190,8 @@ function renderMatch() {
     const legObj = {
       legNumber: leg,
       winner: selectedWinner,
-      moments: [...selectedMoments],
-      momentValues: { ...momentValues },
+      moments: [...currentLeg.moments],
+      momentValues: { ...currentLeg.momentValues },
       setNumber: setPlayMode ? appState.setPlay.currentSet : undefined
     };
     appState.legs.push(legObj);
@@ -2109,8 +2160,8 @@ function renderRoundRobinMatch() {
       <button class="button winner-btn" data-winner="${currentMatch.player1}">${currentMatch.player1}</button>
       <button class="button winner-btn" data-winner="${currentMatch.player2}">${currentMatch.player2}</button>
     </div>
-    <div class="help-label-row"><label>Memorable Moments</label><button class="help-btn" data-help-title="Memorable Moments" data-help-body="Select the tags that best reflect what happened in this leg — only tag what you actually saw during the match.&lt;br&gt;&lt;br&gt;For &lt;b&gt;High Scoring&lt;/b&gt;, &lt;b&gt;Big Finish&lt;/b&gt;, &lt;b&gt;High Average&lt;/b&gt;, or &lt;b&gt;Low Dart Leg&lt;/b&gt; — a value field appears next to the button. Enter the number (e.g. 180, 121 finish, 14 darts).&lt;br&gt;&lt;br&gt;These moments shape the interview questions generated after the match.">?</button></div>
-    <div class="col-2" id="momentBtns"></div>
+    <div class="help-label-row"><label>Memorable Moments</label><button class="help-btn" data-help-title="Memorable Moments" data-help-body="Tap a category to expand it, then select the moments that best reflect this leg. For High Scoring, Big Finish, High Average or Low Dart Leg a value field appears — enter the number (e.g. 180, 121 finish, 14 darts).">?</button></div>
+    <div id="momentBtns"></div>
     <div style="margin-top:0.6em;margin-bottom:0.3em;">
       <div style="display:flex;align-items:center;gap:0.5em;margin-bottom:0.5em;">
         <button id="noteToggleBtn" class="button btn-secondary" style="margin:0;flex:1;">📝 Add Note for Leg ${state.currentLeg}</button>
@@ -2139,60 +2190,17 @@ function renderRoundRobinMatch() {
     };
   });
   
-  // Moment buttons
-  const momentBtnsDiv = div.querySelector("#momentBtns");
-  momentCategories.forEach(cat => {
-    const wrapper = document.createElement("div");
-    wrapper.style.display = "flex";
-    wrapper.style.alignItems = "center";
-    wrapper.style.gap = "0.5em";
-    const btn = document.createElement("button");
-    btn.className = "moment-btn button";
-    btn.textContent = cat.label;
-    btn.dataset.key = cat.key;
-    wrapper.appendChild(btn);
-    
-    // Inline input for value moments
-    let input = null;
-    if (["highScoring","bigFinish","highAverage","lowDartLeg"].includes(cat.key)) {
-      input = document.createElement("input");
-      input.type = "text";
-      input.placeholder = cat.key === "lowDartLeg" ? "Darts" : cat.label + " value";
-      input.style.display = "none";
-      input.style.width = "5em";
-      input.style.fontSize = "1em";
-      input.style.background = "#232834";
-      input.style.color = "#fff";
-      input.style.border = "1px solid #444";
-      input.style.borderRadius = "0.7em";
-      input.style.padding = "0.3em 0.7em";
-      input.oninput = (e) => {
-        currentLeg.momentValues[cat.key] = e.target.value;
-      };
-      wrapper.appendChild(input);
+  // Moment selector (edit mode: pre-populate currentLeg before building)
+  if (state.editMode && state.originalLegs) {
+    const prevLeg = state.originalLegs[state.currentLeg - 1];
+    if (prevLeg) {
+      currentLeg.moments = [...(prevLeg.moments || [])];
+      currentLeg.momentValues = {...(prevLeg.momentValues || {})};
     }
-    
-    btn.onclick = () => {
-      if (currentLeg.moments.includes(cat.key)) {
-        // Deselect
-        currentLeg.moments = currentLeg.moments.filter(m => m !== cat.key);
-        btn.classList.remove("selected");
-        if (input) {
-          input.style.display = "none";
-          delete currentLeg.momentValues[cat.key];
-        }
-      } else {
-        // Select
-        currentLeg.moments.push(cat.key);
-        btn.classList.add("selected");
-        if (input) input.style.display = "inline-block";
-      }
-    };
-    
-    momentBtnsDiv.appendChild(wrapper);
-  });
-  
-  // If edit mode: pre-select the previous leg's winner, moments, note
+  }
+  buildMomentSelector(div.querySelector("#momentBtns"), currentLeg);
+
+  // If edit mode: pre-select winner and note
   if (state.editMode && state.originalLegs) {
     const prevLeg = state.originalLegs[state.currentLeg - 1];
     if (prevLeg) {
@@ -2203,17 +2211,6 @@ function renderRoundRobinMatch() {
       currentLeg.note = prevLeg.note || "";
       div.querySelectorAll(".winner-btn").forEach(btn => {
         if (btn.dataset.winner === prevLeg.winner) btn.classList.add("selected");
-      });
-      // Pre-select moment buttons + restore value inputs
-      div.querySelectorAll(".moment-btn").forEach(btn => {
-        if (currentLeg.moments.includes(btn.dataset.key)) {
-          btn.classList.add("selected");
-          const inp = btn.parentElement.querySelector("input[type=text]");
-          if (inp && currentLeg.momentValues[btn.dataset.key]) {
-            inp.style.display = "inline-block";
-            inp.value = currentLeg.momentValues[btn.dataset.key];
-          }
-        }
       });
       if (currentLeg.note) {
         const noteArea = div.querySelector("#noteArea");
@@ -2767,8 +2764,8 @@ function renderKnockoutMatch() {
       <button class="button winner-btn" data-winner="${p1}">${p1}</button>
       <button class="button winner-btn" data-winner="${p2}">${p2}</button>
     </div>
-    <div class="help-label-row"><label>Memorable Moments</label><button class="help-btn" data-help-title="Memorable Moments" data-help-body="Select the tags that best reflect what happened in this leg. For scored moments enter the value in the field that appears next to the button.">?</button></div>
-    <div class="col-2" id="momentBtns"></div>
+    <div class="help-label-row"><label>Memorable Moments</label><button class="help-btn" data-help-title="Memorable Moments" data-help-body="Tap a category to expand it, then select the moments that best reflect this leg. For High Scoring, Big Finish, High Average or Low Dart Leg a value field appears — enter the number.">?</button></div>
+    <div id="momentBtns"></div>
     <div style="margin-top:0.5em;margin-bottom:0.3em;">
       <div style="display:flex;align-items:center;gap:0.5em;margin-bottom:0.5em;">
         <button id="noteToggleBtn" class="button btn-secondary" style="margin:0;flex:1;">📝 Add Note</button>
@@ -2804,38 +2801,8 @@ function renderKnockoutMatch() {
   };
   div.querySelector("#legNoteInput").oninput = (e) => { currentLeg.note = e.target.value; };
 
-  // Moment buttons
-  const momentBtnsDiv = div.querySelector("#momentBtns");
-  momentCategories.forEach(cat => {
-    const wrapper = document.createElement("div");
-    wrapper.style.cssText = "display:flex;align-items:center;gap:0.5em;";
-    const btn = document.createElement("button");
-    btn.className = "moment-btn button";
-    btn.textContent = cat.label;
-    btn.dataset.key = cat.key;
-    wrapper.appendChild(btn);
-    let input = null;
-    if (["highScoring","bigFinish","highAverage","lowDartLeg"].includes(cat.key)) {
-      input = document.createElement("input");
-      input.type = "text";
-      input.placeholder = cat.key === "lowDartLeg" ? "Darts" : cat.label + " value";
-      input.style.cssText = "display:none;width:5em;font-size:1em;background:#232834;color:#fff;border:1px solid #444;border-radius:0.7em;padding:0.3em 0.7em;";
-      input.oninput = (e) => { currentLeg.momentValues[cat.key] = e.target.value; };
-      wrapper.appendChild(input);
-    }
-    btn.onclick = () => {
-      if (currentLeg.moments.includes(cat.key)) {
-        currentLeg.moments = currentLeg.moments.filter(m => m !== cat.key);
-        btn.classList.remove("selected");
-        if (input) { input.style.display = "none"; delete currentLeg.momentValues[cat.key]; }
-      } else {
-        currentLeg.moments.push(cat.key);
-        btn.classList.add("selected");
-        if (input) input.style.display = "inline-block";
-      }
-    };
-    momentBtnsDiv.appendChild(wrapper);
-  });
+  // Moment selector
+  buildMomentSelector(div.querySelector("#momentBtns"), currentLeg);
 
   // Undo last leg
   div.querySelector("#undoLegBtn").onclick = () => {

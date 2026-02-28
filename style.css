@@ -812,6 +812,113 @@ input::placeholder { color: #444; }
   box-shadow: none;
 }
 
+/* ---- Moment Group Accordion ---- */
+.moment-group {
+  margin-bottom: 0.5em;
+}
+
+.moment-group-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding: 0.75em 1em !important;
+  margin-bottom: 0 !important;
+  background: var(--row-alt) !important;
+  border: 1.5px solid var(--divider) !important;
+  border-radius: 10px !important;
+  color: var(--white) !important;
+  font-family: var(--font-display) !important;
+  font-size: 1em !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: border-color 0.15s, background 0.15s !important;
+}
+
+.moment-group-header.open {
+  border-color: var(--orange) !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  background: rgba(242,101,34,0.06) !important;
+}
+
+.moment-group-header.moment-group-active {
+  border-color: var(--orange) !important;
+  color: var(--orange) !important;
+}
+
+.moment-group-header:hover {
+  border-color: var(--orange) !important;
+  transform: none !important;
+}
+
+.moment-group-label {
+  flex: 1;
+  text-align: left;
+}
+
+.moment-group-badge {
+  font-family: var(--font-display);
+  font-size: 0.78em;
+  font-weight: 700;
+  background: var(--orange);
+  color: #fff;
+  padding: 0.15em 0.6em;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.moment-group-arrow {
+  color: var(--text-muted);
+  font-size: 1.3em;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.moment-group-header.open .moment-group-arrow {
+  transform: rotate(90deg);
+  display: inline-block;
+}
+
+.moment-group-body {
+  background: #111;
+  border: 1.5px solid var(--orange);
+  border-top: none;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  padding: 0.75em;
+}
+
+.moment-group-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5em;
+}
+
+.moment-group-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+
+.moment-value-input {
+  width: 100% !important;
+  padding: 0.4em 0.7em !important;
+  margin: 0 !important;
+  font-size: 0.9em !important;
+  background: #1a1a1a !important;
+  color: var(--white) !important;
+  border: 1.5px solid var(--orange) !important;
+  border-radius: 8px !important;
+  font-family: var(--font-main) !important;
+  box-sizing: border-box !important;
+}
+
 input[type="number"] {
   width: 100%;
   box-sizing: border-box;
