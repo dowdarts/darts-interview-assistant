@@ -1190,8 +1190,14 @@ function renderInterview() {
   const idx = appState.interview.currentQuestionIndex;
   const total = questions.length;
   const qObj = questions[idx];
-  const q = typeof qObj === 'object' ? qObj.text : qObj;
-  const qLeg = typeof qObj === 'object' ? qObj.legNumber : null;
+  // Support both new { options, selected } and legacy { text, legNumber } formats
+  const isMultiOpt = qObj && Array.isArray(qObj.options);
+  const selIdx = isMultiOpt ? (qObj.selected || 0) : 0;
+  const selectedOpt = isMultiOpt ? qObj.options[selIdx] : qObj;
+  const altIdx = 1 - selIdx;
+  const altOpt = isMultiOpt && qObj.options.length > 1 ? qObj.options[altIdx] : null;
+  const q = typeof selectedOpt === 'object' ? selectedOpt.text : selectedOpt;
+  const qLeg = typeof selectedOpt === 'object' ? selectedOpt.legNumber : null;
   const progressPct = Math.round(((idx + 1) / total) * 100);
   const isLast = idx === total - 1;
   const isFirst = idx === 0;
@@ -1240,8 +1246,16 @@ function renderInterview() {
     </div>
     ${subjectHTML}
     ${notesHTML}
-    ${qLeg ? `<div class="interview-question-leg">Leg ${qLeg}</div>` : ''}
-    <div class="interview-question">${q}</div>
+    <div class="interview-options">
+      <button class="interview-option-btn active" data-optidx="${selIdx}">
+        ${qLeg ? `<span class="interview-option-leg">Leg ${qLeg}</span>` : ''}
+        ${q}
+      </button>
+      ${altOpt ? `<button class="interview-option-btn" data-optidx="${altIdx}">
+        ${altOpt.legNumber ? `<span class="interview-option-leg">Leg ${altOpt.legNumber}</span>` : ''}
+        ${altOpt.text}
+      </button>` : ''}
+    </div>
     <div class="sticky-bottom">
       <button id="nextQBtn" class="button">${isLast ? "✓ Finish Interview" : "Next Question →"}</button>
       <div style="display:flex;gap:0.7em;margin-top:0.5em;">
@@ -1261,6 +1275,17 @@ function renderInterview() {
     }
     render();
   }
+
+  // Option swap — tap an inactive option to make it the chosen question
+  div.querySelectorAll('.interview-option-btn').forEach(btn => {
+    btn.onclick = () => {
+      const tappedIdx = parseInt(btn.dataset.optidx);
+      if (isMultiOpt && tappedIdx !== (qObj.selected || 0)) {
+        qObj.selected = tappedIdx;
+        render();
+      }
+    };
+  });
 
   div.querySelector("#nextQBtn").onclick = () => {
     if (isLast) {
@@ -1361,33 +1386,35 @@ function generateInterviewQuestions() {
         data.lowDartLeg = vals.length ? vals[vals.length-1] : undefined;
       }
       
-      const qArr = questionBank[cat];
-      // Select random question and fill in data
-      let q = qArr[Math.floor(Math.random() * qArr.length)](data);
-      questions.push({ text: q, legNumber: data.legNumber || null });
-      usedQuestions.add(q);
+      // Pick up to 2 distinct questions from this category
+      const shuffled = [...questionBank[cat]].sort(() => Math.random() - 0.5);
+      const slotOptions = [];
+      for (const qFn of shuffled) {
+        const text = qFn(data);
+        if (text && !slotOptions.some(o => o.text === text)) {
+          slotOptions.push({ text, legNumber: data.legNumber || null });
+          usedQuestions.add(text);
+          if (slotOptions.length >= 2) break;
+        }
+      }
+      if (slotOptions.length > 0) questions.push({ options: slotOptions, selected: 0 });
     }
   });
   // 5. Fill with general if < 4, ensuring no duplicates
   while (questions.length < 4) {
-    const qArr = questionBank.general;
-    let attempts = 0;
-    let q;
-    const data = {
-      playerName: playerName,
-      opponent: opponent,
-      matchScore: matchScore
-    };
-    do {
-      q = qArr[Math.floor(Math.random() * qArr.length)](data);
-      attempts++;
-    } while (usedQuestions.has(q) && attempts < 20);
-    if (!usedQuestions.has(q)) {
-      questions.push({ text: q, legNumber: null });
-      usedQuestions.add(q);
-    } else {
-      break; // Exit if can't find unique question after 20 attempts
+    const generalData = { playerName, opponent, matchScore };
+    const shuffled = [...questionBank.general].sort(() => Math.random() - 0.5);
+    const slotOptions = [];
+    for (const qFn of shuffled) {
+      const text = qFn(generalData);
+      if (text && !usedQuestions.has(text)) {
+        slotOptions.push({ text, legNumber: null });
+        usedQuestions.add(text);
+        if (slotOptions.length >= 2) break;
+      }
     }
+    if (slotOptions.length === 0) break;
+    questions.push({ options: slotOptions, selected: 0 });
   }
   appState.interview.questions = questions;
   appState.interview.currentQuestionIndex = 0;
@@ -3136,12 +3163,22 @@ function generateRoundRobinInterview(match) {
       data.legNumber = momentLegNumbers[cat][lastIdx];
       data.isWinningLeg = data.legNumber === (winnerScore + loserScore);
       
-      const availableQuestions = questionBank[cat].filter((q) => !usedQuestions.has(q.toString()));
-      if (availableQuestions.length > 0) {
-        const q = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
-        questions.push({ text: q(data), legNumber: data.legNumber || null });
-        usedQuestions.add(q.toString());
-        usedCategories.add(cat);
+      const available = questionBank[cat].filter((q) => !usedQuestions.has(q.toString()));
+      if (available.length > 0) {
+        const shuffled = [...available].sort(() => Math.random() - 0.5);
+        const slotOptions = [];
+        for (const qFn of shuffled) {
+          const text = qFn(data);
+          if (text && !slotOptions.some(o => o.text === text)) {
+            slotOptions.push({ text, legNumber: data.legNumber || null });
+            usedQuestions.add(qFn.toString());
+            if (slotOptions.length >= 2) break;
+          }
+        }
+        if (slotOptions.length > 0) {
+          questions.push({ options: slotOptions, selected: 0 });
+          usedCategories.add(cat);
+        }
       }
     }
   });
@@ -3153,12 +3190,21 @@ function generateRoundRobinInterview(match) {
       .filter(q => !usedQuestions.has(q.toString()))
       .map(q => ({ q, text: q(data) }))
       .filter(item => item.text)
-      .sort(() => Math.random() - 0.5); // shuffle
+      .sort(() => Math.random() - 0.5);
 
-    for (const item of validRR) {
-      if (questions.length >= 4) break;
-      questions.push({ text: item.text, legNumber: null });
-      usedQuestions.add(item.q.toString());
+    let rrIdx = 0;
+    while (questions.length < 4 && rrIdx < validRR.length) {
+      const primary = validRR[rrIdx++];
+      const slotOptions = [{ text: primary.text, legNumber: null }];
+      usedQuestions.add(primary.q.toString());
+      while (rrIdx < validRR.length && slotOptions.length < 2) {
+        const alt = validRR[rrIdx++];
+        if (alt.text !== primary.text) {
+          slotOptions.push({ text: alt.text, legNumber: null });
+          usedQuestions.add(alt.q.toString());
+        }
+      }
+      questions.push({ options: slotOptions, selected: 0 });
     }
   }
   
@@ -3168,10 +3214,22 @@ function generateRoundRobinInterview(match) {
       .filter(q => !usedQuestions.has(q.toString()))
       .sort(() => Math.random() - 0.5);
 
-    for (const q of validGeneral) {
-      if (questions.length >= 4) break;
-      const text = q(data);
-      if (text) { questions.push({ text, legNumber: null }); usedQuestions.add(q.toString()); }
+    let gIdx = 0;
+    while (questions.length < 4 && gIdx < validGeneral.length) {
+      const primary = validGeneral[gIdx++];
+      const primaryText = primary(data);
+      if (!primaryText) continue;
+      const slotOptions = [{ text: primaryText, legNumber: null }];
+      usedQuestions.add(primary.toString());
+      while (gIdx < validGeneral.length && slotOptions.length < 2) {
+        const alt = validGeneral[gIdx++];
+        const altText = alt(data);
+        if (altText && altText !== primaryText) {
+          slotOptions.push({ text: altText, legNumber: null });
+          usedQuestions.add(alt.toString());
+        }
+      }
+      questions.push({ options: slotOptions, selected: 0 });
     }
   }
   
