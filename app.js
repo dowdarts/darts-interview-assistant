@@ -201,8 +201,12 @@ const questionBank = {
   ],
   consolidatedBreak: [
     (data) => `You broke ${data.opponent}'s throw and then held your own — that's the hardest thing in darts. How did you manage to consolidate that break?`,
-    (data) => `Break and hold — leg ${data.legNumber} was the consolidation. In your experience, is that the moment when a match is truly won?`,
-    (data) => `${data.playerName}, you broke and then consolidated. When you held after the break, did you feel the match was yours at that point?`,
+    (data) => data.isWinningLeg
+      ? `Break and hold to win the match — leg ${data.legNumber} was the one that mattered. When the match is on the line, how do you keep your composure on your own throw?`
+      : `Break and hold — leg ${data.legNumber} was the consolidation. In your experience, is that the moment when a match is truly won?`,
+    (data) => data.isWinningLeg
+      ? `${data.playerName}, that consolidation sealed it — you broke and closed the match out. Is holding your throw under that kind of pressure something you train for?`
+      : `${data.playerName}, you broke and then consolidated. When you held after the break, did you feel the match was yours at that point?`,
     (data) => `Consolidating the break against ${data.opponent} — that showed real nerve. How do you stay switched on after a big momentum swing?`
   ],
   stoppedTheRot: [
@@ -1337,6 +1341,7 @@ function generateInterviewQuestions() {
         matchScore: matchScore,
         legNumber: momentLegNumbers[cat] ? momentLegNumbers[cat][momentLegNumbers[cat].length - 1] : undefined
       };
+      data.isWinningLeg = data.legNumber === appState.legs.length;
       
       // Add specific moment values
       if (cat === "highScoring") {
@@ -3129,6 +3134,7 @@ function generateRoundRobinInterview(match) {
       const lastIdx = momentData[cat].length - 1;
       data[cat] = momentData[cat][lastIdx];
       data.legNumber = momentLegNumbers[cat][lastIdx];
+      data.isWinningLeg = data.legNumber === (winnerScore + loserScore);
       
       const availableQuestions = questionBank[cat].filter((q) => !usedQuestions.has(q.toString()));
       if (availableQuestions.length > 0) {
