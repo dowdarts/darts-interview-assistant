@@ -742,47 +742,50 @@ input::placeholder { color: #444; }
 .interview-options {
   display: flex;
   flex-direction: column;
-  gap: 0.6em;
+  gap: 0.75em;
   flex: 1;
   justify-content: center;
   padding: 0.5em 0;
 }
 
 .interview-option-btn {
-  background: #111;
-  border: 2px solid var(--divider);
-  border-radius: 12px;
-  padding: 1em 1.1em;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 14px;
+  padding: 1.1em 1.25em;
   cursor: pointer;
   text-align: left;
   font-family: var(--font-main);
-  font-size: 1.1em;
-  color: var(--text-muted);
-  line-height: 1.55;
+  font-size: 1.2em;
+  font-weight: 400;
+  color: #aaa;
+  line-height: 1.6;
   width: 100%;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
   animation: fadeInQ 0.3s ease;
+  letter-spacing: 0.01em;
 }
 
 .interview-option-btn.active {
   border-color: var(--orange);
-  background: rgba(242, 101, 34, 0.06);
-  color: var(--white);
+  background: #1f1a16;
+  color: #ffffff;
+  font-size: 1.25em;
 }
 
 .interview-option-btn:not(.active):hover {
   border-color: #555;
-  color: #ccc;
+  color: #ddd;
 }
 
 .interview-option-leg {
   display: block;
   font-family: var(--font-display);
-  font-size: 0.65em;
+  font-size: 0.6em;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--orange);
-  margin-bottom: 0.35em;
+  margin-bottom: 0.4em;
 }
 
 .interview-question {
