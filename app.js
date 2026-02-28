@@ -1018,6 +1018,22 @@ const momentKeys = [
 
 // --- MOMENT SELECTOR (flat grid, no accordion) ---
 // legState = { moments: [], momentValues: {} }
+const momentDescriptions = {
+  highScoring:        "A big scoring visit in this leg — e.g. a 180 or a massive three-dart score. Enter the score.",
+  bigFinish:          "Player hit a big checkout to win this leg — e.g. 121, 170. Enter the finish.",
+  lowDartLeg:         "Leg won in an impressive number of darts — e.g. 12-darter. Enter the dart count.",
+  highAverage:        "Player posted a standout three-dart average in this leg. Enter the average.",
+  doublesBattle:      "Both players went back and forth on doubles before the leg was settled.",
+  comeback:           "Player came from behind in this leg to win it.",
+  upset:              "The underdog or lower-ranked player won this leg against the odds.",
+  turningPoint:       "This leg changed the momentum or direction of the match.",
+  matchDart:          "Player had darts at a double to win the match but didn\'t convert immediately.",
+  mentalStrength:     "Player showed exceptional composure or focus under pressure in this leg.",
+  againstTheThrow:    "Player won a leg when it was the opponent\'s throw — broke serve.",
+  holdOfThrow:        "Player held their own throw leg against pressure from the opponent.",
+  consolidatedBreak:  "Player broke the opponent\'s throw then immediately held their own in the next leg.",
+  stoppedTheRot:      "Player won a leg to halt a losing run and get back into the match."
+};
 function buildMomentSelector(container, legState) {
   const valueKeys = ["highScoring","bigFinish","highAverage","lowDartLeg"];
   const valuePlaceholders = { highScoring: "Score (e.g. 180)", bigFinish: "Finish (e.g. 121)", highAverage: "Average", lowDartLeg: "No. of darts" };
@@ -1032,12 +1048,44 @@ function buildMomentSelector(container, legState) {
     const cell = document.createElement("div");
     cell.className = "moment-group-cell";
 
+    // Button row: moment button + info button
+    const btnRow = document.createElement("div");
+    btnRow.className = "moment-btn-row";
+
     const btn = document.createElement("button");
     btn.className = "moment-btn button" + (legState.moments.includes(key) ? " selected" : "");
     btn.textContent = cat.label;
     btn.dataset.key = key;
     btn.type = "button";
-    cell.appendChild(btn);
+    btnRow.appendChild(btn);
+
+    const desc = momentDescriptions[key];
+    if (desc) {
+      const infoBtn = document.createElement("button");
+      infoBtn.type = "button";
+      infoBtn.className = "moment-info-btn";
+      infoBtn.textContent = "?";
+      const tooltip = document.createElement("div");
+      tooltip.className = "moment-tooltip";
+      tooltip.textContent = desc;
+      tooltip.style.display = "none";
+      infoBtn.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = tooltip.style.display !== "none";
+        // Close all other open tooltips
+        document.querySelectorAll(".moment-tooltip").forEach(t => t.style.display = "none");
+        document.querySelectorAll(".moment-info-btn").forEach(b => b.classList.remove("active"));
+        if (!isOpen) {
+          tooltip.style.display = "block";
+          infoBtn.classList.add("active");
+        }
+      };
+      btnRow.appendChild(infoBtn);
+      cell.appendChild(btnRow);
+      cell.appendChild(tooltip);
+    } else {
+      cell.appendChild(btnRow);
+    }
 
     let input = null;
     if (valueKeys.includes(key)) {
