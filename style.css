@@ -1,29 +1,28 @@
 /*
   Darts Interview Assistant — Broadcast UI
-  AADS Design System v2 — Orange/Black Broadcast Theme
+  AADS Design System v3 — Standings Match Theme
 */
-
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   --orange:        #F26522;
   --orange-glow:   #FF7A2F;
   --deep-black:    #0D0D0D;
-  --card-black:    #171717;
-  --divider:       #2A2A2A;
+  --card-black:    #141414;
+  --divider:       #2D2D2D;
   --white:         #FFFFFF;
-  --text-muted:    #A0A0A0;
-  --panel:         #1A1A1A;
+  --text-muted:    #888888;
+  --panel:         #141414;
   --bg:            #0D0D0D;
+  --row-alt:       #1a1a1a;
   --accent:        #F26522;
   --accent2:       #FF7A2F;
   --text:          #FFFFFF;
   --button:        #1A1A1A;
   --button-active: #F26522;
-  --button-radius: 14px;
-  --gap:           1.2em;
-  --font-main:     'Inter', 'Segoe UI', Arial, sans-serif;
-  --font-display:  'Barlow Condensed', 'Segoe UI', Arial, sans-serif;
+  --button-radius: 10px;
+  --gap:           1.1em;
+  --font-main:     'Roboto Condensed', 'Segoe UI', Arial, sans-serif;
+  --font-display:  'Oswald', 'Segoe UI', Arial, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -49,8 +48,7 @@ html, body {
 body {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  background:
-    radial-gradient(ellipse at 50% 0%, #1a0a00 0%, #0D0D0D 55%, #000000 100%);
+  background: var(--deep-black);
 }
 
 #app {
@@ -64,16 +62,15 @@ body {
   position: relative;
 }
 
-/* Orange frame glow */
+/* Clean top accent bar */
 #app::before {
   content: '';
   position: fixed;
-  inset: 0;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange), var(--orange-glow));
   pointer-events: none;
-  z-index: 0;
-  border: 2px solid transparent;
-  background: linear-gradient(var(--deep-black), var(--deep-black)) padding-box,
-              linear-gradient(180deg, #F26522 0%, #FF7A2F 50%, #F26522 100%) border-box;
+  z-index: 100;
 }
 
 .screen {
@@ -92,10 +89,10 @@ body {
 
 h1 {
   font-family: var(--font-display);
-  font-size: 2.4em;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  color: var(--white);
+  font-size: 2.6em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--orange);
   margin: 0 0 0.15em 0;
   text-transform: uppercase;
   line-height: 1;
@@ -104,22 +101,22 @@ h1 {
 
 h2 {
   font-family: var(--font-display);
-  font-size: 1.5em;
+  font-size: 1.6em;
   font-weight: 700;
-  color: var(--white);
+  color: var(--orange);
   margin: 0 0 0.4em 0;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 h3 {
   font-family: var(--font-display);
-  font-size: 1.1em;
-  font-weight: 700;
+  font-size: 1.15em;
+  font-weight: 600;
   color: var(--white);
   margin: 0 0 0.4em 0;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
 }
 
 label {
@@ -127,10 +124,11 @@ label {
   margin-bottom: 0.4em;
   margin-top: 0.9em;
   color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.85em;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 0.88em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
 }
 
 input, select, textarea {
@@ -141,7 +139,7 @@ input, select, textarea {
   border: 1.5px solid var(--divider);
   background: #111111;
   color: var(--white);
-  font-size: 1em;
+  font-size: 1.05em;
   font-family: var(--font-main);
   box-sizing: border-box;
   -webkit-appearance: none;
@@ -160,36 +158,36 @@ input::placeholder { color: #444; }
 .button, button {
   display: block;
   width: 100%;
-  padding: 0.95em 1.2em;
+  padding: 0.9em 1.2em;
   margin-bottom: var(--gap);
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-glow) 100%);
-  color: #000;
+  background: var(--orange);
+  color: #fff;
   border: none;
   border-radius: var(--button-radius);
   font-family: var(--font-display);
-  font-size: 1.1em;
+  font-size: 1.15em;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
   box-sizing: border-box;
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
-  transition: transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 4px 18px rgba(242,101,34,0.35), 0 2px 6px rgba(0,0,0,0.4);
+  transition: background 0.15s, transform 0.12s;
+  box-shadow: 0 4px 20px rgba(242,101,34,0.25);
   position: relative;
   overflow: hidden;
 }
 
 .button:hover, button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(242,101,34,0.5);
+  background: var(--orange-glow);
+  transform: translateY(-1px);
 }
 
 .button:active, button:active {
-  transform: scale(0.97);
-  box-shadow: 0 2px 8px rgba(242,101,34,0.3);
+  transform: scale(0.98);
+  background: var(--orange);
 }
 
 .button.selected {
@@ -201,14 +199,14 @@ input::placeholder { color: #444; }
 
 /* Secondary: dark with orange border */
 .btn-secondary {
-  background: #1A1A1A !important;
+  background: #141414 !important;
   border: 2px solid var(--orange) !important;
   color: var(--white) !important;
   box-shadow: none !important;
 }
 .btn-secondary:hover {
   background: var(--orange) !important;
-  color: #000 !important;
+  color: #fff !important;
 }
 
 /* Accent: pulsing orange (End Interview) */
@@ -244,37 +242,68 @@ input::placeholder { color: #444; }
 
 .card {
   background: var(--card-black);
-  border-radius: var(--button-radius);
-  padding: 1.2em;
+  border-radius: 12px;
   margin-bottom: var(--gap);
   border: 1px solid var(--divider);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   overflow: hidden;
 }
 
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--orange), var(--orange-glow));
-  border-radius: var(--button-radius) var(--button-radius) 0 0;
+.card-header {
+  background: linear-gradient(to bottom, #1f1f1f, #141414);
+  padding: 12px 18px;
+  border-bottom: 2px solid var(--orange);
+}
+
+.card-header h2, .card-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--orange);
+  letter-spacing: 0.06em;
+}
+
+.card-body {
+  padding: 1em 1.1em;
 }
 
 .panel {
-  background: var(--panel);
-  border-radius: var(--button-radius);
-  padding: 1em;
+  background: var(--card-black);
+  border-radius: 12px;
   margin-bottom: var(--gap);
   border: 1px solid var(--divider);
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+}
+
+.panel-hd {
+  background: linear-gradient(to bottom, #1f1f1f, #141414);
+  padding: 12px 18px;
+  border-bottom: 2px solid var(--orange);
+}
+
+.panel-hd h2, .panel-hd h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--orange);
+  letter-spacing: 0.06em;
+}
+
+.panel-bd {
+  padding: 0.9em 1.1em;
 }
 
 /* ---- BROADCAST SCORE PANEL ---- */
 .broadcast-score {
   background: var(--card-black);
   border: 1px solid var(--divider);
-  border-radius: var(--button-radius);
+  border-top: 2px solid var(--orange);
+  border-radius: 12px;
   padding: 1.4em 1em;
   margin-bottom: var(--gap);
   display: flex;
@@ -282,16 +311,6 @@ input::placeholder { color: #444; }
   align-items: center;
   gap: 0.5em;
   box-shadow: 0 4px 24px rgba(0,0,0,0.6);
-  position: relative;
-}
-
-.broadcast-score::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--orange), var(--orange-glow));
-  border-radius: var(--button-radius) var(--button-radius) 0 0;
 }
 
 .broadcast-player {
@@ -304,19 +323,19 @@ input::placeholder { color: #444; }
 
 .broadcast-player-name {
   font-family: var(--font-display);
-  font-size: 0.9em;
+  font-size: 1em;
   font-weight: 700;
   color: var(--white);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-align: center;
   word-break: break-word;
 }
 
 .broadcast-player-score {
   font-family: var(--font-display);
-  font-size: 3.4em;
-  font-weight: 900;
+  font-size: 3.6em;
+  font-weight: 700;
   color: var(--text-muted);
   line-height: 1;
   transition: color 0.3s, text-shadow 0.3s;
@@ -489,42 +508,33 @@ input::placeholder { color: #444; }
 /* Match complete card */
 .match-complete-card {
   background: var(--card-black);
-  border-radius: var(--button-radius);
+  border-radius: 12px;
   padding: 2em 1.5em;
   text-align: center;
   margin-bottom: var(--gap);
   border: 1px solid var(--divider);
   box-shadow: 0 8px 40px rgba(0,0,0,0.7);
-  position: relative;
-  overflow: hidden;
-}
-
-.match-complete-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 5px;
-  background: linear-gradient(90deg, var(--orange), var(--orange-glow));
+  border-top: 3px solid var(--orange);
 }
 
 .match-complete-winner {
   font-family: var(--font-display);
-  font-size: 2.4em;
-  font-weight: 900;
+  font-size: 2.6em;
+  font-weight: 700;
   color: var(--orange);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  text-shadow: 0 0 30px rgba(242,101,34,0.5), 0 0 60px rgba(242,101,34,0.2);
+  letter-spacing: 0.06em;
   margin: 0.3em 0;
   line-height: 1.1;
 }
 
 .match-complete-score {
   font-family: var(--font-display);
-  font-size: 1.4em;
-  font-weight: 700;
+  font-size: 1.5em;
+  font-weight: 600;
   color: var(--white);
   margin: 0.2em 0;
+  letter-spacing: 0.04em;
 }
 
 /* Interview progress bar */
@@ -549,9 +559,9 @@ input::placeholder { color: #444; }
 .interview-subject-card {
   background: var(--card-black);
   border: 1px solid var(--divider);
-  border-left: 4px solid var(--orange);
+  border-top: 2px solid var(--orange);
   border-radius: 12px;
-  padding: 0.75em 1em;
+  padding: 0.85em 1.1em;
   margin-bottom: 0.75em;
 }
 
@@ -564,11 +574,12 @@ input::placeholder { color: #444; }
 
 .interview-subject-name {
   font-family: var(--font-display);
-  font-size: 1.25em;
-  font-weight: 900;
+  font-size: 1.4em;
+  font-weight: 700;
   color: var(--white);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
   line-height: 1.1;
+  text-transform: uppercase;
 }
 
 .interview-subject-province {
@@ -644,21 +655,22 @@ input::placeholder { color: #444; }
 
 .ql-category-label {
   font-family: var(--font-display);
-  font-size: 0.72em;
-  font-weight: 700;
+  font-size: 0.85em;
+  font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--orange);
   border-bottom: 1px solid var(--divider);
-  padding-bottom: 0.35em;
+  padding-bottom: 0.4em;
   margin-bottom: 0.5em;
 }
 
 .ql-question {
-  font-size: 0.88em;
+  font-size: 0.95em;
   color: var(--white);
+  font-family: var(--font-main);
   line-height: 1.55;
-  padding: 0.4em 0;
+  padding: 0.45em 0;
   border-bottom: 1px solid #1a1a1a;
 }
 
@@ -717,13 +729,13 @@ input::placeholder { color: #444; }
 
 .interview-question {
   font-family: var(--font-main);
-  font-size: 1.25em;
-  font-weight: 500;
+  font-size: 1.3em;
+  font-weight: 400;
   color: var(--white);
-  line-height: 1.65;
+  line-height: 1.6;
   text-align: center;
   letter-spacing: 0.01em;
-  padding: 1.4em 0.4em;
+  padding: 1.4em 0.5em;
   flex: 1;
   display: flex;
   align-items: center;
@@ -779,22 +791,25 @@ input::placeholder { color: #444; }
 
 .moment-btn {
   margin-bottom: 0;
-  font-size: 0.95em;
-  padding: 0.8em 0.5em;
+  font-size: 0.9em;
+  padding: 0.75em 0.4em;
   background: #111111;
   color: var(--white);
   border: 1.5px solid var(--divider);
+  border-radius: 8px;
   transition: border-color 0.15s, background 0.15s;
   text-transform: uppercase;
   font-family: var(--font-display);
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  box-shadow: none;
 }
 
 .moment-btn.selected {
   border-color: var(--orange);
-  background: rgba(242,101,34,0.12);
+  background: rgba(242,101,34,0.1);
   color: var(--orange);
-  box-shadow: 0 0 12px rgba(242,101,34,0.2);
+  box-shadow: none;
 }
 
 input[type="number"] {
@@ -805,9 +820,9 @@ input[type="number"] {
 /* Match schedule item */
 .match-item {
   padding: 0.75em 1em;
-  margin-bottom: 0.5em;
-  background: #111111;
-  border-radius: 10px;
+  margin-bottom: 0.4em;
+  background: var(--row-alt);
+  border-radius: 8px;
   border-left: 3px solid var(--divider);
   display: flex;
   justify-content: space-between;
@@ -842,16 +857,19 @@ input[type="number"] {
 
 .match-item-players {
   color: var(--white);
-  font-weight: 600;
-  font-size: 0.95em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .match-item-num {
   font-family: var(--font-display);
   font-weight: 700;
   color: var(--orange);
-  font-size: 0.82em;
-  letter-spacing: 0.06em;
+  font-size: 0.85em;
+  letter-spacing: 0.08em;
 }
 
 .match-item-time {
@@ -863,10 +881,10 @@ input[type="number"] {
 .context-strip {
   background: var(--card-black);
   border: 1px solid var(--divider);
-  border-radius: var(--button-radius);
+  border-radius: 10px;
   padding: 0.9em 1.2em;
   margin-bottom: var(--gap);
-  font-size: 0.88em;
+  font-size: 0.9em;
   line-height: 1.7;
   color: var(--text-muted);
 }
@@ -876,13 +894,13 @@ input[type="number"] {
   font-family: var(--font-display);
   font-size: 1.05em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .context-strip em {
   color: var(--orange);
   font-style: normal;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* Standings table */
@@ -895,40 +913,43 @@ input[type="number"] {
 
 .standings-table th {
   font-family: var(--font-display);
-  font-size: 0.8em;
+  font-size: 0.85em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--text-muted);
-  padding: 0.4em 0.6em;
+  padding: 0.7em 0.8em;
   border-bottom: 1px solid var(--divider);
   text-align: left;
+  background: #000;
 }
 
 .standings-table td {
-  padding: 0.5em 0.6em;
+  padding: 0.8em 0.8em;
   border-bottom: 1px solid var(--divider);
   color: var(--white);
+  font-size: 1.05em;
 }
 
 .standings-table tr:last-child td { border-bottom: none; }
+.standings-table tbody tr:nth-child(odd) { background: var(--row-alt); }
 
-.standings-table .rank { color: var(--text-muted); font-size: 0.85em; }
-.standings-table .player-name { font-weight: 700; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.03em; }
-.standings-table .wins  { color: #4caf50; font-weight: 700; }
-.standings-table .losses { color: #888; }
-.standings-table .prov  { color: var(--orange); font-size: 0.82em; }
+.standings-table .rank { color: var(--text-muted); font-family: var(--font-display); font-size: 0.9em; }
+.standings-table .player-name { font-weight: 700; font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.04em; font-size: 1.1em; }
+.standings-table .wins  { color: #4ade80; font-weight: 700; font-family: var(--font-display); font-size: 1.2em; }
+.standings-table .losses { color: #666; font-family: var(--font-display); font-size: 1.1em; }
+.standings-table .prov  { color: var(--orange); font-size: 0.78em; font-family: var(--font-display); letter-spacing: 0.08em; }
 
 @media (max-width: 600px) {
   html { font-size: 16px; }
   :root { --gap: 0.9em; }
   .screen { padding: 0.9em; }
-  h1 { font-size: 1.9em; }
-  h2 { font-size: 1.3em; }
+  h1 { font-size: 2em; }
+  h2 { font-size: 1.35em; }
   .broadcast-player-score { font-size: 2.8em; }
   .match-complete-winner { font-size: 2em; }
-  .interview-question { font-size: 1.15em; padding: 1.2em 0.3em; }
-  .button, button { font-size: 1em; padding: 0.85em; }
-  .moment-btn { font-size: 0.85em; padding: 0.7em 0.4em; }
+  .interview-question { font-size: 1.2em; padding: 1.2em 0.3em; }
+  .button, button { font-size: 1.05em; padding: 0.85em; }
+  .moment-btn { font-size: 0.82em; padding: 0.65em 0.35em; }
   .col-2 { gap: 0.7em; }
   .b2-score-num { font-size: 1.6em !important; width: 74px !important; }
 }
@@ -939,7 +960,6 @@ input[type="number"] {
   .screen { padding: 0.75em; }
   .broadcast-player-score { font-size: 2.4em; }
   .player-score .score { font-size: 2.2em; }
-  .card, .panel { padding: 0.85em; }
   h2 { font-size: 1.2em; }
 }
 
