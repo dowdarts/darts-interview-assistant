@@ -272,11 +272,109 @@
     }
     
     .footer {
-      margin-top: 2em;
+      margin-top: 1.5em;
       text-align: center;
       color: var(--text-muted);
       font-size: 0.9em;
     }
+
+    /* View indicator pills */
+    .view-indicator {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.6em;
+      margin-bottom: 1.2em;
+    }
+    .view-pill {
+      font-family: var(--font-display);
+      font-size: 0.8em;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.25em 0.9em;
+      border-radius: 20px;
+      border: 1px solid var(--divider);
+      color: var(--text-muted);
+      background: transparent;
+      transition: all 0.3s;
+    }
+    .view-pill.active {
+      background: var(--orange);
+      color: #000;
+      border-color: var(--orange);
+      font-weight: 900;
+    }
+
+    /* Fade transition on content */
+    #content {
+      animation: fadeIn 0.4s ease;
+    }
+
+    /* Standings */
+    .standings-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5em;
+    }
+    .standings-card {
+      background: var(--card-black);
+      border: 2px solid var(--divider);
+      border-radius: 20px;
+      padding: 2em 2.5em;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    }
+    .standings-title {
+      font-family: var(--font-display);
+      font-size: 1.3em;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 1.2em;
+      text-align: center;
+    }
+    .standings-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .standings-table th {
+      font-family: var(--font-display);
+      font-size: 0.8em;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0.4em 0.6em;
+      text-align: center;
+      border-bottom: 1px solid var(--divider);
+    }
+    .standings-table th:first-child { text-align: left; }
+    .standings-table td {
+      padding: 0.7em 0.6em;
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 1.05em;
+    }
+    .standings-table td:first-child {
+      text-align: left;
+      font-family: var(--font-display);
+      font-size: 1.15em;
+      font-weight: 700;
+    }
+    .standings-table tr:last-child td { border-bottom: none; }
+    .standings-table tr:first-child td { padding-top: 1em; }
+    .standings-rank {
+      color: var(--text-muted);
+      font-size: 0.85em;
+      font-weight: 400;
+      margin-right: 0.5em;
+    }
+    .standings-province {
+      font-size: 0.8em;
+      color: var(--orange);
+      font-weight: 600;
+      margin-left: 0.4em;
+    }
+    .standings-wins  { color: #4caf50; font-weight: 700; }
+    .standings-losses { color: var(--text-muted); }
 
     /* --- Live pair layout --- */
     .live-layout {
@@ -525,13 +623,15 @@
       <div class="logo">AADS Darts</div>
       <div class="title">Live Event Display</div>
     </div>
+    <div class="view-indicator" id="viewIndicator"></div>
     <div id="content"></div>
     <div class="footer" id="status">Connecting...</div>
   </div>
 
   <script>
     let eventData = null;
-    let currentView = 'current'; // 'current' or 'schedule'
+    const VIEWS = ['current', 'schedule', 'standings'];
+    let viewIndex = 0; // cycles through VIEWS
 
     // Normalize data so the TV display works with both old and new event-data.json formats
     function normalizeEventData(data) {
@@ -596,14 +696,22 @@
       if (!eventData) return;
       // Pre-event: show full pair schedule until any result is entered
       if (!eventData.eventStarted) {
+        document.getElementById('viewIndicator').innerHTML = '';
         renderPreEventSchedule();
         return;
       }
-      if (currentView === 'current') {
-        renderLiveDisplay();
-      } else {
-        renderUpcomingSchedule();
-      }
+      updateViewIndicator();
+      const view = VIEWS[viewIndex];
+      if (view === 'current')    renderLiveDisplay();
+      else if (view === 'schedule')  renderUpcomingSchedule();
+      else if (view === 'standings') renderStandings();
+    }
+
+    function updateViewIndicator() {
+      const labels = ['Now Playing', 'Upcoming', 'Standings'];
+      document.getElementById('viewIndicator').innerHTML = VIEWS.map((v, i) =>
+        `<span class="view-pill ${i === viewIndex ? 'active' : ''}">${labels[i]}</span>`
+      ).join('');
     }
 
     // -------------------------------------------------------
@@ -792,9 +900,64 @@
         </div>`;
     }
 
+    // -------------------------------------------------------
+    // STANDINGS VIEW
+    // -------------------------------------------------------
+    function renderStandings() {
+      const content = document.getElementById('content');
+      const sA = eventData.standingsA || [];
+      const sB = eventData.standingsB || [];
+
+      if (sA.length === 0 && sB.length === 0) {
+        content.innerHTML = `<div class="no-data"><div class="no-data-icon">📋</div><div class="no-data-text">No Standings Yet</div></div>`;
+        return;
+      }
+
+      const makeTable = (group, label) => {
+        const rows = group.map((p, i) => `
+          <tr>
+            <td>
+              <span class="standings-rank">${i + 1}.</span>${p.name}
+              ${p.province ? `<span class="standings-province">${p.province}</span>` : ''}
+            </td>
+            <td class="standings-wins">${p.matchWins}</td>
+            <td class="standings-losses">${p.matchLosses}</td>
+            <td class="standings-wins">${p.legsWon}</td>
+            <td class="standings-losses">${p.legsLost}</td>
+          </tr>`).join('');
+        return `
+          <div class="standings-card">
+            <div class="standings-title">${label}</div>
+            <table class="standings-table">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>W</th>
+                  <th>L</th>
+                  <th>LW</th>
+                  <th>LL</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+      };
+
+      content.innerHTML = `
+        <div class="standings-layout">
+          ${makeTable(sA, 'Group A')}
+          ${makeTable(sB, 'Group B')}
+        </div>`;
+    }
+
     function rotateView() {
-      if (!eventData || !eventData.eventStarted) return; // no rotation pre-event
-      currentView = currentView === 'current' ? 'schedule' : 'current';
+      if (!eventData || !eventData.eventStarted) return;
+      viewIndex = (viewIndex + 1) % VIEWS.length;
+      // Trigger fade by replacing content node
+      const c = document.getElementById('content');
+      c.style.animation = 'none';
+      c.offsetHeight; // reflow
+      c.style.animation = '';
       updateDisplay();
     }
 
@@ -802,8 +965,8 @@
     setInterval(fetchData, 3000);
     fetchData();
 
-    // Rotate between live + upcoming schedule every 20 seconds
-    setInterval(rotateView, 20000);
+    // Rotate views every 15 seconds
+    setInterval(rotateView, 15000);
   </script>
 </body>
 </html>
