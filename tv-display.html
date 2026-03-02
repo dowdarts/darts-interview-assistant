@@ -287,9 +287,18 @@
 
     .live-section {
       display: grid;
-      grid-template-columns: 3fr 2fr;
+      grid-template-columns: 1fr 1fr;
       gap: 1.5em;
-      align-items: start;
+      align-items: stretch;
+    }
+
+    .live-section .current-match {
+      margin-bottom: 0;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .live-primary {
@@ -297,8 +306,7 @@
     }
 
     .sim-match {
-      border-left: 4px solid #3a3a3a;
-      opacity: 0.92;
+      border-left: 6px solid #555;
     }
 
     .sim-badge {
@@ -693,12 +701,12 @@
             </div>
             <div class="players">
               <div class="player">
-                <div class="player-name player-name-small">${sim.player1}</div>
+                <div class="player-name">${sim.player1}</div>
                 ${sim.player1Province ? `<div class="player-province">${sim.player1Province}</div>` : ''}
               </div>
-              <div class="vs vs-small">VS</div>
+              <div class="vs">VS</div>
               <div class="player">
-                <div class="player-name player-name-small">${sim.player2}</div>
+                <div class="player-name">${sim.player2}</div>
                 ${sim.player2Province ? `<div class="player-province">${sim.player2Province}</div>` : ''}
               </div>
             </div>
