@@ -121,8 +121,66 @@ const GitHubSync = {
     // Upcoming matches (next 8)
     const upcomingMatches = matches.filter(m => !m.completed).slice(0, 8);
     
+    // --- PAIR-BASED TV DISPLAY ---
+    // eventStarted = true once any match result has been entered
+    const eventStarted = completedMatches.length > 0;
+
+    // Helper to build a compact match summary
+    const toMatchSummary = (m) => m ? {
+      matchNum: m.matchNum,
+      board: m.board,
+      time: m.time,
+      player1: m.player1,
+      player2: m.player2,
+      player1Province: appState.roundRobin.playerProfiles?.[m.player1]?.province || null,
+      player2Province: appState.roundRobin.playerProfiles?.[m.player2]?.province || null
+    } : null;
+
+    const allMatchesSorted = [...matches].sort((a, b) => a.matchNum - b.matchNum);
+
+    // Current pair: first incomplete Board 1 match + its Board 2 companion
+    const firstIncompleteBoard1 = allMatchesSorted.find(m => m.board === 1 && !m.completed) || null;
+    let currentPair = null;
+    let nextPair = null;
+
+    if (firstIncompleteBoard1) {
+      const companion = allMatchesSorted.find(
+        m => m.matchNum === firstIncompleteBoard1.matchNum + 1
+      );
+      currentPair = {
+        liveMatch: toMatchSummary(firstIncompleteBoard1),
+        simultaneousMatch: (companion && !companion.completed) ? toMatchSummary(companion) : null
+      };
+
+      // Next pair: next incomplete Board 1 match after the current one
+      const nextBoard1 = allMatchesSorted.find(
+        m => m.board === 1 && !m.completed && m.matchNum > firstIncompleteBoard1.matchNum
+      );
+      if (nextBoard1) {
+        const nextCompanion = allMatchesSorted.find(m => m.matchNum === nextBoard1.matchNum + 1);
+        nextPair = {
+          board1Match: toMatchSummary(nextBoard1),
+          board2Match: nextCompanion ? toMatchSummary(nextCompanion) : null
+        };
+      }
+    }
+
+    // All pairs for pre-event full schedule (sorted by matchNum)
+    const allPairs = [];
+    for (let i = 0; i < allMatchesSorted.length; i += 2) {
+      allPairs.push({
+        board1: toMatchSummary(allMatchesSorted[i]),
+        board2: toMatchSummary(allMatchesSorted[i + 1])
+      });
+    }
+    // --- END PAIR-BASED TV DISPLAY ---
+
     return {
       timestamp: new Date().toISOString(),
+      eventStarted,
+      currentPair,
+      nextPair,
+      allPairs,
       currentMatch: currentMatch ? {
         matchNum: currentMatch.matchNum,
         board: currentMatch.board,
