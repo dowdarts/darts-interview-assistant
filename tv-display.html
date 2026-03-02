@@ -525,12 +525,55 @@
     let eventData = null;
     let currentView = 'current'; // 'current' or 'schedule'
 
+    // Normalize data so the TV display works with both old and new event-data.json formats
+    function normalizeEventData(data) {
+      // --- eventStarted ---
+      if (data.eventStarted === undefined) {
+        data.eventStarted = !!(data.recentMatches && data.recentMatches.length > 0);
+      }
+
+      // Build a sorted combined match list from recentMatches + upcomingMatches
+      const allMatchesSorted = [];
+      (data.recentMatches || []).forEach(m => allMatchesSorted.push({ ...m, completed: true }));
+      (data.upcomingMatches || []).forEach(m => allMatchesSorted.push({ ...m, completed: false }));
+      allMatchesSorted.sort((a, b) => a.matchNum - b.matchNum);
+
+      // --- allPairs (for pre-event full schedule) ---
+      if (!data.allPairs || data.allPairs.length === 0) {
+        data.allPairs = [];
+        for (let i = 0; i < allMatchesSorted.length; i += 2) {
+          data.allPairs.push({
+            board1: allMatchesSorted[i]   || null,
+            board2: allMatchesSorted[i+1] || null
+          });
+        }
+      }
+
+      // --- currentPair + nextPair (for live display) ---
+      if (!data.currentPair) {
+        const upcoming = allMatchesSorted.filter(m => !m.completed);
+        const liveMatch = upcoming.find(m => m.board === 1) || upcoming[0] || null;
+        if (liveMatch) {
+          const sim = upcoming.find(m => m.matchNum === liveMatch.matchNum + 1) || null;
+          data.currentPair = { liveMatch, simultaneousMatch: sim };
+
+          const nextBoard1 = upcoming.find(m => m.board === 1 && m.matchNum > liveMatch.matchNum);
+          if (nextBoard1) {
+            const nextBoard2 = upcoming.find(m => m.matchNum === nextBoard1.matchNum + 1) || null;
+            data.nextPair = { board1Match: nextBoard1, board2Match: nextBoard2 };
+          }
+        }
+      }
+
+      return data;
+    }
+
     async function fetchData() {
       try {
         const cacheBuster = Date.now();
         const response = await fetch(`event-data.json?t=${cacheBuster}`);
         if (response.ok) {
-          eventData = await response.json();
+          eventData = normalizeEventData(await response.json());
           updateDisplay();
           document.getElementById('status').textContent =
             `Last updated: ${new Date(eventData.timestamp || Date.now()).toLocaleTimeString()}`;
