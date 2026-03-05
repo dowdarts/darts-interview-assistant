@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-05T02:56:43.730Z",
+  "timestamp": "2026-03-05T02:57:13.432Z",
   "eventStarted": true,
   "currentPair": {
     "liveMatch": {
@@ -244,12 +244,12 @@
     }
   ],
   "currentMatch": {
-    "matchNum": 4,
-    "board": 2,
-    "time": "9:25 AM",
-    "player1": "Wayne Champman",
+    "matchNum": 5,
+    "board": 1,
+    "time": "9:50 AM",
+    "player1": "Jordan Boyd",
     "player2": "Kevin Blanchard",
-    "player1Province": "NB",
+    "player1Province": "NS",
     "player2Province": "PE",
     "scorekeeper": "TBD"
   },
@@ -300,9 +300,9 @@
       "name": "Wayne Champman",
       "province": "NB",
       "legsWon": 3,
-      "legsLost": 2,
+      "legsLost": 3,
       "matchWins": 1,
-      "matchLosses": 0
+      "matchLosses": 1
     },
     {
       "name": "Jordan Boyd",
@@ -315,9 +315,9 @@
     {
       "name": "Kevin Blanchard",
       "province": "PE",
-      "legsWon": 0,
+      "legsWon": 1,
       "legsLost": 0,
-      "matchWins": 0,
+      "matchWins": 1,
       "matchLosses": 0
     },
     {
@@ -338,6 +338,16 @@
     }
   ],
   "recentMatches": [
+    {
+      "matchNum": 4,
+      "board": 2,
+      "time": "9:25 AM",
+      "player1": "Wayne Champman",
+      "player2": "Kevin Blanchard",
+      "score1": 0,
+      "score2": 1,
+      "winner": "Kevin Blanchard"
+    },
     {
       "matchNum": 3,
       "board": 1,
@@ -370,16 +380,6 @@
     }
   ],
   "upcomingMatches": [
-    {
-      "matchNum": 4,
-      "board": 2,
-      "time": "9:25 AM",
-      "player1": "Wayne Champman",
-      "player2": "Kevin Blanchard",
-      "player1Province": "NB",
-      "player2Province": "PE",
-      "scorekeeper": "TBD"
-    },
     {
       "matchNum": 5,
       "board": 1,
@@ -448,6 +448,16 @@
       "player2": "Jordan Boyd",
       "player1Province": "PE",
       "player2Province": "NS",
+      "scorekeeper": "TBD"
+    },
+    {
+      "matchNum": 12,
+      "board": 2,
+      "time": "11:05 AM",
+      "player1": "Colby Burke",
+      "player2": "Cory Wallace",
+      "player1Province": "NFLD",
+      "player2Province": "NB",
       "scorekeeper": "TBD"
     }
   ],
