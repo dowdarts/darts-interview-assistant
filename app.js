@@ -534,17 +534,15 @@ function showTokenModal() {
           The TV display opens a page, enters this code, and receives live data directly — no GitHub, no internet delay.
         </div>
 
-        ${peerActive && peerCode ? `
-          <div style="text-align:center;margin-bottom:0.9em;">
-            <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.14em;text-transform:uppercase;color:#5a8a5a;margin-bottom:0.3em;">Your pairing code</div>
-            <div id="pairCodeDisplay" style="font-family:monospace;font-size:2.6em;font-weight:900;letter-spacing:0.22em;color:#4caf50;background:#0a150a;border:2px solid #4caf50;border-radius:12px;padding:0.25em 0.5em;display:inline-block;">${peerCode}</div>
-            <div style="font-size:0.75em;color:#5a8a5a;margin-top:0.4em;">TV displays connected: <b style="color:#4caf50;" id="viewerCount">${PeerSync.connectedViewers()}</b></div>
-          </div>
-          <button id="peerResetBtn" style="width:100%;background:#0a150a;border:1px solid #2a3a2a;color:#5a8a5a;padding:0.55em;border-radius:10px;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Generate New Code</button>
-        ` : `
-          <button id="peerStartBtn" class="button" style="width:100%;margin:0;background:linear-gradient(135deg,#1a4a1a,#2a6a2a);border:1px solid #4caf50;color:#4caf50;">Activate Pairing Code</button>
-          <div id="peerStartStatus" style="text-align:center;font-size:0.78em;color:var(--text-muted);margin-top:0.5em;min-height:1.2em;"></div>
-        `}
+        <div style="text-align:center;margin-bottom:0.9em;">
+          <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.14em;text-transform:uppercase;color:#5a8a5a;margin-bottom:0.4em;">Your pairing code</div>
+          ${peerActive && peerCode
+            ? `<div id="pairCodeDisplay" style="font-family:monospace;font-size:2.8em;font-weight:900;letter-spacing:0.28em;color:#4caf50;background:#0a150a;border:2px solid #4caf50;border-radius:12px;padding:0.25em 0.6em;display:inline-block;">${peerCode}</div>`
+            : `<div id="pairCodeDisplay" style="font-family:var(--font-display);font-size:1em;color:#5a8a5a;background:#0a150a;border:2px dashed #2a3a2a;border-radius:12px;padding:0.6em 1.2em;display:inline-block;letter-spacing:0.08em;">Starting up…</div>`
+          }
+          <div style="font-size:0.75em;color:#5a8a5a;margin-top:0.5em;">TV displays connected: <b style="color:#4caf50;" id="viewerCount">${PeerSync.connectedViewers()}</b></div>
+        </div>
+        <button id="peerResetBtn" style="width:100%;background:#0a150a;border:1px solid #2a3a2a;color:#5a8a5a;padding:0.55em;border-radius:10px;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Generate New Code</button>
       </div>
 
       <!-- ═══════ METHOD 2: GITHUB TOKEN ═══════ -->
@@ -588,28 +586,7 @@ function showTokenModal() {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   overlay.querySelector('#tokenCancelBtn').onclick = () => overlay.remove();
 
-  // -------- Pairing code handlers --------
-  const peerStartBtn = overlay.querySelector('#peerStartBtn');
-  if (peerStartBtn) {
-    const peerStatusEl = overlay.querySelector('#peerStartStatus');
-    peerStartBtn.onclick = async () => {
-      peerStartBtn.disabled = true;
-      peerStartBtn.textContent = 'Starting…';
-      peerStatusEl.textContent = 'Connecting to pairing server…';
-      try {
-        await PeerSync.startHost();
-        overlay.remove();
-        showTokenModal(); // re-open with code shown
-      } catch (e) {
-        peerStatusEl.style.color = '#e53935';
-        peerStatusEl.textContent = 'Could not start — check your internet connection.';
-        peerStartBtn.disabled = false;
-        peerStartBtn.textContent = 'Activate Pairing Code';
-      }
-    };
-  }
-
-  const peerResetBtn = overlay.querySelector('#peerResetBtn');
+  // -------- Pairing code handlers --------  const peerResetBtn = overlay.querySelector('#peerResetBtn');
   if (peerResetBtn) {
     peerResetBtn.onclick = async () => {
       if (!confirm('Generate a new pairing code? Any connected TV displays will need to re-enter the new code.')) return;
@@ -621,13 +598,28 @@ function showTokenModal() {
         showTokenModal();
       } catch (e) {}
     };
-    // Refresh connected viewer count every 2s while modal is open
-    const viewerInterval = setInterval(() => {
-      const el = overlay.querySelector('#viewerCount');
-      if (!el) { clearInterval(viewerInterval); return; }
-      el.textContent = PeerSync.connectedViewers();
-    }, 2000);
   }
+
+  // Poll every second: refresh viewer count AND swap in code once PeerSync is ready
+  const peerPollInterval = setInterval(() => {
+    if (!overlay.isConnected) { clearInterval(peerPollInterval); return; }
+    const countEl = overlay.querySelector('#viewerCount');
+    if (countEl) countEl.textContent = PeerSync.connectedViewers();
+    const codeEl = overlay.querySelector('#pairCodeDisplay');
+    if (codeEl && PeerSync.isHostActive() && PeerSync.getCode()) {
+      const code = PeerSync.getCode();
+      if (codeEl.textContent !== code) {
+        codeEl.textContent = code;
+        codeEl.style.fontFamily = 'monospace';
+        codeEl.style.fontSize   = '2.8em';
+        codeEl.style.fontWeight = '900';
+        codeEl.style.letterSpacing = '0.28em';
+        codeEl.style.color      = '#4caf50';
+        codeEl.style.border     = '2px solid #4caf50';
+        codeEl.style.borderStyle = 'solid';
+      }
+    }
+  }, 1000);
 
   // -------- GitHub token handlers --------
   const input = overlay.querySelector('#tokenInput');
@@ -3501,5 +3493,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
   appState.screen = "matchList";
   render();
+
+  // Auto-start PeerSync host silently in the background
+  // so the pairing code is always ready when the modal is opened
+  if (window.PeerSync) {
+    PeerSync.startHost().catch(err => console.warn('[PeerSync] Auto-start failed:', err));
+  }
 });
 
