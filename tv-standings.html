@@ -32,6 +32,7 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
+            padding-bottom: 60px;
         }
 
         /* Header */
@@ -238,6 +239,51 @@
             letter-spacing: 2px;
             font-family: 'Oswald', sans-serif;
         }
+
+        /* Live status bar at bottom */
+        #liveStatusBar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 20px;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background: #0d0d0d;
+            border-top: 1px solid var(--border);
+            transition: border-color 0.4s, color 0.4s;
+            z-index: 100;
+        }
+        #liveStatusBar.connected {
+            border-top-color: #4caf50;
+            color: #4caf50;
+        }
+        #liveStatusBar.polling {
+            border-top-color: var(--border);
+            color: var(--text-muted);
+        }
+        #liveStatusBar .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+        #liveStatusBar.connected .status-dot {
+            box-shadow: 0 0 6px #4caf50;
+            animation: pulse-dot 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
     </style>
 </head>
 <body>
@@ -264,6 +310,12 @@
                 <div id="results-content"></div>
             </div>
         </div>
+    </div>
+
+    <!-- Live status bar fixed to bottom -->
+    <div id="liveStatusBar" class="polling">
+        <span class="status-dot"></span>
+        <span id="liveStatusText">Waiting for data…</span>
     </div>
 
     <script>
@@ -302,7 +354,14 @@
         async function fetchData() {
             try {
                 const res = await fetch(`event-data.json?t=${Date.now()}`);
-                if (res.ok) eventData = await res.json();
+                if (res.ok) {
+                    eventData = await res.json();
+                    const txt = document.getElementById('liveStatusText');
+                    if (txt && !_peerConnected) {
+                        const ts = eventData.timestamp ? new Date(eventData.timestamp).toLocaleTimeString() : '';
+                        txt.textContent = 'GitHub data' + (ts ? '  ·  Last update: ' + ts : '');
+                    }
+                }
             } catch (e) {}
             renderUI();
         }
@@ -443,11 +502,19 @@
 
                 conn.on('close', () => {
                     _peerConnected = false;
+                    const bar = document.getElementById('liveStatusBar');
+                    const txt = document.getElementById('liveStatusText');
+                    if (bar) bar.className = 'polling';
+                    if (txt) txt.textContent = 'Disconnected \u2014 reconnecting\u2026';
                     _startPolling();
                 });
 
                 conn.on('error', () => {
                     _peerConnected = false;
+                    const bar = document.getElementById('liveStatusBar');
+                    const txt = document.getElementById('liveStatusText');
+                    if (bar) bar.className = 'polling';
+                    if (txt) txt.textContent = 'Connection error \u2014 using GitHub data.';
                     _startPolling();
                 });
             });
@@ -519,11 +586,21 @@
 
         // On load: auto-reconnect from saved code, or show pairing overlay
         window.addEventListener('load', () => {
+            const bar = document.getElementById('liveStatusBar');
+            const txt = document.getElementById('liveStatusText');
             const saved = localStorage.getItem('dartsViewerCode');
             if (saved) {
+                if (txt) txt.textContent = 'Connecting to code ' + saved + '\u2026';
                 _peerConnect(saved);
-                setTimeout(() => { if (!_peerConnected) _startPolling(); }, 7000);
+                setTimeout(() => {
+                    if (!_peerConnected) {
+                        if (bar) bar.className = 'polling';
+                        if (txt) txt.textContent = 'Using GitHub data';
+                        _startPolling();
+                    }
+                }, 7000);
             } else {
+                if (txt) txt.textContent = 'Enter pairing code to connect';
                 _showPairOverlay();
                 _startPolling();
             }
