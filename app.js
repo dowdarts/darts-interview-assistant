@@ -35,6 +35,10 @@ const appState = {
   }
 };
 
+// --- ADMIN CONFIG ---
+const ADMIN_PASSWORD  = "40783";
+const ADMIN_PEER_CODE = "AADS40"; // Fixed 6-char code — TV displays auto-connect to this
+
 // --- PRESET EVENTS ---
 const presetEvents = {
   event4: {
@@ -553,8 +557,8 @@ function showTokenModal() {
             : `<div id="pairCodeDisplay" style="font-family:var(--font-display);font-size:1em;color:#5a8a5a;background:#0a150a;border:2px dashed #2a3a2a;border-radius:12px;padding:0.6em 1.2em;display:inline-block;letter-spacing:0.08em;">Starting up…</div>`
           }
           <div style="font-size:0.75em;color:#5a8a5a;margin-top:0.5em;">TV displays connected: <b style="color:#4caf50;" id="viewerCount">${PeerSync.connectedViewers()}</b></div>
+          <div style="font-size:0.72em;color:#4a7a4a;margin-top:0.4em;font-family:var(--font-display);letter-spacing:0.04em;">✓ TV displays auto-connect — no code entry needed</div>
         </div>
-        <button id="peerResetBtn" style="width:100%;background:#0a150a;border:1px solid #2a3a2a;color:#5a8a5a;padding:0.55em;border-radius:10px;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Generate New Code</button>
       </div>
 
       <!-- ═══════ METHOD 2: GITHUB TOKEN ═══════ -->
@@ -598,19 +602,8 @@ function showTokenModal() {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   overlay.querySelector('#tokenCancelBtn').onclick = () => overlay.remove();
 
-  // -------- Pairing code handlers --------  const peerResetBtn = overlay.querySelector('#peerResetBtn');
-  if (peerResetBtn) {
-    peerResetBtn.onclick = async () => {
-      if (!confirm('Generate a new pairing code? Any connected TV displays will need to re-enter the new code.')) return;
-      PeerSync.resetCode();
-      peerResetBtn.textContent = 'Starting…';
-      try {
-        await PeerSync.startHost();
-        overlay.remove();
-        showTokenModal();
-      } catch (e) {}
-    };
-  }
+  // -------- Pairing code handlers --------
+  // viewerCount refresh handled by poll interval below
 
   // Poll every second: refresh viewer count AND swap in code once PeerSync is ready
   const peerPollInterval = setInterval(() => {
@@ -882,6 +875,8 @@ function renderMatchList() {
   // Reset button
   div.querySelector("#resetBtn").onclick = () => {
     if (confirm("Reset Event 4? All progress will be cleared.")) {
+      // Notify connected TV displays to reset their standings
+      if (window.PeerSync) PeerSync.broadcast({ type: "reset" });
       localStorage.removeItem("dartsRoundRobinState");
       loadPresetEvent("event4");
       render();
@@ -3662,8 +3657,66 @@ function generateRoundRobinInterview(match) {
     matchNum: match.matchNum
   };
 }
-window.addEventListener("DOMContentLoaded", () => {
-  // Restore player library on load
+// --- ADMIN PASSWORD SCREEN ---
+function showAdminPasswordScreen() {
+  const overlay = document.createElement('div');
+  overlay.id = 'adminPasswordScreen';
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0a0a0a;z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+  overlay.innerHTML = `
+    <div style="text-align:center;max-width:360px;width:100%;">
+      <div style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.25em;text-transform:uppercase;color:var(--orange);margin-bottom:0.5em;">AADS Darts</div>
+      <h1 style="font-family:var(--font-display);font-size:2.2em;font-weight:900;letter-spacing:0.06em;text-transform:uppercase;color:#fff;margin-bottom:0.1em;">Interview App</h1>
+      <div style="width:50px;height:3px;background:var(--orange);border-radius:2px;margin:0.5em auto 1.8em;"></div>
+      <div style="font-size:0.88em;color:var(--text-muted);margin-bottom:1.4em;line-height:1.7;">Enter the admin password to access the scoring controls.</div>
+      <input id="adminPwInput" type="password" inputmode="numeric" maxlength="10"
+        placeholder="&bull;&bull;&bull;&bull;&bull;"
+        style="width:100%;background:#1a1a1a;border:2px solid var(--divider);color:#fff;padding:0.75em;border-radius:12px;font-size:2em;font-family:monospace;font-weight:900;letter-spacing:0.3em;text-align:center;outline:none;margin-bottom:0.9em;transition:border-color 0.2s;"
+      />
+      <button id="adminPwBtn"
+        style="width:100%;background:linear-gradient(135deg,var(--orange),#f5a623);color:#000;border:none;border-radius:12px;padding:0.85em;font-family:var(--font-display);font-size:1.1em;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-bottom:0.6em;">
+        Enter
+      </button>
+      <div id="adminPwStatus" style="font-size:0.82em;color:#e53935;min-height:1.3em;font-family:var(--font-display);letter-spacing:0.04em;"></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const input  = overlay.querySelector('#adminPwInput');
+  const btn    = overlay.querySelector('#adminPwBtn');
+  const status = overlay.querySelector('#adminPwStatus');
+  setTimeout(() => input.focus(), 80);
+
+  function tryLogin() {
+    const pw = input.value.trim();
+    if (pw === ADMIN_PASSWORD) {
+      localStorage.setItem('dartsAdminAuth', '1');
+      overlay.remove();
+      _initApp();
+    } else {
+      status.textContent = 'Incorrect password. Try again.';
+      input.value = '';
+      input.style.borderColor = '#e53935';
+      setTimeout(() => { input.style.borderColor = 'var(--divider)'; input.focus(); }, 1500);
+    }
+  }
+
+  btn.onclick = tryLogin;
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+  input.addEventListener('input',   () => { status.textContent = ''; });
+}
+
+function _startAdminHost() {
+  if (!window.PeerSync) return;
+  PeerSync.startHost(ADMIN_PEER_CODE)
+    .then(code => console.log('[App] Admin host ready, code:', code))
+    .catch(err => {
+      console.warn('[App] Fixed code failed, falling back to random:', err);
+      PeerSync.startHost().catch(() => {});
+    });
+}
+
+function _initApp() {
+  // Restore player library
   const savedPlayers = localStorage.getItem("dartsPlayerLibrary");
   if (savedPlayers) {
     try {
@@ -3680,7 +3733,6 @@ window.addEventListener("DOMContentLoaded", () => {
       const parsed = JSON.parse(savedRoundRobin);
       if (parsed && parsed.matches && parsed.matches.length > 0) {
         appState.roundRobin = parsed;
-        // Ensure playerProfiles exists after restore
         if (!appState.roundRobin.playerProfiles) appState.roundRobin.playerProfiles = {};
         restored = true;
       }
@@ -3689,18 +3741,18 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  if (!restored) {
-    // Auto-load Event 4 as default
-    loadPresetEvent("event4");
-  }
+  if (!restored) loadPresetEvent("event4");
 
   appState.screen = "matchList";
   render();
+  _startAdminHost();
+}
 
-  // Auto-start PeerSync host silently in the background
-  // so the pairing code is always ready when the modal is opened
-  if (window.PeerSync) {
-    PeerSync.startHost().catch(err => console.warn('[PeerSync] Auto-start failed:', err));
+window.addEventListener("DOMContentLoaded", () => {
+  if (localStorage.getItem('dartsAdminAuth') === '1') {
+    _initApp();
+  } else {
+    showAdminPasswordScreen();
   }
 });
 

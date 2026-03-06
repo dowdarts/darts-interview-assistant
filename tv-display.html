@@ -967,6 +967,7 @@
     // -------------------------------------------------------
     // PAIRING CODE CONNECTION (no GitHub token needed)
     // -------------------------------------------------------
+    const ADMIN_PEER_CODE = 'AADS40'; // Fixed code — interview app always hosts here
     let _peerConnected = false;
     let _pollingInterval = null;
     let _peerObj = null;
@@ -1021,6 +1022,12 @@
         });
 
         conn.on('data', (data) => {
+          // Handle reset broadcast from admin app
+          if (data && data.type === 'reset') {
+            eventData = normalizeEventData({});
+            updateDisplay();
+            return;
+          }
           eventData = normalizeEventData(data);
           updateDisplay();
         });
@@ -1029,6 +1036,8 @@
           _peerConnected = false;
           _setStatus('Peer disconnected — reconnecting…');
           _startPolling();
+          // Auto-reconnect to admin app after a short delay
+          setTimeout(() => { if (!_peerConnected) _peerConnect(ADMIN_PEER_CODE); }, 5000);
         });
 
         conn.on('error', () => {
@@ -1104,17 +1113,18 @@
       _peerConnect(code);
     }
 
-    // On load: auto-reconnect from saved code, or show pairing overlay
+    // On load: show display immediately via GitHub polling,
+    // then silently attempt live peer connection to the admin app.
     window.addEventListener('load', () => {
-      const saved = localStorage.getItem('dartsViewerCode');
-      if (saved) {
-        _peerConnect(saved);
-        // Fallback: if peer doesn't connect in 7s, start polling
-        setTimeout(() => { if (!_peerConnected) _startPolling(); }, 7000);
-      } else {
-        _showPairOverlay();
-        _startPolling(); // Poll as backup while overlay is showing
-      }
+      // Start GitHub polling immediately — no blocking overlay
+      _startPolling();
+      _setStatus('Loading display data\u2026');
+
+      // Silently attempt live peer connection to the admin app
+      _peerConnect(ADMIN_PEER_CODE);
+      setTimeout(() => {
+        if (!_peerConnected) _setStatus('Live from GitHub data.');
+      }, 9000);
     });
   </script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>

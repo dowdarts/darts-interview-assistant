@@ -440,6 +440,7 @@
         // -------------------------------------------------------
         // PAIRING CODE CONNECTION (no GitHub token needed)
         // -------------------------------------------------------
+        const ADMIN_PEER_CODE = 'AADS40'; // Fixed code — interview app always hosts here
         let _peerConnected = false;
         let _pollingInterval = null;
         let _peerObj = null;
@@ -489,6 +490,16 @@
                 });
 
                 conn.on('data', (data) => {
+                    // Handle reset broadcast from admin app
+                    if (data && data.type === 'reset') {
+                        eventData = {
+                            standingsA: eventData.standingsA.map(p => ({...p, matchWins:0, matchLosses:0, legsWon:0})),
+                            standingsB: eventData.standingsB.map(p => ({...p, matchWins:0, matchLosses:0, legsWon:0})),
+                            recentMatches: []
+                        };
+                        renderUI();
+                        return;
+                    }
                     eventData = data;
                     renderUI();
                 });
@@ -500,6 +511,8 @@
                     if (bar) bar.className = 'polling';
                     if (txt) txt.textContent = 'Disconnected \u2014 reconnecting\u2026';
                     _startPolling();
+                    // Auto-reconnect to admin app after a short delay
+                    setTimeout(() => { if (!_peerConnected) _peerConnect(ADMIN_PEER_CODE); }, 5000);
                 });
 
                 conn.on('error', () => {
@@ -577,26 +590,23 @@
             _peerConnect(code);
         }
 
-        // On load: auto-reconnect from saved code, or show pairing overlay
+        // Fixed admin code is now at script level; just start polling + attempt peer connect
         window.addEventListener('load', () => {
             const bar = document.getElementById('liveStatusBar');
             const txt = document.getElementById('liveStatusText');
-            const saved = localStorage.getItem('dartsViewerCode');
-            if (saved) {
-                if (txt) txt.textContent = 'Connecting to code ' + saved + '\u2026';
-                _peerConnect(saved);
-                setTimeout(() => {
-                    if (!_peerConnected) {
-                        if (bar) bar.className = 'polling';
-                        if (txt) txt.textContent = 'Using GitHub data';
-                        _startPolling();
-                    }
-                }, 7000);
-            } else {
-                if (txt) txt.textContent = 'Enter pairing code to connect';
-                _showPairOverlay();
-                _startPolling();
-            }
+
+            // Start GitHub polling right away — no blocking overlay
+            _startPolling();
+            if (txt) txt.textContent = 'Loading standings\u2026';
+
+            // Silently attempt live connection to admin app
+            _peerConnect(ADMIN_PEER_CODE);
+            setTimeout(() => {
+                if (!_peerConnected) {
+                    if (bar) bar.className = 'polling';
+                    if (txt) txt.textContent = 'Live from GitHub data';
+                }
+            }, 9000);
         });
     </script>
 

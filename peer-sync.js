@@ -12,15 +12,27 @@ const PeerSync = {
   _lastData: null,
   _hostStarting: false,
   _hostReady: false,
+  _preferredCode: null,
+  _preferredCodeRetried: false,
 
   // ------------------------------------------------------------------
   // HOST — called by the interview app
+  // preferredCode (optional): if supplied, always try to use that exact code
   // ------------------------------------------------------------------
-  startHost() {
+  startHost(preferredCode = null) {
     return new Promise((resolve, reject) => {
       if (this._hostReady && this.peer && !this.peer.destroyed) {
-        resolve(this._code);
-        return;
+        // Already running with the same code — done
+        if (!preferredCode || this._code === preferredCode.toUpperCase()) {
+          resolve(this._code);
+          return;
+        }
+        // Different code requested — tear down and restart
+        this.peer.destroy();
+        this.peer = null;
+        this._hostReady = false;
+        this._hostStarting = false;
+        this.connections = [];
       }
       if (this._hostStarting) {
         // Already starting, poll until ready
@@ -32,11 +44,19 @@ const PeerSync = {
 
       this._hostStarting = true;
 
-      // Restore or generate a 6-char uppercase code
-      let code = localStorage.getItem('dartsRoomCode');
-      if (!code || code.length !== 6) {
-        code = Math.random().toString(36).slice(2, 8).toUpperCase();
+      let code;
+      if (preferredCode && preferredCode.length >= 4) {
+        code = preferredCode.toUpperCase().slice(0, 6).padEnd(6, '0');
         localStorage.setItem('dartsRoomCode', code);
+        this._preferredCode = code;
+        this._preferredCodeRetried = false;
+      } else {
+        code = localStorage.getItem('dartsRoomCode');
+        if (!code || code.length !== 6) {
+          code = Math.random().toString(36).slice(2, 8).toUpperCase();
+          localStorage.setItem('dartsRoomCode', code);
+        }
+        this._preferredCode = null;
       }
       this._code = code;
 
@@ -79,10 +99,19 @@ const PeerSync = {
 
       p.on('error', (err) => {
         if (err.type === 'unavailable-id') {
-          // Code already in use — generate a fresh one
+          if (this._preferredCode && !this._preferredCodeRetried) {
+            // Fixed admin code is temporarily busy — retry once after 3 s
+            this._preferredCodeRetried = true;
+            p.destroy();
+            console.warn('[PeerSync] Fixed code busy, retrying in 3s…');
+            setTimeout(() => this._createPeer(this._preferredCode, resolve, reject), 3000);
+            return;
+          }
+          // Fall back to a fresh random code
           const newCode = Math.random().toString(36).slice(2, 8).toUpperCase();
           localStorage.setItem('dartsRoomCode', newCode);
           this._code = newCode;
+          this._preferredCode = null;
           this._hostStarting = false;
           p.destroy();
           this._createPeer(newCode, resolve, reject);
