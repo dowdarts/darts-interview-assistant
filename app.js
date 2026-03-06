@@ -141,6 +141,18 @@ const questionBank = {
     (data) => `A ${data.highAverage || "strong"} average against ${data.opponent}, are you pleased with that?`,
     (data) => `That ${data.highAverage || "high"} average shows real quality. What's clicking for you right now?`
   ],
+  // Pressure questions — asked to the WINNER when the LOSER had the attributed stat
+  highScoringPressure: [
+    (data) => `In leg ${data.legNumber}, ${data.statPlayer} hit you with a ${data.statValue}. How did you handle that?`,
+    (data) => `${data.statPlayer} threw a ${data.statValue} in leg ${data.legNumber} — what was going through your mind when that went in?`,
+    (data) => `When ${data.statPlayer} posted that ${data.statValue} in leg ${data.legNumber}, how did you keep your composure?`,
+    (data) => `That ${data.statValue} from ${data.statPlayer} in leg ${data.legNumber} — did that fire you up or pile on the pressure?`
+  ],
+  highAveragePressure: [
+    (data) => `${data.statPlayer} was averaging ${data.statValue} — how did you find a way through against that level of scoring?`,
+    (data) => `Facing a ${data.statValue} average from ${data.statPlayer} is no easy task. What was the key to coming through?`,
+    (data) => `${data.statPlayer} posted a ${data.statValue} average tonight. How did you overcome that performance to take the win?`
+  ],
   lowDartLeg: [
     (data) => `${data.lowDartLeg || "Quick"} darts to win that leg — that's clinical finishing, ${data.playerName}!`,
     (data) => `A ${data.lowDartLeg || "quick"}-darter! Talk us through that leg.`,
@@ -1182,9 +1194,62 @@ const momentDescriptions = {
   consolidatedBreak:  "Player broke the opponent\'s throw then immediately held their own in the next leg.",
   stoppedTheRot:      "Player won a leg to halt a losing run and get back into the match."
 };
-function buildMomentSelector(container, legState) {
-  const valueKeys = ["highScoring","bigFinish","highAverage","lowDartLeg"];
-  const valuePlaceholders = { highScoring: "Score (e.g. 180)", bigFinish: "Finish (e.g. 121)", highAverage: "Average", lowDartLeg: "No. of darts" };
+// --- PLAYER STAT ATTRIBUTION MODAL ---
+// Shows a two-tab player picker + value input for highScoring / highAverage moments.
+// onConfirm(result) — result is { playerKey, player, value } or null if cancelled.
+function showPlayerStatModal(p1Name, p2Name, statType, onConfirm) {
+  const labels       = { highScoring: "High Score", highAverage: "High Average" };
+  const placeholders = { highScoring: "Score (e.g. 180)", highAverage: "Average (e.g. 105)" };
+
+  const overlay = document.createElement("div");
+  overlay.className = "player-stat-overlay";
+  overlay.innerHTML = `
+    <div class="player-stat-modal">
+      <div class="player-stat-title">${labels[statType] || statType}</div>
+      <div class="player-stat-subtitle">Which player was this for?</div>
+      <div class="player-stat-tabs">
+        <button class="player-stat-tab selected" data-pkey="player1">${p1Name}</button>
+        <button class="player-stat-tab" data-pkey="player2">${p2Name}</button>
+      </div>
+      <input type="text" inputmode="decimal" class="player-stat-input" placeholder="${placeholders[statType] || 'Enter value'}" />
+      <div class="player-stat-actions">
+        <button class="button player-stat-confirm">✓ Confirm</button>
+        <button class="button btn-secondary player-stat-cancel">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  let selectedPkey = "player1";
+  overlay.querySelectorAll(".player-stat-tab").forEach(tab => {
+    tab.onclick = () => {
+      selectedPkey = tab.dataset.pkey;
+      overlay.querySelectorAll(".player-stat-tab").forEach(t => t.classList.remove("selected"));
+      tab.classList.add("selected");
+    };
+  });
+
+  overlay.querySelector(".player-stat-confirm").onclick = () => {
+    const value = overlay.querySelector(".player-stat-input").value.trim();
+    const playerName = selectedPkey === "player1" ? p1Name : p2Name;
+    document.body.removeChild(overlay);
+    onConfirm({ playerKey: selectedPkey, player: playerName, value });
+  };
+
+  overlay.querySelector(".player-stat-cancel").onclick = () => {
+    document.body.removeChild(overlay);
+    onConfirm(null);
+  };
+
+  document.body.appendChild(overlay);
+  setTimeout(() => overlay.querySelector(".player-stat-input").focus(), 100);
+}
+
+function buildMomentSelector(container, legState, p1Name, p2Name) {
+  // highScoring and highAverage use the player-attribution modal (not an inline input).
+  // All other valued types use the existing inline text input.
+  const valueKeys        = ["bigFinish","lowDartLeg"];
+  const attributedKeys   = ["highScoring","highAverage"];
+  const valuePlaceholders = { bigFinish: "Finish (e.g. 121)", highAverage: "Average", lowDartLeg: "No. of darts" };
 
   const grid = document.createElement("div");
   grid.className = "moment-flat-grid";
@@ -1201,7 +1266,10 @@ function buildMomentSelector(container, legState) {
     btnRow.className = "moment-btn-row";
 
     const btn = document.createElement("button");
-    btn.className = "moment-btn button" + (legState.moments.includes(key) ? " selected" : "");
+    const isAttrKey = attributedKeys.includes(key);
+    const isAttrSelected = isAttrKey && legState.attributedStats && legState.attributedStats.some(s => s.type === key);
+    const isSelected = isAttrKey ? isAttrSelected : legState.moments.includes(key);
+    btn.className = "moment-btn button" + (isSelected ? " selected" : "");
     btn.textContent = cat.label;
     btn.dataset.key = key;
     btn.type = "button";
@@ -1236,7 +1304,21 @@ function buildMomentSelector(container, legState) {
     }
 
     let input = null;
-    if (valueKeys.includes(key)) {
+    let attrLabel = null;
+
+    if (attributedKeys.includes(key)) {
+      // Player-attributed stat: show a label row instead of inline input
+      if (!legState.attributedStats) legState.attributedStats = [];
+      const existingStat = legState.attributedStats.find(s => s.type === key);
+      attrLabel = document.createElement("div");
+      attrLabel.className = "moment-attr-label";
+      attrLabel.style.display = existingStat ? "block" : "none";
+      if (existingStat) {
+        attrLabel.textContent = `${existingStat.player}  ·  ${existingStat.value}   (tap to change)`;
+        btn.classList.add("selected");
+      }
+      cell.appendChild(attrLabel);
+    } else if (valueKeys.includes(key)) {
       input = document.createElement("input");
       input.type = "text";
       input.placeholder = valuePlaceholders[key] || cat.label;
@@ -1250,7 +1332,33 @@ function buildMomentSelector(container, legState) {
     }
 
     btn.onclick = () => {
-      if (legState.moments.includes(key)) {
+      if (attributedKeys.includes(key)) {
+        // Open player-attribution modal regardless of current state
+        const hasBothPlayers = p1Name && p2Name;
+        if (!hasBothPlayers) {
+          // Fallback: treat as regular toggled moment without attribution
+          if (legState.moments.includes(key)) {
+            legState.moments = legState.moments.filter(k => k !== key);
+            btn.classList.remove("selected");
+          } else {
+            legState.moments.push(key);
+            btn.classList.add("selected");
+          }
+          return;
+        }
+        showPlayerStatModal(p1Name, p2Name, key, (result) => {
+          if (!result) return; // cancelled
+          if (!legState.attributedStats) legState.attributedStats = [];
+          // Replace any existing attributed stat of the same type
+          legState.attributedStats = legState.attributedStats.filter(s => s.type !== key);
+          legState.attributedStats.push({ type: key, playerKey: result.playerKey, player: result.player, value: result.value });
+          btn.classList.add("selected");
+          if (attrLabel) {
+            attrLabel.textContent = `${result.player}  ·  ${result.value}   (tap to change)`;
+            attrLabel.style.display = "block";
+          }
+        });
+      } else if (legState.moments.includes(key)) {
         legState.moments = legState.moments.filter(k => k !== key);
         btn.classList.remove("selected");
         if (input) { input.style.display = "none"; delete legState.momentValues[key]; }
@@ -1286,7 +1394,7 @@ function renderMatch() {
   }
   // State for this leg
   let selectedWinner = null;
-  const currentLeg = { moments: [], momentValues: {} };
+  const currentLeg = { moments: [], momentValues: {}, attributedStats: [] };
 
   div.innerHTML = `
     <div class="scoreboard">
@@ -1313,7 +1421,7 @@ function renderMatch() {
     };
   });
   // Moment selector
-  buildMomentSelector(div.querySelector("#momentBtns"), currentLeg);
+  buildMomentSelector(div.querySelector("#momentBtns"), currentLeg, p1, p2);
 
   // Next Leg/Set logic
   div.querySelector("#nextLegBtn").onclick = () => {
@@ -1327,6 +1435,7 @@ function renderMatch() {
       winner: selectedWinner,
       moments: [...currentLeg.moments],
       momentValues: { ...currentLeg.momentValues },
+      attributedStats: [...(currentLeg.attributedStats || [])],
       setNumber: setPlayMode ? appState.setPlay.currentSet : undefined
     };
     appState.legs.push(legObj);
@@ -1553,8 +1662,52 @@ function generateInterviewQuestions() {
   // 4. Pull one random question per category, filling in values
   const questions = [];
   const usedQuestions = new Set(); // Track used questions to avoid duplicates
+  const usedCats = new Set();      // Categories already covered by attributed stats
+
+  // 4a. Player-attributed stats (Priority 0 — recorded in real time during legs)
+  const allAttributedStats = [];
+  appState.legs.forEach(leg => {
+    (leg.attributedStats || []).forEach(stat => {
+      allAttributedStats.push({ ...stat, legNumber: leg.legNumber });
+    });
+  });
+  allAttributedStats.forEach(stat => {
+    const isWinnerStat = stat.player === playerName;
+    const qData = {
+      playerName, opponent, matchScore,
+      legNumber: stat.legNumber,
+      statPlayer: stat.player,
+      statValue: stat.value,
+      highScore:   stat.type === "highScoring" ? stat.value : undefined,
+      highAverage: stat.type === "highAverage" ? stat.value : undefined
+    };
+    let qFns = [];
+    if (isWinnerStat) {
+      qFns = questionBank[stat.type] || [];
+    } else {
+      const pressureKey = stat.type === "highScoring" ? "highScoringPressure"
+                        : stat.type === "highAverage"  ? "highAveragePressure" : null;
+      qFns = pressureKey ? (questionBank[pressureKey] || []) : [];
+    }
+    if (!qFns.length) return;
+    const shuffled = [...qFns].sort(() => Math.random() - 0.5);
+    const slotOptions = [];
+    for (const fn of shuffled) {
+      const text = fn(qData);
+      if (text && !usedQuestions.has(text)) {
+        slotOptions.push({ text, legNumber: qData.legNumber || null });
+        usedQuestions.add(text);
+        if (slotOptions.length >= 2) break;
+      }
+    }
+    if (slotOptions.length > 0) {
+      questions.push({ options: slotOptions, selected: 0 });
+      if (isWinnerStat) usedCats.add(stat.type);
+    }
+  });
+
   selectedCats.forEach(cat => {
-    if (questionBank[cat] && questionBank[cat].length) {
+    if (!questionBank[cat] || !questionBank[cat].length || usedCats.has(cat)) return;
       // Build data object with all available context
       let data = {
         playerName: playerName,
@@ -1594,7 +1747,6 @@ function generateInterviewQuestions() {
         }
       }
       if (slotOptions.length > 0) questions.push({ options: slotOptions, selected: 0 });
-    }
   });
   // 5. Fill with general if < 4, ensuring no duplicates
   while (questions.length < 4) {
@@ -2288,6 +2440,7 @@ function renderRoundRobinMatch() {
     winner: null,
     moments: [],
     momentValues: {},
+    attributedStats: [],
     legNumber: state.currentLeg,
     note: ""
   };
@@ -2362,9 +2515,10 @@ function renderRoundRobinMatch() {
     if (prevLeg) {
       currentLeg.moments = [...(prevLeg.moments || [])];
       currentLeg.momentValues = {...(prevLeg.momentValues || {})};
+      currentLeg.attributedStats = [...(prevLeg.attributedStats || [])];
     }
   }
-  buildMomentSelector(div.querySelector("#momentBtns"), currentLeg);
+  buildMomentSelector(div.querySelector("#momentBtns"), currentLeg, currentMatch.player1, currentMatch.player2);
 
   // If edit mode: pre-select winner and note
   if (state.editMode && state.originalLegs) {
@@ -2456,6 +2610,7 @@ function renderRoundRobinMatch() {
         winner: currentLeg.winner,
         moments: [...currentLeg.moments],
         momentValues: {...currentLeg.momentValues},
+        attributedStats: [...(currentLeg.attributedStats || [])],
         legNumber: currentLeg.legNumber,
         note: currentLeg.note || ""
       });
@@ -2898,7 +3053,7 @@ function renderKnockoutMatch() {
   const fmtLabel = `Best of ${format.setsToWin*2-1} Sets · Best of ${format.legsPerSet} Legs per Set`;
 
   let selectedWinner = null;
-  let currentLeg = { winner:null, moments:[], momentValues:{}, legNumber: state.legs.length+1, setNumber: state.currentSet, note:"" };
+  let currentLeg = { winner:null, moments:[], momentValues:{}, attributedStats:[], legNumber: state.legs.length+1, setNumber: state.currentSet, note:"" };
 
   const legsInSetDisplay = `${state.legScores.player1}–${state.legScores.player2}`;
   const setScoreDisplay  = `${state.score1}–${state.score2}`;
@@ -2968,7 +3123,7 @@ function renderKnockoutMatch() {
   div.querySelector("#legNoteInput").oninput = (e) => { currentLeg.note = e.target.value; };
 
   // Moment selector
-  buildMomentSelector(div.querySelector("#momentBtns"), currentLeg);
+  buildMomentSelector(div.querySelector("#momentBtns"), currentLeg, p1, p2);
 
   // Undo last leg
   div.querySelector("#undoLegBtn").onclick = () => {
@@ -2995,7 +3150,7 @@ function renderKnockoutMatch() {
     if (!selectedWinner) { alert("Select a leg winner first."); return; }
     currentLeg.legNumber = state.legs.length + 1;
     currentLeg.setNumber = state.currentSet;
-    state.legs.push({ ...currentLeg, moments:[...currentLeg.moments], momentValues:{...currentLeg.momentValues} });
+    state.legs.push({ ...currentLeg, moments:[...currentLeg.moments], momentValues:{...currentLeg.momentValues}, attributedStats:[...(currentLeg.attributedStats||[])] });
 
     // Update set legs
     if (selectedWinner === p1) state.legScores.player1++;
@@ -3356,10 +3511,58 @@ function generateRoundRobinInterview(match) {
   const questions = [];
   const usedCategories = new Set();
   const usedQuestions = new Set();
-  
+
+  // Priority 0: Player-attributed stats (highScoring / highAverage recorded in real time)
+  // These are processed FIRST so they always appear — before generic moment questions.
+  const allAttributedStats = [];
+  match.legs.forEach(leg => {
+    (leg.attributedStats || []).forEach(stat => {
+      allAttributedStats.push({ ...stat, legNumber: leg.legNumber, legWinner: leg.winner });
+    });
+  });
+
+  allAttributedStats.forEach(stat => {
+    const isWinnerStat = stat.player === winner;
+    const qData = {
+      ...data,
+      legNumber: stat.legNumber,
+      statPlayer: stat.player,
+      statValue: stat.value,
+      highScore:   stat.type === "highScoring" ? stat.value : undefined,
+      highAverage: stat.type === "highAverage" ? stat.value : undefined
+    };
+
+    let qFns = [];
+    if (isWinnerStat) {
+      // Winner had the stat — positive question
+      qFns = questionBank[stat.type] || [];
+    } else {
+      // Loser had the stat — ask the winner how they overcame it
+      const pressureKey = stat.type === "highScoring" ? "highScoringPressure"
+                        : stat.type === "highAverage"  ? "highAveragePressure" : null;
+      qFns = pressureKey ? (questionBank[pressureKey] || []) : [];
+    }
+
+    if (!qFns.length) return;
+    const shuffled = [...qFns].sort(() => Math.random() - 0.5);
+    const slotOptions = [];
+    for (const fn of shuffled) {
+      const text = fn(qData);
+      if (text && !usedQuestions.has(fn.toString())) {
+        slotOptions.push({ text, legNumber: qData.legNumber || null });
+        usedQuestions.add(fn.toString());
+        if (slotOptions.length >= 2) break;
+      }
+    }
+    if (slotOptions.length > 0) {
+      questions.push({ options: slotOptions, selected: 0 });
+      if (isWinnerStat) usedCategories.add(stat.type);
+    }
+  });
+
   // Priority 1: Add moment-based questions (limit to top 4 most frequent)
   sortedMoments.slice(0, 4).forEach((cat) => {
-    if (questionBank[cat] && questions.length < 4) {
+    if (questionBank[cat] && questions.length < 4 && !usedCategories.has(cat)) {
       // Use the last occurrence of this moment
       const lastIdx = momentData[cat].length - 1;
       data[cat] = momentData[cat][lastIdx];

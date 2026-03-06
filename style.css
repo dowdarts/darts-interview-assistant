@@ -887,6 +887,102 @@ input::placeholder { color: #444; }
   box-shadow: none;
 }
 
+/* ---- Player Stat Attribution Label ---- */
+.moment-attr-label {
+  font-size: 0.75em;
+  color: var(--orange);
+  background: rgba(242,101,34,0.08);
+  border: 1px solid rgba(242,101,34,0.3);
+  border-radius: 6px;
+  padding: 0.3em 0.6em;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ---- Player Stat Attribution Modal ---- */
+.player-stat-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2em;
+}
+.player-stat-modal {
+  background: var(--card-bg, #1a1a1a);
+  border: 1.5px solid var(--divider, #2a2a2a);
+  border-radius: 16px;
+  padding: 1.5em 1.4em 1.3em;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+}
+.player-stat-title {
+  font-family: var(--font-display);
+  font-size: 1.05em;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 0.2em;
+  font-weight: 700;
+}
+.player-stat-subtitle {
+  font-size: 0.88em;
+  color: var(--text-muted);
+  margin-bottom: 1em;
+}
+.player-stat-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5em;
+  margin-bottom: 1em;
+}
+.player-stat-tab {
+  padding: 0.75em 0.5em;
+  border-radius: 10px;
+  border: 1.5px solid var(--divider, #2a2a2a);
+  background: #111;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.player-stat-tab.selected {
+  border-color: var(--orange);
+  background: rgba(242,101,34,0.14);
+  color: var(--white);
+}
+.player-stat-input {
+  width: 100%;
+  background: #111;
+  color: var(--white);
+  border: 1.5px solid var(--divider, #2a2a2a);
+  border-radius: 10px;
+  padding: 0.75em 1em;
+  font-family: var(--font-main);
+  font-size: 1.05em;
+  box-sizing: border-box;
+  margin-bottom: 1em;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.player-stat-input:focus {
+  border-color: var(--orange);
+}
+.player-stat-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5em;
+}
+
 /* ---- Moment Group Accordion ---- */
 .moment-group {
   margin-bottom: 0.5em;
