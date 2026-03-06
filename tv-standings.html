@@ -378,8 +378,158 @@
             content.innerHTML = html;
         }
 
-        fetchData();
-        setInterval(fetchData, 3000);
+        // -------------------------------------------------------
+        // PAIRING CODE CONNECTION (no GitHub token needed)
+        // -------------------------------------------------------
+        let _peerConnected = false;
+        let _pollingInterval = null;
+        let _peerObj = null;
+
+        function _startPolling() {
+            if (_pollingInterval) return;
+            fetchData();
+            _pollingInterval = setInterval(fetchData, 3000);
+        }
+
+        function _stopPolling() {
+            if (_pollingInterval) { clearInterval(_pollingInterval); _pollingInterval = null; }
+        }
+
+        function _peerConnect(code) {
+            const cleanCode = code.trim().toUpperCase();
+            const hostId    = 'darts-' + cleanCode;
+            const viewerId  = 'viewer-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+            if (_peerObj && !_peerObj.destroyed) _peerObj.destroy();
+
+            const peer = new Peer(viewerId, { debug: 0 });
+            _peerObj = peer;
+
+            peer.on('open', () => {
+                const conn = peer.connect(hostId, { reliable: true, serialization: 'json' });
+
+                const timeout = setTimeout(() => {
+                    if (!_peerConnected) {
+                        const ps = document.getElementById('pairStatus');
+                        if (ps) { ps.style.color='#e53935'; ps.textContent='Host not found — check the code.'; }
+                        _startPolling();
+                    }
+                }, 8000);
+
+                conn.on('open', () => {
+                    clearTimeout(timeout);
+                    _peerConnected = true;
+                    localStorage.setItem('dartsViewerCode', cleanCode);
+                    _hidePairOverlay();
+                    _stopPolling();
+                    const hdr = document.querySelector('.main-header');
+                    if (hdr) {
+                        let pill = document.getElementById('peerPill');
+                        if (!pill) {
+                            pill = document.createElement('div');
+                            pill.id = 'peerPill';
+                            pill.style.cssText = 'margin-top:8px;display:inline-block;background:rgba(76,175,80,0.15);border:1px solid #4caf50;color:#4caf50;font-family:"Oswald",sans-serif;font-size:0.75em;letter-spacing:0.1em;text-transform:uppercase;padding:0.3em 0.9em;border-radius:20px;cursor:pointer;';
+                            pill.textContent = '● LIVE — Code: ' + cleanCode;
+                            pill.onclick = () => _showPairOverlay();
+                            hdr.appendChild(pill);
+                        }
+                    }
+                });
+
+                conn.on('data', (data) => {
+                    eventData = data;
+                    renderUI();
+                });
+
+                conn.on('close', () => {
+                    _peerConnected = false;
+                    _startPolling();
+                });
+
+                conn.on('error', () => {
+                    _peerConnected = false;
+                    _startPolling();
+                });
+            });
+
+            peer.on('error', () => {
+                _peerConnected = false;
+                const ps = document.getElementById('pairStatus');
+                if (ps) { ps.style.color='#e53935'; ps.textContent='Could not connect — check code.'; }
+                _startPolling();
+            });
+        }
+
+        function _showPairOverlay() {
+            let ov = document.getElementById('pairOverlay');
+            if (ov) { ov.style.display='flex'; setTimeout(()=>document.getElementById('pairInput')?.focus(),80); return; }
+
+            ov = document.createElement('div');
+            ov.id = 'pairOverlay';
+            ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+            ov.innerHTML = `
+              <div style="background:#111;border:2px solid var(--aads-orange);border-radius:22px;padding:2.2em 2em;max-width:440px;width:100%;text-align:center;">
+                <div style="font-family:'Oswald',sans-serif;font-size:0.75em;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.3em;">AADS Darts</div>
+                <h2 style="font-family:'Oswald',sans-serif;font-size:2em;font-weight:900;letter-spacing:0.05em;text-transform:uppercase;color:#fff;margin-bottom:0.1em;">Live Standings</h2>
+                <div style="width:50px;height:3px;background:var(--aads-orange);border-radius:2px;margin:0.5em auto 1.4em;"></div>
+                <p style="font-size:0.9em;color:var(--text-muted);margin-bottom:1.4em;line-height:1.7;">
+                  Enter the <b style="color:#fff;">6-character pairing code</b><br>shown in the interview app.
+                </p>
+                <input id="pairInput" type="text" maxlength="6" placeholder="AB3X7Q"
+                  style="width:100%;background:#1a1a1a;border:2px solid var(--aads-orange);color:#fff;padding:0.75em;border-radius:12px;font-size:2em;font-family:monospace;font-weight:900;letter-spacing:0.3em;text-align:center;text-transform:uppercase;outline:none;margin-bottom:0.9em;"
+                />
+                <button id="pairConnectBtn"
+                  style="width:100%;background:var(--aads-orange);color:#000;border:none;border-radius:12px;padding:0.85em;font-family:'Oswald',sans-serif;font-size:1.1em;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-bottom:0.7em;">
+                  Connect
+                </button>
+                <div id="pairStatus" style="font-size:0.82em;color:var(--text-muted);min-height:1.3em;margin-bottom:0.8em;"></div>
+                <button id="pairGithubBtn"
+                  style="background:none;border:none;color:var(--text-muted);font-size:0.8em;cursor:pointer;text-decoration:underline;">
+                  Use GitHub data instead
+                </button>
+              </div>`;
+
+            document.body.appendChild(ov);
+
+            const input = ov.querySelector('#pairInput');
+            setTimeout(() => input?.focus(), 80);
+            input.addEventListener('input',  () => { input.value = input.value.toUpperCase(); });
+            input.addEventListener('keydown', e => { if (e.key === 'Enter') _doPairConnect(); });
+            ov.querySelector('#pairConnectBtn').addEventListener('click', _doPairConnect);
+            ov.querySelector('#pairGithubBtn').addEventListener('click', () => {
+                _hidePairOverlay(); _startPolling();
+            });
+        }
+
+        function _hidePairOverlay() {
+            const ov = document.getElementById('pairOverlay');
+            if (ov) ov.style.display = 'none';
+        }
+
+        function _doPairConnect() {
+            const code = (document.getElementById('pairInput')?.value || '').trim().toUpperCase();
+            const ps = document.getElementById('pairStatus');
+            if (code.length < 4) {
+                if (ps) { ps.style.color='#e53935'; ps.textContent='Enter the 6-character code from the interview app.'; }
+                return;
+            }
+            if (ps) { ps.style.color='var(--text-muted)'; ps.textContent='Connecting…'; }
+            _peerConnect(code);
+        }
+
+        // On load: auto-reconnect from saved code, or show pairing overlay
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('dartsViewerCode');
+            if (saved) {
+                _peerConnect(saved);
+                setTimeout(() => { if (!_peerConnected) _startPolling(); }, 7000);
+            } else {
+                _showPairOverlay();
+                _startPolling();
+            }
+        });
     </script>
+
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </body>
 </html>

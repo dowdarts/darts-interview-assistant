@@ -457,7 +457,10 @@ function renderMainMenu() {
       <div style="width:70px;height:3px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin:0.6em auto 0;box-shadow:0 0 12px var(--orange);"></div>
     </div>
     <button id="roundRobinBtn" class="button" style="max-width:360px;margin:0 auto var(--gap);">Round Robin Event</button>
-    <button id="questionBankBtn" class="button btn-secondary" style="max-width:360px;margin:0 auto;">Interview Questions</button>
+    <button id="questionBankBtn" class="button btn-secondary" style="max-width:360px;margin:0 auto var(--gap);">Interview Questions</button>
+    <button id="menuSyncBtn" style="max-width:360px;margin:0 auto;display:block;background:${(GitHubSync.hasToken()||PeerSync.isHostActive()) ? '#1a3a1a' : '#111'};border:1px solid ${(GitHubSync.hasToken()||PeerSync.isHostActive()) ? '#4caf50' : 'var(--divider)'};color:${(GitHubSync.hasToken()||PeerSync.isHostActive()) ? '#4caf50' : 'var(--text-muted)'};font-family:var(--font-display);font-size:0.78em;letter-spacing:0.1em;text-transform:uppercase;padding:0.65em 1.2em;border-radius:12px;cursor:pointer;">
+      ${PeerSync.isHostActive() ? `📡 TV Sync  ✓ Code: ${PeerSync.getCode()}` : GitHubSync.hasToken() ? '📡 TV Sync  ✓ GitHub Connected' : '📡 TV Sync  ⊘ Not configured'}
+    </button>
   `;
   div.querySelector("#roundRobinBtn").onclick = () => {
     // Check if there's a saved tournament
@@ -491,7 +494,180 @@ function renderMainMenu() {
     appState.screen = "questionBank";
     render();
   };
+  div.querySelector("#menuSyncBtn").onclick = () => showTokenModal();
   return div;
+}
+
+// --- TOKEN SETUP MODAL ---
+function showTokenModal() {
+  const existing = document.getElementById('tokenModal');
+  if (existing) existing.remove();
+
+  const hasToken  = GitHubSync.hasToken();
+  const peerCode  = PeerSync.getCode();
+  const peerActive = PeerSync.isHostActive();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tokenModal';
+  overlay.style.cssText = [
+    'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;',
+    'display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto;'
+  ].join('');
+
+  overlay.innerHTML = `
+    <div style="background:#111;border:1.5px solid var(--orange);border-radius:18px;padding:1.6em 1.4em;max-width:460px;width:100%;box-shadow:0 0 40px rgba(255,130,0,0.15);">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5em;">
+        <h2 style="margin:0;font-size:1.2em;font-family:var(--font-display);letter-spacing:0.08em;text-transform:uppercase;color:var(--orange);">📡 TV Sync Setup</h2>
+        <button id="tokenCancelBtn" style="background:none;border:none;color:var(--text-muted);font-size:1.4em;cursor:pointer;padding:0 0.2em;line-height:1;">✕</button>
+      </div>
+      <div style="height:1px;background:var(--divider);margin-bottom:1.2em;"></div>
+
+      <!-- ═══════ METHOD 1: PAIRING CODE ═══════ -->
+      <div style="background:#0f1c0f;border:1.5px solid ${peerActive ? '#4caf50' : '#2a3a2a'};border-radius:14px;padding:1.1em 1.2em;margin-bottom:1.1em;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7em;">
+          <span style="font-family:var(--font-display);font-size:0.8em;letter-spacing:0.12em;text-transform:uppercase;color:${peerActive ? '#4caf50' : '#5a8a5a'};">★ Method 1 — Pairing Code</span>
+          <span style="font-size:0.72em;font-family:var(--font-display);letter-spacing:0.08em;text-transform:uppercase;padding:0.2em 0.7em;border-radius:20px;background:${peerActive ? 'rgba(76,175,80,0.18)' : '#1a2a1a'};color:${peerActive ? '#4caf50' : '#5a8a5a'};border:1px solid ${peerActive ? '#4caf50' : '#2a3a2a'};">No account needed</span>
+        </div>
+
+        <div style="font-size:0.8em;color:#7aaa7a;margin-bottom:0.9em;line-height:1.55;">
+          The TV display opens a page, enters this code, and receives live data directly — no GitHub, no internet delay.
+        </div>
+
+        ${peerActive && peerCode ? `
+          <div style="text-align:center;margin-bottom:0.9em;">
+            <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.14em;text-transform:uppercase;color:#5a8a5a;margin-bottom:0.3em;">Your pairing code</div>
+            <div id="pairCodeDisplay" style="font-family:monospace;font-size:2.6em;font-weight:900;letter-spacing:0.22em;color:#4caf50;background:#0a150a;border:2px solid #4caf50;border-radius:12px;padding:0.25em 0.5em;display:inline-block;">${peerCode}</div>
+            <div style="font-size:0.75em;color:#5a8a5a;margin-top:0.4em;">TV displays connected: <b style="color:#4caf50;" id="viewerCount">${PeerSync.connectedViewers()}</b></div>
+          </div>
+          <button id="peerResetBtn" style="width:100%;background:#0a150a;border:1px solid #2a3a2a;color:#5a8a5a;padding:0.55em;border-radius:10px;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Generate New Code</button>
+        ` : `
+          <button id="peerStartBtn" class="button" style="width:100%;margin:0;background:linear-gradient(135deg,#1a4a1a,#2a6a2a);border:1px solid #4caf50;color:#4caf50;">Activate Pairing Code</button>
+          <div id="peerStartStatus" style="text-align:center;font-size:0.78em;color:var(--text-muted);margin-top:0.5em;min-height:1.2em;"></div>
+        `}
+      </div>
+
+      <!-- ═══════ METHOD 2: GITHUB TOKEN ═══════ -->
+      <div style="background:#1a1210;border:1px solid #2a1f18;border-radius:14px;padding:1.1em 1.2em;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7em;">
+          <span style="font-family:var(--font-display);font-size:0.8em;letter-spacing:0.12em;text-transform:uppercase;color:${hasToken ? 'var(--orange)' : '#7a5a40'};">Method 2 — GitHub Token</span>
+          <span style="font-size:0.72em;font-family:var(--font-display);letter-spacing:0.08em;text-transform:uppercase;padding:0.2em 0.7em;border-radius:20px;background:${hasToken ? 'rgba(242,101,34,0.15)' : '#1a1208'};color:${hasToken ? 'var(--orange)' : '#7a5a40'};border:1px solid ${hasToken ? 'var(--orange)' : '#2a1f18'};">Requires GitHub PAT</span>
+        </div>
+
+        <div style="font-size:0.79em;color:#8a7060;margin-bottom:0.9em;line-height:1.55;">
+          ${hasToken
+            ? '✓ Token active — standings commit to GitHub on every score update.'
+            : 'Pushes data to GitHub. Works even when the interview app is closed. Requires a Personal Access Token with <b>repo</b> permission.'}
+        </div>
+
+        <label style="display:block;font-family:var(--font-display);font-size:0.74em;letter-spacing:0.08em;text-transform:uppercase;color:#7a5a40;margin-bottom:0.35em;">${hasToken ? 'Paste new token to update' : 'Paste GitHub Personal Access Token'}</label>
+        <div style="display:flex;gap:0.5em;margin-bottom:0.8em;">
+          <input id="tokenInput" type="password"
+            placeholder="${hasToken ? '(saved — paste to update)' : 'ghp_xxxxxxxxxxxxxxxxxxxx'}"
+            style="flex:1;background:#120e0a;border:1px solid #2a1f18;color:#fff;padding:0.6em 0.85em;border-radius:10px;font-size:0.9em;font-family:monospace;outline:none;"
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          />
+          <button id="tokenToggle" title="Show/hide" style="background:#120e0a;border:1px solid #2a1f18;color:#7a5a40;padding:0 0.8em;border-radius:10px;font-size:0.9em;cursor:pointer;flex-shrink:0;">👁</button>
+        </div>
+
+        <div style="display:flex;gap:0.5em;flex-wrap:wrap;">
+          <button id="tokenSaveBtn" style="flex:1;min-width:100px;background:linear-gradient(135deg,#3a2010,#5a3010);border:1px solid var(--orange);color:var(--orange);border-radius:10px;padding:0.65em;font-family:var(--font-display);font-size:0.8em;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Save Token</button>
+          ${hasToken ? `<button id="tokenDisableBtn" style="flex:0 0 auto;background:#1a1208;border:1px solid #e53935;color:#e53935;border-radius:10px;padding:0.65em 1em;font-family:var(--font-display);font-size:0.8em;letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;">Disable</button>` : ''}
+        </div>
+        <div id="tokenStatus" style="margin-top:0.7em;font-size:0.79em;min-height:1.2em;text-align:center;font-family:var(--font-display);letter-spacing:0.04em;color:var(--text-muted);"></div>
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const statusEl = overlay.querySelector('#tokenStatus');
+
+  // Dismiss on backdrop click
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('#tokenCancelBtn').onclick = () => overlay.remove();
+
+  // -------- Pairing code handlers --------
+  const peerStartBtn = overlay.querySelector('#peerStartBtn');
+  if (peerStartBtn) {
+    const peerStatusEl = overlay.querySelector('#peerStartStatus');
+    peerStartBtn.onclick = async () => {
+      peerStartBtn.disabled = true;
+      peerStartBtn.textContent = 'Starting…';
+      peerStatusEl.textContent = 'Connecting to pairing server…';
+      try {
+        await PeerSync.startHost();
+        overlay.remove();
+        showTokenModal(); // re-open with code shown
+      } catch (e) {
+        peerStatusEl.style.color = '#e53935';
+        peerStatusEl.textContent = 'Could not start — check your internet connection.';
+        peerStartBtn.disabled = false;
+        peerStartBtn.textContent = 'Activate Pairing Code';
+      }
+    };
+  }
+
+  const peerResetBtn = overlay.querySelector('#peerResetBtn');
+  if (peerResetBtn) {
+    peerResetBtn.onclick = async () => {
+      if (!confirm('Generate a new pairing code? Any connected TV displays will need to re-enter the new code.')) return;
+      PeerSync.resetCode();
+      peerResetBtn.textContent = 'Starting…';
+      try {
+        await PeerSync.startHost();
+        overlay.remove();
+        showTokenModal();
+      } catch (e) {}
+    };
+    // Refresh connected viewer count every 2s while modal is open
+    const viewerInterval = setInterval(() => {
+      const el = overlay.querySelector('#viewerCount');
+      if (!el) { clearInterval(viewerInterval); return; }
+      el.textContent = PeerSync.connectedViewers();
+    }, 2000);
+  }
+
+  // -------- GitHub token handlers --------
+  const input = overlay.querySelector('#tokenInput');
+  overlay.querySelector('#tokenToggle').onclick = () => {
+    input.type = input.type === 'password' ? 'text' : 'password';
+  };
+
+  const disableBtn = overlay.querySelector('#tokenDisableBtn');
+  if (disableBtn) {
+    disableBtn.onclick = () => {
+      GitHubSync.setToken('');
+      overlay.remove();
+      render();
+    };
+  }
+
+  overlay.querySelector('#tokenSaveBtn').onclick = async () => {
+    const val = input.value.trim();
+    if (!val && !hasToken) {
+      statusEl.style.color = '#e53935';
+      statusEl.textContent = 'Paste your token above first.';
+      input.focus();
+      return;
+    }
+    if (!val && hasToken) { overlay.remove(); return; }
+
+    statusEl.style.color = 'var(--text-muted)';
+    statusEl.textContent = 'Connecting to GitHub…';
+    GitHubSync.setToken(val);
+    try {
+      const eventData = GitHubSync.buildEventData(appState);
+      await GitHubSync.pushEventData(eventData);
+      statusEl.style.color = '#4caf50';
+      statusEl.textContent = '✓ Connected! Standings will sync to GitHub.';
+      setTimeout(() => { overlay.remove(); render(); }, 1600);
+    } catch (err) {
+      statusEl.style.color = '#e53935';
+      statusEl.textContent = 'Connection failed — check your token and try again.';
+    }
+  };
 }
 
 // --- MATCH LIST (main hub) ---
@@ -519,7 +695,7 @@ function renderMatchList() {
         <h1 style="font-size:1.85em;margin:0;display:flex;align-items:center;gap:0.4em;">Event 4 <button class="help-btn" data-help-title="Match List" data-help-body="Matches unlock one at a time as they complete. Tap an available match to score it live, leg by leg.&lt;br&gt;&lt;br&gt;Tap any &lt;b&gt;completed match&lt;/b&gt; (green) to edit it. Board 2 matches use a quick score-entry screen — enter final legs won by each player.">?</button></h1>
       </div>
       <div style="display:flex;gap:0.35em;flex-wrap:wrap;">
-        <button id="syncBtn" style="width:auto;padding:0.45em 1em;margin:0;background:${GitHubSync.hasToken()?'#1a3a1a':'#1a1a1a'};border:1px solid ${GitHubSync.hasToken()?'#4caf50':'var(--divider)'};color:${GitHubSync.hasToken()?'#4caf50':'var(--text-muted)'};font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">${GitHubSync.hasToken()?'✓ TV Sync':'TV Sync'}</button>
+        <button id="syncBtn" style="width:auto;padding:0.45em 1em;margin:0;background:${(GitHubSync.hasToken()||PeerSync.isHostActive())?'#1a3a1a':'#1a1a1a'};border:1px solid ${(GitHubSync.hasToken()||PeerSync.isHostActive())?'#4caf50':'var(--divider)'};color:${(GitHubSync.hasToken()||PeerSync.isHostActive())?'#4caf50':'var(--text-muted)'};font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">${PeerSync.isHostActive() ? `✓ Code: ${PeerSync.getCode()}` : GitHubSync.hasToken()?'✓ TV Sync':'TV Sync'}</button>
         <button id="resetBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--divider);color:var(--text-muted);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Reset</button>
         <button id="qlBtn" style="width:auto;padding:0.45em 1em;margin:0;background:#1a1a1a;border:1px solid var(--orange);color:var(--orange);font-size:0.78em;border-radius:10px;box-shadow:none;text-transform:uppercase;letter-spacing:0.06em;">Questions</button>
       </div>
@@ -697,27 +873,7 @@ function renderMatchList() {
   }
 
   // TV Sync button
-  div.querySelector("#syncBtn").onclick = () => {
-    const currentToken = GitHubSync.token || '';
-    const msg = currentToken 
-      ? `TV Sync is ${GitHubSync.hasToken() ? 'ACTIVE' : 'INACTIVE'}.\n\nGitHub Token: ${currentToken.substring(0,8)}...\n\nTo update or disable, enter a new token below (or leave blank to disable):`
-      : `TV Sync enables live updates on your TV displays and OBS overlays.\n\nYou need a GitHub Personal Access Token:\n1. Go to github.com → Settings → Developer settings\n2. Personal access tokens → Tokens (classic)\n3. Generate new token\n4. Check 'repo' permission\n5. Copy the token and paste it below:`;
-    
-    const token = prompt(msg, currentToken);
-    if (token === null) return; // cancelled
-    if (token.trim() === '') {
-      GitHubSync.setToken('');
-      alert('TV Sync disabled.');
-    } else {
-      GitHubSync.setToken(token.trim());
-      // Immediate sync
-      const eventData = GitHubSync.buildEventData(appState);
-      GitHubSync.pushEventData(eventData)
-        .then(() => alert('✓ TV Sync enabled! Your displays will update automatically.'))
-        .catch(err => alert('Sync failed. Check your token and try again.\n\nError: ' + err.message));
-    }
-    render();
-  };
+  div.querySelector("#syncBtn").onclick = () => showTokenModal();
 
   // Reset button
   div.querySelector("#resetBtn").onclick = () => {
@@ -2916,11 +3072,18 @@ function moveToNextBoard1Match() {
 // --- SAVE ROUND ROBIN STATE ---
 function saveRoundRobinState() {
   localStorage.setItem("dartsRoundRobinState", JSON.stringify(appState.roundRobin));
-  
-  // Sync to GitHub for TV displays
+
+  // Build event data once and push to both channels
+  const eventData = GitHubSync.buildEventData(appState);
+
+  // Channel 1: GitHub (requires token)
   if (window.GitHubSync && GitHubSync.hasToken()) {
-    const eventData = GitHubSync.buildEventData(appState);
     GitHubSync.pushEventData(eventData).catch(err => console.error('GitHub sync failed:', err));
+  }
+
+  // Channel 2: Peer-to-peer (pairing code, no token)
+  if (window.PeerSync && PeerSync.isHostActive()) {
+    PeerSync.broadcast(eventData);
   }
 }
 

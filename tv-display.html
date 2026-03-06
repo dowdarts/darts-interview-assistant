@@ -961,12 +961,162 @@
       updateDisplay();
     }
 
-    // Fetch data every 3 seconds
-    setInterval(fetchData, 3000);
-    fetchData();
-
     // Rotate views every 15 seconds
     setInterval(rotateView, 15000);
+
+    // -------------------------------------------------------
+    // PAIRING CODE CONNECTION (no GitHub token needed)
+    // -------------------------------------------------------
+    let _peerConnected = false;
+    let _pollingInterval = null;
+    let _peerObj = null;
+
+    function _startPolling() {
+      if (_pollingInterval) return;
+      fetchData();
+      _pollingInterval = setInterval(fetchData, 3000);
+    }
+
+    function _stopPolling() {
+      if (_pollingInterval) { clearInterval(_pollingInterval); _pollingInterval = null; }
+    }
+
+    function _setStatus(html) {
+      const el = document.getElementById('status');
+      if (el) el.innerHTML = html;
+    }
+
+    function _peerConnect(code) {
+      const cleanCode = code.trim().toUpperCase();
+      const hostId    = 'darts-' + cleanCode;
+      const viewerId  = 'viewer-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+      _setStatus('Connecting to code <b>' + cleanCode + '</b>…');
+
+      if (_peerObj && !_peerObj.destroyed) _peerObj.destroy();
+
+      const peer = new Peer(viewerId, { debug: 0 });
+      _peerObj = peer;
+
+      peer.on('open', () => {
+        const conn = peer.connect(hostId, { reliable: true, serialization: 'json' });
+
+        // Timeout if host not found within 8s
+        const timeout = setTimeout(() => {
+          if (!_peerConnected) {
+            const pairStatus = document.getElementById('pairStatus');
+            if (pairStatus) { pairStatus.style.color='#e53935'; pairStatus.textContent='Host not found — check the code and try again.'; }
+            _setStatus('Code not found — using GitHub data.');
+            _startPolling();
+          }
+        }, 8000);
+
+        conn.on('open', () => {
+          clearTimeout(timeout);
+          _peerConnected = true;
+          localStorage.setItem('dartsViewerCode', cleanCode);
+          _hidePairOverlay();
+          _stopPolling();
+          _setStatus('● LIVE — paired to interview app &nbsp; <button onclick="_showPairOverlay()" style="background:none;border:none;color:var(--text-muted);font-size:0.85em;cursor:pointer;text-decoration:underline;">change</button>');
+        });
+
+        conn.on('data', (data) => {
+          eventData = normalizeEventData(data);
+          updateDisplay();
+        });
+
+        conn.on('close', () => {
+          _peerConnected = false;
+          _setStatus('Peer disconnected — reconnecting…');
+          _startPolling();
+        });
+
+        conn.on('error', () => {
+          _peerConnected = false;
+          _setStatus('Peer error — using GitHub data.');
+          _startPolling();
+        });
+      });
+
+      peer.on('error', () => {
+        _peerConnected = false;
+        const pairStatus = document.getElementById('pairStatus');
+        if (pairStatus) { pairStatus.style.color='#e53935'; pairStatus.textContent='Could not connect — check the code.'; }
+        _setStatus('Peer unavailable — using GitHub data.');
+        _startPolling();
+      });
+    }
+
+    function _showPairOverlay() {
+      let ov = document.getElementById('pairOverlay');
+      if (ov) { ov.style.display = 'flex'; setTimeout(() => document.getElementById('pairInput')?.focus(), 80); return; }
+
+      ov = document.createElement('div');
+      ov.id = 'pairOverlay';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+      ov.innerHTML = `
+        <div style="background:#111;border:2px solid var(--orange);border-radius:22px;padding:2.2em 2em;max-width:440px;width:100%;text-align:center;">
+          <div style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.3em;">AADS Darts</div>
+          <h2 style="font-family:var(--font-display);font-size:2em;font-weight:900;letter-spacing:0.05em;text-transform:uppercase;color:#fff;margin-bottom:0.1em;">TV Display</h2>
+          <div style="width:50px;height:3px;background:var(--orange);border-radius:2px;margin:0.5em auto 1.4em;"></div>
+          <p style="font-size:0.9em;color:var(--text-muted);margin-bottom:1.4em;line-height:1.7;">
+            Enter the <b style="color:#fff;">6-character pairing code</b><br>shown in the interview app.
+          </p>
+          <input id="pairInput" type="text" maxlength="6" placeholder="AB3X7Q"
+            style="width:100%;background:#1a1a1a;border:2px solid var(--orange);color:#fff;padding:0.75em;border-radius:12px;font-size:2em;font-family:monospace;font-weight:900;letter-spacing:0.3em;text-align:center;text-transform:uppercase;outline:none;margin-bottom:0.9em;"
+          />
+          <button id="pairConnectBtn"
+            style="width:100%;background:var(--orange);color:#000;border:none;border-radius:12px;padding:0.85em;font-family:var(--font-display);font-size:1.1em;font-weight:900;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;margin-bottom:0.7em;">
+            Connect
+          </button>
+          <div id="pairStatus" style="font-size:0.82em;color:var(--text-muted);min-height:1.3em;margin-bottom:0.8em;"></div>
+          <button id="pairGithubBtn"
+            style="background:none;border:none;color:var(--text-muted);font-size:0.8em;cursor:pointer;text-decoration:underline;">
+            Use GitHub data instead
+          </button>
+        </div>`;
+
+      document.body.appendChild(ov);
+
+      const input = ov.querySelector('#pairInput');
+      setTimeout(() => input?.focus(), 80);
+      input.addEventListener('input',  () => { input.value = input.value.toUpperCase(); });
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') _doPairConnect(); });
+      ov.querySelector('#pairConnectBtn').addEventListener('click', _doPairConnect);
+      ov.querySelector('#pairGithubBtn').addEventListener('click', () => {
+        _hidePairOverlay(); _startPolling();
+      });
+    }
+
+    function _hidePairOverlay() {
+      const ov = document.getElementById('pairOverlay');
+      if (ov) ov.style.display = 'none';
+    }
+
+    function _doPairConnect() {
+      const code = (document.getElementById('pairInput')?.value || '').trim().toUpperCase();
+      const pairStatus = document.getElementById('pairStatus');
+      if (code.length < 4) {
+        if (pairStatus) { pairStatus.style.color = '#e53935'; pairStatus.textContent = 'Enter the 6-character code from the interview app.'; }
+        return;
+      }
+      if (pairStatus) { pairStatus.style.color = 'var(--text-muted)'; pairStatus.textContent = 'Connecting…'; }
+      _peerConnect(code);
+    }
+
+    // On load: auto-reconnect from saved code, or show pairing overlay
+    window.addEventListener('load', () => {
+      const saved = localStorage.getItem('dartsViewerCode');
+      if (saved) {
+        _peerConnect(saved);
+        // Fallback: if peer doesn't connect in 7s, start polling
+        setTimeout(() => { if (!_peerConnected) _startPolling(); }, 7000);
+      } else {
+        _showPairOverlay();
+        _startPolling(); // Poll as backup while overlay is showing
+      }
+    });
   </script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </body>
 </html>
