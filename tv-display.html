@@ -677,21 +677,34 @@
       return data;
     }
 
-    // Use raw.githubusercontent.com to bypass GitHub Pages CDN caching
-    const RAW_DATA_URL = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
+    // Two data sources: raw GitHub (no CDN delay) → fallback to same-origin file
+    const RAW_DATA_URL  = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
+    const LOCAL_DATA_URL = 'event-data.json';
 
     async function fetchData() {
+      const t = Date.now();
+      let data = null;
+
+      // 1. Try raw.githubusercontent.com (bypasses GitHub Pages CDN)
       try {
-        const cacheBuster = Date.now();
-        const response = await fetch(`${RAW_DATA_URL}?t=${cacheBuster}`, { cache: 'no-store' });
-        if (response.ok) {
-          eventData = normalizeEventData(await response.json());
-          updateDisplay();
-          document.getElementById('status').textContent =
-            `Last updated: ${new Date(eventData.timestamp || Date.now()).toLocaleTimeString()}`;
-        }
-      } catch (error) {
-        console.error('Fetch error:', error);
+        const r = await fetch(`${RAW_DATA_URL}?t=${t}`, { cache: 'no-store' });
+        if (r.ok) data = await r.json();
+      } catch (_) {}
+
+      // 2. Fall back to same-origin event-data.json
+      if (!data) {
+        try {
+          const r = await fetch(`${LOCAL_DATA_URL}?t=${t}`);
+          if (r.ok) data = await r.json();
+        } catch (_) {}
+      }
+
+      if (data) {
+        eventData = normalizeEventData(data);
+        updateDisplay();
+        document.getElementById('status').textContent =
+          `Last updated: ${new Date(eventData.timestamp || Date.now()).toLocaleTimeString()}`;
+      } else if (!eventData) {
         document.getElementById('status').textContent = 'Waiting for data...';
       }
     }
@@ -955,18 +968,17 @@
     }
 
     function rotateView() {
-      if (!eventData || !eventData.eventStarted) return;
-      viewIndex = (viewIndex + 1) % VIEWS.length;
-      // Trigger fade by replacing content node
-      const c = document.getElementById('content');
-      c.style.animation = 'none';
-      c.offsetHeight; // reflow
-      c.style.animation = '';
-      updateDisplay();
+      try {
+        if (!eventData || !eventData.eventStarted) return;
+        viewIndex = (viewIndex + 1) % VIEWS.length;
+        const c = document.getElementById('content');
+        if (c) { c.style.animation = 'none'; c.offsetHeight; c.style.animation = ''; }
+        updateDisplay();
+      } catch(e) { console.error('[rotateView]', e); }
     }
 
-    // Rotate views every 15 seconds
-    setInterval(rotateView, 15000);
+    // Rotate views every 20 seconds
+    setInterval(rotateView, 20000);
 
     // -------------------------------------------------------
     // PAIRING CODE CONNECTION (no GitHub token needed)
@@ -979,7 +991,8 @@
     function _startPolling() {
       if (_pollingInterval) return;
       fetchData();
-      _pollingInterval = setInterval(fetchData, 3000);
+      // 20 s interval — raw.githubusercontent.com rate-limits heavy anonymous polling
+      _pollingInterval = setInterval(fetchData, 20000);
     }
 
     function _stopPolling() {
