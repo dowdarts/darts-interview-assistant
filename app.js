@@ -3755,6 +3755,9 @@ function _initApp() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  // Always force AADS40 — clear any stale random code from localStorage
+  localStorage.setItem('dartsRoomCode', 'AADS40');
+
   // Start hosting on AADS40 immediately — TV displays connect without waiting for password
   if (window.PeerSync) PeerSync.startHost(ADMIN_PEER_CODE).catch(() => {});
 

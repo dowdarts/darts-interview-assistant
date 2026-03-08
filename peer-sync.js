@@ -13,7 +13,6 @@ const PeerSync = {
   _hostStarting: false,
   _hostReady: false,
   _preferredCode: null,
-  _preferredCodeRetried: false,
 
   // ------------------------------------------------------------------
   // HOST — called by the interview app
@@ -99,19 +98,17 @@ const PeerSync = {
 
       p.on('error', (err) => {
         if (err.type === 'unavailable-id') {
-          if (this._preferredCode && !this._preferredCodeRetried) {
-            // Fixed admin code is temporarily busy — retry once after 3 s
-            this._preferredCodeRetried = true;
+          if (this._preferredCode) {
+            // Fixed admin code is temporarily busy (another tab/session) — keep retrying every 5s
             p.destroy();
-            console.warn('[PeerSync] Fixed code busy, retrying in 3s…');
-            setTimeout(() => this._createPeer(this._preferredCode, resolve, reject), 3000);
+            console.warn('[PeerSync] Fixed code busy, retrying in 5s…');
+            setTimeout(() => this._createPeer(this._preferredCode, resolve, reject), 5000);
             return;
           }
-          // Fall back to a fresh random code
+          // No preferred code — try a fresh random code
           const newCode = Math.random().toString(36).slice(2, 8).toUpperCase();
           localStorage.setItem('dartsRoomCode', newCode);
           this._code = newCode;
-          this._preferredCode = null;
           this._hostStarting = false;
           p.destroy();
           this._createPeer(newCode, resolve, reject);
