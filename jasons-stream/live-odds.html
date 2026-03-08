@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AADS Live Odds — OBS Overlay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700;900&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /*
+     * OBS Browser Source Settings:
+     *   Width:  1920  Height: 120
+     *   Custom CSS: body { background: transparent !important; }
+     *   Tick: "Shutdown source when not visible"
+     *
+     * This page syncs live from the Stream Controller via localStorage
+     * and BroadcastChannel — place both pages on the same machine.
+     */
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0;
+      background: transparent;
+      font-family: 'Roboto Condensed', 'Segoe UI', Arial, sans-serif;
+      overflow: hidden;
+      width: 1920px;
+      height: 120px;
+    }
+
+    /* ── Overlay wrapper — centred in the 1920px canvas ── */
+    .overlay {
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 720px;
+      height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding-bottom: 8px;
+    }
+
+    /* Match label */
+    .match-label {
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+      margin-bottom: 5px;
+    }
+
+    /* Bar container */
+    .bar-container {
+      width: 100%;
+      position: relative;
+    }
+
+    /* Player name + percentage labels above bar */
+    .bar-labels {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 4px;
+      padding: 0 2px;
+    }
+
+    .bar-name {
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+      line-height: 1;
+    }
+
+    .bar-pct {
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+      line-height: 1;
+    }
+
+    .p1-name { color: #e91e63; }
+    .p2-name { color: #2196f3; text-align: right; }
+    .p1-pct  { color: rgba(233,30,99,0.9); }
+    .p2-pct  { color: rgba(33,150,243,0.9); }
+
+    /* The probability bar track */
+    .bar-track {
+      width: 100%;
+      height: 28px;
+      border-radius: 14px;
+      background: rgba(20,20,20,0.7);
+      overflow: hidden;
+      display: flex;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.6), inset 0 1px 3px rgba(0,0,0,0.4);
+      position: relative;
+    }
+
+    /* Thin divider line in the centre of the track */
+    .bar-track::after {
+      content: '';
+      position: absolute;
+      left: 50%; top: 20%; bottom: 20%;
+      width: 1px;
+      background: rgba(255,255,255,0.1);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .bar-fill-p1 {
+      background: linear-gradient(90deg, #c2185b, #e91e63);
+      height: 100%;
+      transition: width 0.8s ease-in-out;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    /* Gloss sheen on P1 fill */
+    .bar-fill-p1::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 50%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.18), transparent);
+      border-radius: 14px 0 0 0;
+    }
+
+    .bar-fill-p2 {
+      background: linear-gradient(90deg, #1976d2, #2196f3);
+      height: 100%;
+      flex: 1;
+      position: relative;
+    }
+
+    /* Gloss sheen on P2 fill */
+    .bar-fill-p2::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 50%;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.18), transparent);
+      border-radius: 0 14px 0 0;
+    }
+
+    /* Score badges inside bar */
+    .score-badge {
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+      color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .score-p1 { left: 10px; }
+    .score-p2 { right: 10px; }
+
+    /* Break of throw alert — slides up when a break occurs */
+    .break-alert {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: rgba(233,30,99,0.92);
+      color: #fff;
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 5px 16px;
+      border-radius: 20px;
+      white-space: nowrap;
+      box-shadow: 0 2px 14px rgba(233,30,99,0.5);
+      opacity: 0;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+
+    .break-alert.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Waiting state */
+    .waiting {
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      text-align: center;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      padding: 2em 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+  <div class="waiting" id="waitingMsg">Waiting for stream controller…</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  AADS Live Odds — OBS Browser Source Overlay
+//  Receives data from the Stream Controller (index.html)
+//  via localStorage and BroadcastChannel.
+//
+//  Same-machine, same-origin: storage events fire reliably.
+//  Polling fallback every 500ms for OBS Chromium contexts.
+// ══════════════════════════════════════════════════════════
+
+const STREAM_KEY = 'AADS_STREAM_DATA';
+let lastTimestamp = 0;
+let breakTimeout  = null;
+
+// Build overlay HTML once data is available
+function renderOverlay(data) {
+  const overlay   = document.getElementById('overlay');
+  const p1Prob    = Math.max(2, Math.min(98, data.p1Prob || 50));
+  const p2Prob    = 100 - p1Prob;
+  const p1Name    = data.p1Name || 'Player 1';
+  const p2Name    = data.p2Name || 'Player 2';
+  const p1Score   = data.p1Score || 0;
+  const p2Score   = data.p2Score || 0;
+  const matchNum  = data.matchNum ? 'Match ' + data.matchNum : 'Board 1';
+
+  overlay.innerHTML = `
+    <div class="match-label">${matchNum} · Live Odds</div>
+    <div class="bar-container">
+      <div class="break-alert" id="breakAlert"></div>
+      <div class="bar-labels">
+        <div>
+          <div class="bar-name p1-name">${p1Name}</div>
+          <div class="bar-pct p1-pct">${p1Prob}%</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="bar-name p2-name">${p2Name}</div>
+          <div class="bar-pct p2-pct">${p2Prob}%</div>
+        </div>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill-p1" id="fillP1" style="width:${p1Prob}%;"></div>
+        <div class="bar-fill-p2" id="fillP2" style="width:${p2Prob}%;"></div>
+        <div class="score-badge score-p1">${p1Score}</div>
+        <div class="score-badge score-p2">${p2Score}</div>
+      </div>
+    </div>
+  `;
+}
+
+// Animate bar width changes without full re-render
+function updateBar(data) {
+  const p1Prob = Math.max(2, Math.min(98, data.p1Prob || 50));
+  const p2Prob = 100 - p1Prob;
+
+  const fillP1 = document.getElementById('fillP1');
+  const fillP2 = document.getElementById('fillP2');
+
+  if (fillP1) fillP1.style.width = p1Prob + '%';
+  if (fillP2) fillP2.style.width = p2Prob + '%';
+
+  // Update percentage labels
+  const labels = document.querySelectorAll('.bar-pct');
+  if (labels[0]) labels[0].textContent = p1Prob + '%';
+  if (labels[1]) labels[1].textContent = p2Prob + '%';
+
+  // Update score badges
+  const scoreP1 = document.querySelector('.score-p1');
+  const scoreP2 = document.querySelector('.score-p2');
+  if (scoreP1) scoreP1.textContent = data.p1Score || 0;
+  if (scoreP2) scoreP2.textContent = data.p2Score || 0;
+
+  // Break of throw alert
+  triggerBreakAlert(data.lastBreak);
+}
+
+let lastBreakLeg = null;
+
+function triggerBreakAlert(breakData) {
+  const alertEl = document.getElementById('breakAlert');
+  if (!alertEl) return;
+
+  if (breakData && breakData.leg !== lastBreakLeg) {
+    lastBreakLeg = breakData.leg;
+    alertEl.textContent = '🔴 Break of Throw — Leg ' + breakData.leg + ': ' + (breakData.name || '');
+    alertEl.classList.add('visible');
+
+    clearTimeout(breakTimeout);
+    breakTimeout = setTimeout(() => {
+      alertEl.classList.remove('visible');
+    }, 6000);
+  }
+}
+
+// Process any incoming data object
+function handleData(data) {
+  if (!data || data.timestamp === lastTimestamp) return;
+  lastTimestamp = data.timestamp;
+
+  const waitMsg = document.getElementById('waitingMsg');
+  if (waitMsg) {
+    // First time receiving data — build the full overlay
+    renderOverlay(data);
+    return;
+  }
+
+  // Already rendered — just update bar and scores
+  updateBar(data);
+}
+
+// Read from localStorage (works for polling and cross-context)
+function readFromStorage() {
+  try {
+    const raw = localStorage.getItem(STREAM_KEY);
+    if (raw) handleData(JSON.parse(raw));
+  } catch(_) {}
+}
+
+// BroadcastChannel (same-browser, same-origin)
+try {
+  const bc = new BroadcastChannel('aads_stream');
+  bc.onmessage = (e) => { if (e.data) handleData(e.data); };
+} catch(_) {}
+
+// Storage event (fires in other tabs/windows of same origin)
+window.addEventListener('storage', (e) => {
+  if (e.key === STREAM_KEY && e.newValue) {
+    try { handleData(JSON.parse(e.newValue)); } catch(_) {}
+  }
+});
+
+// Polling fallback (500ms) — ensures OBS Chromium contexts pick up updates
+setInterval(readFromStorage, 500);
+
+// Initial read on load
+readFromStorage();
+</script>
+</body>
+</html>

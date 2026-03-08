@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AADS Stream Controller — Jason</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange:      #F26522;
+      --orange-glow: #FF7A2F;
+      --deep-black:  #0D0D0D;
+      --card-black:  #141414;
+      --divider:     #2D2D2D;
+      --white:       #FFFFFF;
+      --text-muted:  #888888;
+      --pink:        #e91e63;
+      --blue:        #2196f3;
+      --green:       #4caf50;
+      --font-main:   'Roboto Condensed', 'Segoe UI', Arial, sans-serif;
+      --font-display:'Oswald', 'Segoe UI', Arial, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--deep-black);
+      color: var(--white);
+      font-family: var(--font-main);
+      font-size: 16px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content:'';
+      position: fixed; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--orange), var(--orange-glow));
+      z-index: 100;
+    }
+    #app {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 1.2em 1em 3em;
+    }
+
+    /* ── Typography ── */
+    h1 {
+      font-family: var(--font-display);
+      font-size: 1.9em; font-weight: 700;
+      color: var(--orange); text-transform: uppercase;
+      letter-spacing: 0.06em; margin: 0 0 0.1em;
+    }
+    h2 {
+      font-family: var(--font-display);
+      font-size: 1.05em; font-weight: 700;
+      color: var(--orange); text-transform: uppercase;
+      letter-spacing: 0.06em; margin: 0;
+    }
+    label {
+      display: block;
+      font-family: var(--font-display); font-size: 0.75em;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted); margin: 0.75em 0 0.3em;
+    }
+    input, select {
+      width: 100%; padding: 0.7em 0.9em;
+      background: #111; border: 1.5px solid var(--divider);
+      border-radius: 10px; color: var(--white);
+      font-family: var(--font-main); font-size: 1em;
+      appearance: none; outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--orange); }
+    input[type=number] { -moz-appearance: textfield; }
+    select option { background: #141414; color: var(--white); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card-black);
+      border-radius: 12px; border: 1px solid var(--divider);
+      margin-bottom: 1em; overflow: hidden;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+    }
+    .card-header {
+      background: linear-gradient(to bottom, #1f1f1f, #141414);
+      padding: 11px 16px; border-bottom: 2px solid var(--orange);
+    }
+    .card-body { padding: 0.9em 1em; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: block; width: 100%;
+      padding: 0.85em 1.2em; margin-bottom: 0.7em;
+      background: var(--orange); color: #fff;
+      border: none; border-radius: 10px;
+      font-family: var(--font-display); font-size: 1.05em;
+      font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+      cursor: pointer; touch-action: manipulation;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 4px 16px rgba(242,101,34,0.25);
+      text-decoration: none; text-align: center;
+    }
+    .btn:hover  { background: var(--orange-glow); transform: translateY(-1px); }
+    .btn:active { transform: scale(0.97); }
+    .btn.secondary {
+      background: #141414; border: 2px solid var(--orange);
+      color: var(--white); box-shadow: none;
+    }
+    .btn.secondary:hover { background: var(--orange); }
+    .btn.disabled { opacity: 0.45; pointer-events: none; }
+    .row { display: flex; gap: 0.7em; }
+    .row .btn { flex: 1; margin-bottom: 0; }
+
+    /* ── Bull buttons ── */
+    .bull-btn {
+      flex: 1; margin: 0;
+      background: #141414; border: 2px solid var(--divider);
+      color: var(--text-muted); box-shadow: none;
+      font-size: 0.9em; padding: 0.8em 0.5em;
+      line-height: 1.4;
+    }
+    .bull-btn.active { border-color: var(--orange); color: var(--orange); background: rgba(242,101,34,0.1); }
+
+    /* ── Score display ── */
+    .score-display {
+      display: flex; justify-content: space-between;
+      align-items: center; text-align: center; padding: 1.2em 1em;
+    }
+    .score-player { flex: 1; }
+    .score-name {
+      font-family: var(--font-display); font-size: 0.88em; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--white); margin-bottom: 0.2em;
+    }
+    .score-num {
+      font-family: var(--font-display); font-size: 4.2em; font-weight: 700;
+      line-height: 1; color: var(--text-muted); transition: color 0.3s;
+    }
+    .score-num.leading { color: var(--orange); text-shadow: 0 0 20px rgba(242,101,34,0.35); }
+    .vs-dot {
+      width: 40px; height: 40px; background: var(--orange); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 0.72em; font-weight: 900;
+      color: #000; flex-shrink: 0;
+    }
+    .throw-indicator {
+      font-family: var(--font-display); font-size: 0.72em; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 0.25em 0.7em; border-radius: 20px;
+      margin-top: 0.3em; display: inline-block; transition: all 0.3s;
+    }
+    .throw-on  { background: rgba(242,101,34,0.15); border: 1px solid var(--orange); color: var(--orange); }
+    .throw-off { border: 1px solid transparent; color: transparent; }
+
+    /* ── Leg buttons ── */
+    .leg-btn-p1 {
+      flex: 1; margin: 0; font-size: 0.95em;
+      background: linear-gradient(135deg, #880e4f, var(--pink));
+      box-shadow: 0 4px 18px rgba(233,30,99,0.3);
+      padding: 1em 0.5em; line-height: 1.4;
+    }
+    .leg-btn-p2 {
+      flex: 1; margin: 0; font-size: 0.95em;
+      background: linear-gradient(135deg, #0d47a1, var(--blue));
+      box-shadow: 0 4px 18px rgba(33,150,243,0.3);
+      padding: 1em 0.5em; line-height: 1.4;
+    }
+    .leg-btn-p1:hover { background: linear-gradient(135deg, #ad1457, #f06292); }
+    .leg-btn-p2:hover { background: linear-gradient(135deg, #1565c0, #64b5f6); }
+
+    /* ── Odds bar ── */
+    .odds-track {
+      width: 100%; height: 24px; border-radius: 12px;
+      overflow: hidden; display: flex;
+      background: var(--divider); position: relative;
+    }
+    .odds-fill-p1 {
+      background: var(--pink); height: 100%;
+      transition: width 0.8s ease-in-out;
+    }
+    .odds-fill-p2 {
+      background: var(--blue); height: 100%; flex: 1;
+      transition: width 0.8s ease-in-out;
+    }
+    .odds-labels {
+      display: flex; justify-content: space-between;
+      font-family: var(--font-display); font-size: 0.88em; font-weight: 700;
+      margin-bottom: 0.4em;
+    }
+    .odds-p1-label { color: var(--pink); }
+    .odds-p2-label { color: var(--blue); }
+
+    /* ── Break badge ── */
+    .break-badge {
+      display: inline-flex; align-items: center; gap: 0.3em;
+      background: rgba(233,30,99,0.12); border: 1.5px solid var(--pink);
+      color: var(--pink); font-family: var(--font-display);
+      font-size: 0.75em; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; padding: 0.25em 0.75em; border-radius: 20px;
+      animation: break-pulse 2s ease-in-out 3;
+    }
+    @keyframes break-pulse {
+      0%,100% { box-shadow: none; }
+      50%      { box-shadow: 0 0 18px rgba(233,30,99,0.55); }
+    }
+
+    /* ── H2H cheat sheet ── */
+    .h2h-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7em; }
+    .h2h-player {
+      background: #111; border-radius: 10px;
+      padding: 0.8em 0.9em; border: 1px solid var(--divider);
+    }
+    .h2h-name {
+      font-family: var(--font-display); font-size: 0.95em; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--white); margin-bottom: 0.4em;
+    }
+    .h2h-stat {
+      font-size: 0.82em; color: var(--text-muted); margin-bottom: 0.2em;
+    }
+    .h2h-stat strong { color: var(--orange); }
+
+    /* ── Narrative prompts ── */
+    .narrative {
+      background: rgba(242,101,34,0.06); border-left: 3px solid var(--orange);
+      border-radius: 0 8px 8px 0; padding: 0.7em 0.9em; margin-bottom: 0.6em;
+      font-size: 0.9em; line-height: 1.55; color: var(--white);
+    }
+    .narrative:last-child { margin-bottom: 0; }
+    .narrative-label {
+      font-family: var(--font-display); font-size: 0.68em;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--orange); margin-bottom: 0.3em;
+    }
+    .narrative.urgent { border-left-color: var(--pink); background: rgba(233,30,99,0.07); }
+    .narrative.urgent .narrative-label { color: var(--pink); }
+    .narrative.info   { border-left-color: var(--blue);  background: rgba(33,150,243,0.07); }
+    .narrative.info   .narrative-label   { color: var(--blue); }
+
+    /* ── Misc ── */
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 0.35em;
+      background: var(--orange); color: #000;
+      font-family: var(--font-display); font-size: 0.72em; font-weight: 900;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.25em 0.75em; border-radius: 20px;
+      animation: live-pulse 2s ease-in-out infinite;
+    }
+    .live-badge::before {
+      content:''; width:6px; height:6px; background:#000;
+      border-radius:50%; animation: live-dot 2s ease-in-out infinite;
+    }
+    @keyframes live-pulse { 0%,100%{box-shadow:0 0 8px rgba(242,101,34,.5);}  50%{box-shadow:0 0 22px rgba(242,101,34,.9);} }
+    @keyframes live-dot   { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+    .match-point-alert {
+      background: rgba(242,101,34,0.12); border: 1.5px solid var(--orange);
+      border-radius: 10px; padding: 0.6em 1em; text-align: center;
+      font-family: var(--font-display); font-size: 0.88em;
+      letter-spacing: 0.06em; color: var(--orange);
+      text-transform: uppercase; margin-bottom: 0.8em;
+    }
+    .leg-log-row { font-size: 0.82em; margin-bottom: 0.2em; }
+    .leg-log-row.was-break { color: var(--pink); }
+    .leg-log-row.was-hold  { color: var(--text-muted); }
+    .divider-line { height: 1px; background: var(--divider); margin: 0.8em 0; }
+    .sub-label {
+      font-family: var(--font-display); font-size: 0.7em; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.4em;
+    }
+    .obs-link {
+      display: block; text-align: center;
+      font-family: var(--font-display); font-size: 0.78em;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-muted); text-decoration: none;
+      margin-bottom: 1em;
+      border: 1px solid var(--divider); border-radius: 8px;
+      padding: 0.55em 1em;
+    }
+    .obs-link:hover { border-color: var(--orange); color: var(--orange); }
+    .complete-winner {
+      font-family: var(--font-display); font-size: 2.4em; font-weight: 700;
+      color: var(--orange); text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .complete-score {
+      font-family: var(--font-display); font-size: 1.5em; color: var(--white);
+      margin: 0.2em 0;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div style="text-align:center;padding:3em 1em;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;">
+    Loading schedule…
+  </div>
+</div>
+<script>
+// ══════════════════════════════════════════════════════════
+//  AADS Stream Controller — Jason's Live Broadcast Tool
+//  Standalone app (separated from the main interview app)
+// ══════════════════════════════════════════════════════════
+
+const STREAM_KEY     = 'AADS_STREAM_DATA';
+const RAW_URL        = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
+const LOCAL_URL      = '../event-data.json';
+
+let eventData = null;
+let bc = null;
+try { bc = new BroadcastChannel('aads_stream'); } catch(_) {}
+
+// ── STATE ─────────────────────────────────────────────────
+const S = {
+  screen:     'setup',   // setup | live | complete
+  match:      null,      // { matchNum, board, time, player1, player2, ... }
+  p1:         { name: '', avg3DA: 50, checkout: 35 },
+  p2:         { name: '', avg3DA: 50, checkout: 35 },
+  p1Score:    0,
+  p2Score:    0,
+  bullWinner: 0,         // 1 or 2
+  matchPoint: 3,         // legs needed to win (best of 5 = 3)
+  legHistory: []         // [{ leg, winner, expectedStarter, wasBreak }]
+};
+
+// ── ODDS ENGINE ───────────────────────────────────────────
+// Weights from the "Pro-Bookie" spec:
+//   Base: 50/50 ± (p1.3DA − p2.3DA) × 1.5   [Strength Gap]
+//   Bull winner:  +8.6%
+//   Each leg won: +15%
+//   Break bonus:  +10% per break (one-time, accumulated)
+//   Match point:  lock to 5%–95%
+
+function calculateLiveOdds() {
+  if (!S.bullWinner) return 50;
+
+  // 1. Base + strength gap
+  let p = 50 + (S.p1.avg3DA - S.p2.avg3DA) * 1.5;
+
+  // 2. Bull winner edge (+8.6% to the player who won the bull)
+  p += (S.bullWinner === 1) ? 8.6 : -8.6;
+
+  // 3. Leg differential (+15% per leg lead)
+  p += (S.p1Score - S.p2Score) * 15;
+
+  // 4. Break of Throw bonuses (+10% to breaker, accumulated)
+  S.legHistory.forEach(leg => {
+    if (leg.wasBreak) p += (leg.winner === 1) ? 10 : -10;
+  });
+
+  // 5. Match point lock — keep bar alive until the final dart
+  if (Math.max(S.p1Score, S.p2Score) >= S.matchPoint - 1) {
+    p = Math.min(95, Math.max(5, p));
+  }
+
+  return Math.min(98, Math.max(2, Math.round(p)));
+}
+
+// ── BREAK OF THROW ────────────────────────────────────────
+// In a Best-of-N, the bull winner starts odd-numbered legs (1,3,5…)
+// and the other player starts even-numbered legs (2,4…).
+// Winning a leg when you did NOT have the opening throw = "Break".
+
+function expectedStarter(legNum) {
+  const bw = S.bullWinner;
+  return (legNum % 2 === 1) ? bw : (bw === 1 ? 2 : 1);
+}
+
+function currentLegNum() {
+  return S.p1Score + S.p2Score + 1;
+}
+
+function throwHolder() {
+  const starter = expectedStarter(currentLegNum());
+  return starter === 1 ? S.p1.name : S.p2.name;
+}
+
+function getLastBreak() {
+  const breaks = S.legHistory.filter(l => l.wasBreak);
+  if (!breaks.length) return null;
+  const last = breaks[breaks.length - 1];
+  return { winner: last.winner, name: last.winner === 1 ? S.p1.name : S.p2.name, leg: last.leg };
+}
+
+// ── RECORD LEG WIN ────────────────────────────────────────
+function recordLegWin(winner) {
+  const legNum  = currentLegNum();
+  const starter = expectedStarter(legNum);
+  const wasBreak = (winner !== starter);
+
+  S.legHistory.push({ leg: legNum, winner, expectedStarter: starter, wasBreak });
+  if (winner === 1) S.p1Score++;
+  else              S.p2Score++;
+
+  if (S.p1Score >= S.matchPoint || S.p2Score >= S.matchPoint) {
+    S.screen = 'complete';
+  }
+
+  pushToOverlay();
+  renderApp();
+}
+
+// ── PUSH TO OBS OVERLAY ───────────────────────────────────
+function pushToOverlay() {
+  const p1Prob = calculateLiveOdds();
+  const data = {
+    p1Name:    S.p1.name,
+    p2Name:    S.p2.name,
+    p1Prob,
+    p2Prob:    100 - p1Prob,
+    p1Score:   S.p1Score,
+    p2Score:   S.p2Score,
+    matchPoint: S.matchPoint,
+    lastBreak:  getLastBreak(),
+    matchNum:   S.match ? S.match.matchNum : null,
+    timestamp:  Date.now()
+  };
+  localStorage.setItem(STREAM_KEY, JSON.stringify(data));
+  if (bc) try { bc.postMessage(data); } catch(_) {}
+}
+
+// ── PLAYER STATS FROM EVENT DATA ─────────────────────────
+function getPlayerRecord(name) {
+  if (!eventData) return null;
+  const all = [...(eventData.standingsA || []), ...(eventData.standingsB || [])];
+  return all.find(s => s.name === name) || null;
+}
+
+function getPlayerProvince(name) {
+  if (!eventData) return null;
+  const rec = getPlayerRecord(name);
+  return rec ? rec.province : null;
+}
+
+// ── NEXT OPPONENT LOOKUP ──────────────────────────────────
+function getNextOpponent(forPlayerName) {
+  if (!eventData || !S.match) return null;
+  const track  = forPlayerName || (S.p1Score >= S.p2Score ? S.p1.name : S.p2.name);
+  const curNum = S.match.matchNum;
+  const upcoming = eventData.upcomingMatches || [];
+  for (const m of upcoming) {
+    if (m.matchNum <= curNum) continue;
+    if (m.player1 === track || m.player2 === track) {
+      const opp  = (m.player1 === track) ? m.player2 : m.player1;
+      const prov = (m.player1 === track) ? m.player2Province : m.player1Province;
+      return { name: opp, province: prov, matchNum: m.matchNum, time: m.time, board: m.board };
+    }
+  }
+  return null;
+}
+
+// ── NARRATIVE GENERATOR ───────────────────────────────────
+function buildNarratives() {
+  const items = [];
+  const p1 = S.p1.name || 'Player 1';
+  const p2 = S.p2.name || 'Player 2';
+  const lastBreak = getLastBreak();
+
+  // 1. Comparison prompt (always shown)
+  const gap3DA   = Math.abs(S.p1.avg3DA - S.p2.avg3DA);
+  const p1IsScorer  = S.p1.avg3DA >= S.p2.avg3DA;
+  const p1IsFinisher = S.p1.checkout >= S.p2.checkout;
+  let compText;
+  if (gap3DA >= 5 && !p1IsFinisher) {
+    compText = `Jason: Contrast ${p1}'s power scoring (${S.p1.avg3DA} avg) against ${p2}'s clinical finishing (${S.p2.checkout}% checkout). Which style takes the win today?`;
+  } else if (gap3DA >= 5 && p1IsFinisher) {
+    compText = `${p1} holds the edge in both scoring (${S.p1.avg3DA} avg) and checkout (${S.p1.checkout}%). Talk about whether ${p2} at ${S.p2.avg3DA} avg can keep pace.`;
+  } else {
+    compText = `These two are closely matched — ${p1}: ${S.p1.avg3DA} avg / ${S.p1.checkout}% checkout vs ${p2}: ${S.p2.avg3DA} avg / ${S.p2.checkout}%. Who wins the mental game?`;
+  }
+  items.push({ label: 'Comparison', text: compText, style: '' });
+
+  // 2. Break of Throw (urgent if one just happened)
+  if (lastBreak) {
+    items.push({
+      label: '🔴 Break of Throw',
+      text: `${lastBreak.name} broke the throw in Leg ${lastBreak.leg}! This is the darts equivalent of a break of serve and it's just moved the live odds significantly. Tell the audience why this matters — the throw holder is now under extra pressure to break back.`,
+      style: 'urgent'
+    });
+  } else if (S.legHistory.length > 0 && S.screen === 'live') {
+    const holder = throwHolder();
+    items.push({
+      label: 'Throw Pattern',
+      text: `${holder} has the throw for Leg ${currentLegNum()}. So far no breaks — both players are holding their serve. Watch if the pattern holds or if a break changes the match picture completely.`,
+      style: ''
+    });
+  }
+
+  // 3. Score-context prompt
+  const p1Ahead = S.p1Score > S.p2Score;
+  const tied    = S.p1Score === S.p2Score && S.p1Score > 0;
+  const leader  = p1Ahead ? p1 : p2;
+  const trailer = p1Ahead ? p2 : p1;
+  const isMatchPoint = Math.max(S.p1Score, S.p2Score) >= S.matchPoint - 1;
+  const isDecider    = S.p1Score === S.matchPoint - 1 && S.p2Score === S.matchPoint - 1;
+
+  if (S.screen === 'live' && S.p1Score === 0 && S.p2Score === 0) {
+    items.push({
+      label: 'Set The Scene',
+      text: `Board 1 is live — ${p1} vs ${p2}. ${getPlayerProvince(p1) ? p1 + ' (' + getPlayerProvince(p1) + ')' : p1} against ${getPlayerProvince(p2) ? p2 + ' (' + getPlayerProvince(p2) + ')' : p2}. Build the atmosphere for the viewers — what do they need to know about these two players going into this match?`,
+      style: 'info'
+    });
+  } else if (isDecider) {
+    items.push({
+      label: '🏆 Deciding Leg',
+      text: `IT'S THE DECIDING LEG! Legs are level at ${S.p1Score}–${S.p2Score}. Talk about what this win means in the standings — and ask viewers if either player has the mental strength to close it out. The throw holder ${throwHolder()} has a small edge.`,
+      style: 'urgent'
+    });
+  } else if (isMatchPoint) {
+    items.push({
+      label: '⚡ Match Point',
+      text: `${leader} is ONE LEG AWAY from winning! Can ${trailer} find a response and force a decider? Build the tension — this is the biggest moment in the match for the audience.`,
+      style: 'urgent'
+    });
+  } else if (tied) {
+    items.push({
+      label: 'Evenly Matched',
+      text: `All square at ${S.p1Score}–${S.p2Score}. This match is perfectly poised — talk about who has the momentum and whether the throw pattern gives anyone an edge heading into Leg ${currentLegNum()}.`,
+      style: ''
+    });
+  } else if (S.legHistory.length >= 2) {
+    items.push({
+      label: 'Match Story',
+      text: `${leader} leads ${Math.max(S.p1Score, S.p2Score)}–${Math.min(S.p1Score, S.p2Score)}. Talk about what's working for ${leader} — is it the scoring, the finishing, or are they benefiting from the throw pattern?`,
+      style: ''
+    });
+  }
+
+  // 4. Look-Ahead
+  const nextOpp = getNextOpponent();
+  if (nextOpp) {
+    items.push({
+      label: 'Look-Ahead',
+      text: `After this match, keep an eye on ${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''} — Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} on Board ${nextOpp.board || 1}. Worth flagging for viewers.`,
+      style: 'info'
+    });
+  }
+
+  return items;
+}
+
+// ── DATA FETCH ────────────────────────────────────────────
+async function loadEventData() {
+  try {
+    const r = await fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) { eventData = await r.json(); return; }
+  } catch(_) {}
+  try {
+    const r = await fetch(LOCAL_URL + '?t=' + Date.now());
+    if (r.ok) { eventData = await r.json(); }
+  } catch(_) {}
+
+  // Auto-populate from current match pair
+  if (eventData && eventData.currentPair && eventData.currentPair.board1) {
+    const m = eventData.currentPair.board1;
+    if (!S.p1.name) S.p1.name = m.player1 || '';
+    if (!S.p2.name) S.p2.name = m.player2 || '';
+    if (!S.match)   S.match = m;
+  }
+}
+
+// ── RENDER: SETUP ─────────────────────────────────────────
+function renderSetup() {
+  let matchOptions = '<option value="">— Select or enter names below —</option>';
+  if (eventData) {
+    const all = (eventData.upcomingMatches || []).filter(m => m.board === 1);
+    if (all.length) {
+      matchOptions += all.map(m =>
+        `<option value="${m.matchNum}" ${S.match && S.match.matchNum === m.matchNum ? 'selected' : ''}>
+          M${m.matchNum}: ${m.player1} vs ${m.player2} ${m.time ? '· ' + m.time : ''}
+        </option>`
+      ).join('');
+    }
+  }
+
+  const canStart = S.p1.name && S.p2.name && S.bullWinner;
+
+  return `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5em;margin-bottom:1em;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts · Jason</div>
+        <h1>Stream Controller</h1>
+      </div>
+      <a href="../index.html" style="flex-shrink:0;display:inline-block;font-family:var(--font-display);font-size:0.72em;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);text-decoration:none;border:1px solid var(--divider);padding:0.4em 0.8em;border-radius:8px;margin-top:0.3em;">← Interview App</a>
+    </div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
+
+    <!-- Match Selector -->
+    <div class="card">
+      <div class="card-header"><h2>1 · Select Match</h2></div>
+      <div class="card-body">
+        ${eventData ? `<label>Board 1 Match (auto-loaded from schedule)</label><select id="matchPicker">${matchOptions}</select>` : '<p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.7em;">Schedule unavailable — enter player names manually.</p>'}
+        <label>Player 1 Name</label>
+        <input type="text" id="p1Name" value="${S.p1.name}" placeholder="Player 1" autocomplete="off">
+        <label>Player 2 Name</label>
+        <input type="text" id="p2Name" value="${S.p2.name}" placeholder="Player 2" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Player Stats -->
+    <div class="card">
+      <div class="card-header"><h2>2 · Player Stats (for odds &amp; commentary)</h2></div>
+      <div class="card-body">
+        <div class="row">
+          <div style="flex:1;">
+            <label>${S.p1.name || 'Player 1'} — 3-Dart Avg</label>
+            <input type="number" id="p1Avg" value="${S.p1.avg3DA}" min="20" max="120" step="0.5">
+          </div>
+          <div style="flex:1;">
+            <label>${S.p2.name || 'Player 2'} — 3-Dart Avg</label>
+            <input type="number" id="p2Avg" value="${S.p2.avg3DA}" min="20" max="120" step="0.5">
+          </div>
+        </div>
+        <div class="row">
+          <div style="flex:1;">
+            <label>${S.p1.name || 'Player 1'} — Checkout %</label>
+            <input type="number" id="p1Chk" value="${S.p1.checkout}" min="0" max="100">
+          </div>
+          <div style="flex:1;">
+            <label>${S.p2.name || 'Player 2'} — Checkout %</label>
+            <input type="number" id="p2Chk" value="${S.p2.checkout}" min="0" max="100">
+          </div>
+        </div>
+        <label>Match Format</label>
+        <select id="legsToWin">
+          <option value="2" ${S.matchPoint === 2 ? 'selected' : ''}>Best of 3 (first to 2)</option>
+          <option value="3" ${S.matchPoint === 3 ? 'selected' : ''}>Best of 5 (first to 3) ✦ default</option>
+          <option value="4" ${S.matchPoint === 4 ? 'selected' : ''}>Best of 7 (first to 4)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Bull Winner -->
+    <div class="card">
+      <div class="card-header"><h2>3 · Bull Winner <span style="font-size:0.8em;font-weight:400;color:var(--text-muted);letter-spacing:0.04em;">(+8.6% live odds edge)</span></h2></div>
+      <div class="card-body">
+        <p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.8em;">Who won the bullseye? They throw Leg 1 and all odd-numbered legs.</p>
+        <div class="row">
+          <button class="btn bull-btn ${S.bullWinner === 1 ? 'active' : ''}" id="bull1Btn">
+            ${S.p1.name || 'Player 1'}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 1, 3, 5</span>
+          </button>
+          <button class="btn bull-btn ${S.bullWinner === 2 ? 'active' : ''}" id="bull2Btn">
+            ${S.p2.name || 'Player 2'}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 2, 4</span>
+          </button>
+        </div>
+        ${S.bullWinner ? `<div style="margin-top:0.7em;text-align:center;font-family:var(--font-display);font-size:0.78em;letter-spacing:0.06em;color:var(--orange);">✓ ${S.bullWinner === 1 ? S.p1.name || 'Player 1' : S.p2.name || 'Player 2'} has the bull — odds set to ${calculateLiveOdds()}% / ${100 - calculateLiveOdds()}%</div>` : ''}
+      </div>
+    </div>
+
+    <button class="btn ${canStart ? '' : 'disabled'}" id="startMatchBtn">🎥 Start Live Stream Scoring</button>
+    <a href="live-odds.html" target="_blank" class="obs-link">Open OBS Odds Overlay ↗</a>
+  `;
+}
+
+// ── RENDER: LIVE ──────────────────────────────────────────
+function renderLive() {
+  const p1Prob = calculateLiveOdds();
+  const p2Prob = 100 - p1Prob;
+  const legNum      = currentLegNum();
+  const thrower     = throwHolder();
+  const lastBreak   = getLastBreak();
+  const narratives  = buildNarratives();
+  const nextOpp     = getNextOpponent();
+  const p1Rec       = getPlayerRecord(S.p1.name);
+  const p2Rec       = getPlayerRecord(S.p2.name);
+  const isMatchPt   = Math.max(S.p1Score, S.p2Score) >= S.matchPoint - 1;
+  const isDecider   = S.p1Score === S.matchPoint - 1 && S.p2Score === S.matchPoint - 1;
+  const p1Prov      = (p1Rec && p1Rec.province) ? p1Rec.province : '';
+  const p2Prov      = (p2Rec && p2Rec.province) ? p2Rec.province : '';
+
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9em;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">Board ${S.match ? S.match.board || 1 : 1} · Match ${S.match ? S.match.matchNum || '' : ''} ${S.match && S.match.time ? '· ' + S.match.time : ''}</div>
+        <h1 style="margin:0;">Live</h1>
+      </div>
+      <span class="live-badge">Live</span>
+    </div>
+
+    <!-- Score panel -->
+    <div class="card">
+      <div class="score-display">
+        <div class="score-player">
+          <div class="score-name" style="color:${p1Prov ? 'var(--pink)' : 'var(--white)'};">${S.p1.name}${p1Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--pink);">' + p1Prov + '</span>' : ''}</div>
+          <div class="score-num ${S.p1Score > S.p2Score ? 'leading' : ''}">${S.p1Score}</div>
+          <div class="throw-indicator ${thrower === S.p1.name ? 'throw-on' : 'throw-off'}">Throwing</div>
+        </div>
+        <div class="vs-dot">VS</div>
+        <div class="score-player">
+          <div class="score-name" style="color:${p2Prov ? 'var(--blue)' : 'var(--white)'};">${S.p2.name}${p2Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--blue);">' + p2Prov + '</span>' : ''}</div>
+          <div class="score-num ${S.p2Score > S.p1Score ? 'leading' : ''}">${S.p2Score}</div>
+          <div class="throw-indicator ${thrower === S.p2.name ? 'throw-on' : 'throw-off'}">Throwing</div>
+        </div>
+      </div>
+      <div style="padding:0 1em 0.7em;text-align:center;font-family:var(--font-display);font-size:0.76em;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;">
+        Leg ${legNum} · Best of ${S.matchPoint * 2 - 1}
+      </div>
+    </div>
+
+    ${isMatchPt ? `<div class="match-point-alert">⚡ Match Point — ${S.p1Score > S.p2Score ? S.p1.name : S.p2.name} leads ${Math.max(S.p1Score,S.p2Score)}–${Math.min(S.p1Score,S.p2Score)}</div>` : ''}
+    ${isDecider && !isMatchPt ? `<div class="match-point-alert" style="border-color:#4caf50;color:#4caf50;background:rgba(76,175,80,0.1);">🏆 Deciding Leg — Legs level at ${S.p1Score}–${S.p2Score}</div>` : ''}
+
+    <!-- Leg win buttons -->
+    <div class="row" style="margin-bottom:1em;">
+      <button class="btn leg-btn-p1" id="winP1">
+        ${S.p1.name}<br><span style="font-size:0.75em;font-weight:400;opacity:0.85;">Wins Leg ${legNum}</span>
+      </button>
+      <button class="btn leg-btn-p2" id="winP2">
+        ${S.p2.name}<br><span style="font-size:0.75em;font-weight:400;opacity:0.85;">Wins Leg ${legNum}</span>
+      </button>
+    </div>
+
+    <!-- Live Odds -->
+    <div class="card">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h2>Live Odds</h2>
+        <a href="live-odds.html" target="_blank" class="obs-link" style="margin:0;padding:0.3em 0.7em;font-size:0.7em;border-color:var(--divider);">OBS Overlay ↗</a>
+      </div>
+      <div class="card-body">
+        <div class="odds-labels">
+          <span class="odds-p1-label">${S.p1.name} ${p1Prob}%</span>
+          <span class="odds-p2-label">${p2Prob}% ${S.p2.name}</span>
+        </div>
+        <div class="odds-track">
+          <div class="odds-fill-p1" id="oddsP1Fill" style="width:${p1Prob}%;"></div>
+          <div class="odds-fill-p2" id="oddsP2Fill" style="width:${p2Prob}%;"></div>
+        </div>
+        ${lastBreak ? `<div style="margin-top:0.7em;"><span class="break-badge">🔴 Break — Leg ${lastBreak.leg}: ${lastBreak.name}</span></div>` : ''}
+        <div style="margin-top:0.6em;font-family:var(--font-display);font-size:0.7em;letter-spacing:0.06em;color:var(--text-muted);text-transform:uppercase;">Live odds are pushing to the OBS overlay</div>
+      </div>
+    </div>
+
+    <!-- H2H Commentary Cheat Sheet -->
+    <div class="card">
+      <div class="card-header"><h2>Commentary Cheat Sheet</h2></div>
+      <div class="card-body">
+        <div class="h2h-grid">
+          <div class="h2h-player">
+            <div class="h2h-name" style="color:var(--pink);">${S.p1.name}${p1Prov ? '<br><span style="font-size:0.68em;color:var(--text-muted);">' + p1Prov + '</span>' : ''}</div>
+            <div class="h2h-stat">3DA: <strong>${S.p1.avg3DA}</strong></div>
+            <div class="h2h-stat">Checkout: <strong>${S.p1.checkout}%</strong></div>
+            ${p1Rec ? `<div class="h2h-stat">Record: <strong>${p1Rec.matchWins}W–${p1Rec.matchLosses}L</strong></div>` : ''}
+            ${p1Rec ? `<div class="h2h-stat">Legs Won: <strong>${p1Rec.legsWon}</strong></div>` : ''}
+            <div class="h2h-stat">Bull Throw: <strong>${S.bullWinner === 1 ? 'Yes (Legs 1,3,5)' : 'No (Legs 2,4)'}</strong></div>
+          </div>
+          <div class="h2h-player">
+            <div class="h2h-name" style="color:var(--blue);">${S.p2.name}${p2Prov ? '<br><span style="font-size:0.68em;color:var(--text-muted);">' + p2Prov + '</span>' : ''}</div>
+            <div class="h2h-stat">3DA: <strong>${S.p2.avg3DA}</strong></div>
+            <div class="h2h-stat">Checkout: <strong>${S.p2.checkout}%</strong></div>
+            ${p2Rec ? `<div class="h2h-stat">Record: <strong>${p2Rec.matchWins}W–${p2Rec.matchLosses}L</strong></div>` : ''}
+            ${p2Rec ? `<div class="h2h-stat">Legs Won: <strong>${p2Rec.legsWon}</strong></div>` : ''}
+            <div class="h2h-stat">Bull Throw: <strong>${S.bullWinner === 2 ? 'Yes (Legs 1,3,5)' : 'No (Legs 2,4)'}</strong></div>
+          </div>
+        </div>
+
+        ${S.legHistory.length > 0 ? `
+        <div class="divider-line"></div>
+        <div class="sub-label">Leg Log</div>
+        ${S.legHistory.map(l => {
+          const wName = l.winner === 1 ? S.p1.name : S.p2.name;
+          const cls   = l.wasBreak ? 'was-break' : 'was-hold';
+          const icon  = l.wasBreak ? '🔴 BREAK' : '✓ Hold';
+          return `<div class="leg-log-row ${cls}">Leg ${l.leg}: ${wName} — ${icon}</div>`;
+        }).join('')}
+        ` : ''}
+      </div>
+    </div>
+
+    <!-- Narrative Prompts -->
+    <div class="card">
+      <div class="card-header"><h2>Narrative Prompts</h2></div>
+      <div class="card-body">
+        ${narratives.map(n => `
+          <div class="narrative ${n.style || ''}">
+            <div class="narrative-label">${n.label}</div>
+            ${n.text}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- Look-Ahead -->
+    ${nextOpp ? `
+    <div class="card" style="border-color:rgba(33,150,243,0.3);background:rgba(33,150,243,0.05);">
+      <div class="card-body">
+        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:0.4em;">Look-Ahead · Next Match</div>
+        <div style="font-size:0.9em;">
+          ${S.p1Score >= S.p2Score ? S.p1.name : S.p2.name} faces
+          <strong>${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''}</strong>
+          in Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} — Board ${nextOpp.board || 1}
+        </div>
+      </div>
+    </div>` : ''}
+
+    <!-- Controls -->
+    <div class="row" style="margin-bottom:1.5em;">
+      <button class="btn secondary" id="undoLegBtn" style="flex:1;margin:0;${S.legHistory.length === 0 ? 'opacity:0.4;pointer-events:none;' : ''}">↩ Undo Leg</button>
+      <button class="btn secondary" id="editSetupBtn" style="flex:1;margin:0;">⚙ Setup</button>
+    </div>
+  `;
+}
+
+// ── RENDER: COMPLETE ──────────────────────────────────────
+function renderComplete() {
+  const winnerNum = S.p1Score >= S.matchPoint ? 1 : 2;
+  const winner    = winnerNum === 1 ? S.p1.name : S.p2.name;
+  const loser     = winnerNum === 1 ? S.p2.name : S.p1.name;
+  const wScore    = Math.max(S.p1Score, S.p2Score);
+  const lScore    = Math.min(S.p1Score, S.p2Score);
+  const breaks    = S.legHistory.filter(l => l.wasBreak).length;
+  const narratives = buildNarratives();
+  const nextOpp    = getNextOpponent(winner);
+
+  return `
+    <div style="text-align:center;padding:1.5em 0 1.2em;">
+      <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.3em;">Match Complete</div>
+      <div class="complete-winner">${winner}</div>
+      <div class="complete-score">${wScore}–${lScore}</div>
+      <div style="font-size:0.84em;color:var(--text-muted);margin-top:0.3em;">
+        ${breaks} break${breaks !== 1 ? 's' : ''} of throw · Best of ${S.matchPoint * 2 - 1}
+      </div>
+    </div>
+
+    <!-- Leg summary -->
+    <div class="card">
+      <div class="card-header"><h2>Match Summary</h2></div>
+      <div class="card-body">
+        ${S.legHistory.map(l => {
+          const wName = l.winner === 1 ? S.p1.name : S.p2.name;
+          const cls  = l.wasBreak ? 'was-break' : 'was-hold';
+          return `<div class="leg-log-row ${cls}">Leg ${l.leg}: ${wName} ${l.wasBreak ? '🔴 BREAK of Throw' : '✓ Hold'}</div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    ${nextOpp ? `
+    <div class="card" style="border-color:rgba(33,150,243,0.3);background:rgba(33,150,243,0.05);">
+      <div class="card-body">
+        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:0.4em;">${winner}'s Next Match</div>
+        <div style="font-size:0.9em;">
+          ${winner} faces <strong>${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''}</strong>
+          in Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} — Board ${nextOpp.board || 1}
+        </div>
+      </div>
+    </div>` : ''}
+
+    <!-- Post-match narratives -->
+    <div class="card">
+      <div class="card-header"><h2>Post-Match Narrative</h2></div>
+      <div class="card-body">
+        ${narratives.map(n => `
+          <div class="narrative ${n.style || ''}">
+            <div class="narrative-label">${n.label}</div>
+            ${n.text}
+          </div>
+        `).join('')}
+        <div class="narrative info">
+          <div class="narrative-label">Interview Trigger</div>
+          Once ${winner} finishes the handshake, open the Interview App to start the post-match interview questions — the system will auto-generate questions based on today's leg data.
+        </div>
+      </div>
+    </div>
+
+    <a href="../index.html" class="btn" style="text-decoration:none;display:block;margin-bottom:0.7em;">🎙 Go to Interview App</a>
+    <button class="btn secondary" id="newMatchBtn">Set Up Next Match</button>
+  `;
+}
+
+// ── RENDER: MAIN ──────────────────────────────────────────
+function renderApp() {
+  const app = document.getElementById('app');
+  if      (S.screen === 'setup')    app.innerHTML = renderSetup();
+  else if (S.screen === 'live')     app.innerHTML = renderLive();
+  else                              app.innerHTML = renderComplete();
+  bindEvents();
+}
+
+// ── EVENT BINDING ─────────────────────────────────────────
+function bindEvents() {
+  if (S.screen === 'setup') {
+    const picker = document.getElementById('matchPicker');
+    if (picker) {
+      picker.onchange = () => {
+        const mNum = parseInt(picker.value, 10);
+        if (isNaN(mNum) || !eventData) return;
+        const m = (eventData.upcomingMatches || []).find(u => u.matchNum === mNum);
+        if (!m) return;
+        S.match  = m;
+        S.p1.name = m.player1;
+        S.p2.name = m.player2;
+        document.getElementById('p1Name').value = m.player1;
+        document.getElementById('p2Name').value = m.player2;
+      };
+    }
+
+    document.getElementById('p1Name').oninput = e => { S.p1.name = e.target.value.trim(); };
+    document.getElementById('p2Name').oninput = e => { S.p2.name = e.target.value.trim(); };
+    document.getElementById('p1Avg').oninput  = e => { S.p1.avg3DA   = parseFloat(e.target.value) || 50; };
+    document.getElementById('p2Avg').oninput  = e => { S.p2.avg3DA   = parseFloat(e.target.value) || 50; };
+    document.getElementById('p1Chk').oninput  = e => { S.p1.checkout = parseFloat(e.target.value) || 35; };
+    document.getElementById('p2Chk').oninput  = e => { S.p2.checkout = parseFloat(e.target.value) || 35; };
+    document.getElementById('legsToWin').onchange = e => { S.matchPoint  = parseInt(e.target.value, 10); };
+
+    document.getElementById('bull1Btn').onclick = () => { S.bullWinner = 1; renderApp(); };
+    document.getElementById('bull2Btn').onclick = () => { S.bullWinner = 2; renderApp(); };
+
+    document.getElementById('startMatchBtn').onclick = () => {
+      if (!S.p1.name || !S.p2.name) { alert('Enter both player names first.'); return; }
+      if (!S.bullWinner) { alert('Select the bull winner before starting.'); return; }
+      S.p1Score = 0; S.p2Score = 0; S.legHistory = [];
+      S.screen = 'live';
+      pushToOverlay();
+      renderApp();
+    };
+  }
+
+  if (S.screen === 'live') {
+    document.getElementById('winP1').onclick = () => recordLegWin(1);
+    document.getElementById('winP2').onclick = () => recordLegWin(2);
+
+    const undoBtn = document.getElementById('undoLegBtn');
+    if (undoBtn && S.legHistory.length > 0) {
+      undoBtn.onclick = () => {
+        const last = S.legHistory.pop();
+        if (last.winner === 1) S.p1Score--;
+        else                   S.p2Score--;
+        S.screen = 'live';
+        pushToOverlay();
+        renderApp();
+      };
+    }
+
+    document.getElementById('editSetupBtn').onclick = () => { S.screen = 'setup'; renderApp(); };
+  }
+
+  if (S.screen === 'complete') {
+    document.getElementById('newMatchBtn').onclick = () => {
+      S.screen = 'setup'; S.p1Score = 0; S.p2Score = 0;
+      S.legHistory = []; S.bullWinner = 0; S.match = null;
+      renderApp();
+    };
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────
+(async function init() {
+  await loadEventData();
+  renderApp();
+})();
+</script>
+</body>
+</html>
