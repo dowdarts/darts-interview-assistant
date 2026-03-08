@@ -3755,6 +3755,9 @@ function _initApp() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  // Start hosting on AADS40 immediately — TV displays connect without waiting for password
+  if (window.PeerSync) PeerSync.startHost(ADMIN_PEER_CODE).catch(() => {});
+
   if (localStorage.getItem('dartsAdminAuth') === '1') {
     _initApp();
   } else {
