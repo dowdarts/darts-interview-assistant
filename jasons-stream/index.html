@@ -560,23 +560,22 @@ async function loadEventData() {
 function renderSetup() {
   let matchOptions = '<option value="">— Select or enter names below —</option>';
   if (eventData) {
-    // Build full match list from allPairs (all boards, all rounds)
+    // Build Board 1 (live stream) matches only from allPairs
     const allMatches = [];
     if (eventData.allPairs && eventData.allPairs.length) {
       for (const pair of eventData.allPairs) {
         if (pair.board1) allMatches.push(pair.board1);
-        if (pair.board2) allMatches.push(pair.board2);
       }
       allMatches.sort((a, b) => a.matchNum - b.matchNum);
     }
-    // Fallback to upcomingMatches if allPairs not available
+    // Fallback to upcomingMatches board 1 if allPairs not available
     if (!allMatches.length) {
-      allMatches.push(...(eventData.upcomingMatches || []));
+      allMatches.push(...(eventData.upcomingMatches || []).filter(m => m.board === 1));
     }
     if (allMatches.length) {
       matchOptions += allMatches.map(m =>
         `<option value="${m.matchNum}" ${S.match && S.match.matchNum === m.matchNum ? 'selected' : ''}>
-          M${m.matchNum} · B${m.board}: ${m.player1} vs ${m.player2} ${m.time ? '· ' + m.time : ''}
+          M${m.matchNum}: ${m.player1} vs ${m.player2} ${m.time ? '· ' + m.time : ''}
         </option>`
       ).join('');
     }
@@ -595,7 +594,7 @@ function renderSetup() {
     <div class="card">
       <div class="card-header"><h2>1 · Select Match</h2></div>
       <div class="card-body">
-        ${eventData ? `<label>Match (all boards — full schedule)</label><select id="matchPicker">${matchOptions}</select>` : '<p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.7em;">Schedule unavailable — enter player names manually.</p>'}
+        ${eventData ? `<label>Board 1 Match (live stream schedule)</label><select id="matchPicker">${matchOptions}</select>` : '<p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.7em;">Schedule unavailable — enter player names manually.</p>'}
         <label>Player 1 Name</label>
         <input type="text" id="p1Name" value="${S.p1.name}" placeholder="Player 1" autocomplete="off">
         <label>Player 2 Name</label>
