@@ -13,6 +13,9 @@ const PeerSync = {
   _hostStarting: false,
   _hostReady: false,
   _preferredCode: null,
+  _takingOver: false,
+  _retryTimer: null,
+  _adminBC: null,
 
   // ------------------------------------------------------------------
   // HOST — called by the interview app
@@ -48,7 +51,6 @@ const PeerSync = {
         code = preferredCode.toUpperCase().slice(0, 6).padEnd(6, '0');
         localStorage.setItem('dartsRoomCode', code);
         this._preferredCode = code;
-        this._preferredCodeRetried = false;
       } else {
         code = localStorage.getItem('dartsRoomCode');
         if (!code || code.length !== 6) {
@@ -76,6 +78,7 @@ const PeerSync = {
         this.peer = p;
         this._hostReady = true;
         this._hostStarting = false;
+        this._setupAdminChannel(p);
         console.log('[PeerSync] Host ready, code:', code, 'peer:', id);
         resolve(code);
       });
@@ -86,6 +89,17 @@ const PeerSync = {
           this.connections.push(conn);
           // Send the latest data immediately so the TV updates right away
           if (this._lastData) conn.send(this._lastData);
+        });
+        conn.on('data', (msg) => {
+          if (msg && msg.type === 'admin-takeover') {
+            console.log('[PeerSync] Takeover requested — releasing AADS40 to new session');
+            this._hostReady = false;
+            this._hostStarting = false;
+            this.connections.forEach(c => { try { c.close(); } catch (x) {} });
+            this.connections = [];
+            if (this._adminBC) { this._adminBC.close(); this._adminBC = null; }
+            p.destroy();
+          }
         });
         conn.on('close', () => {
           this.connections = this.connections.filter(c => c !== conn);
@@ -101,8 +115,14 @@ const PeerSync = {
           if (this._preferredCode) {
             // Fixed admin code is temporarily busy (another tab/session) — keep retrying every 5s
             p.destroy();
+            if (this._takingOver) return; // takeover in progress — _finishTakeover will restart
             console.warn('[PeerSync] Fixed code busy, retrying in 5s…');
-            setTimeout(() => this._createPeer(this._preferredCode, resolve, reject), 5000);
+            this._retryTimer = setTimeout(() => {
+              this._retryTimer = null;
+              if (!this._takingOver && !this._hostReady) {
+                this._createPeer(this._preferredCode, resolve, reject);
+              }
+            }, 5000);
             return;
           }
           // No preferred code — try a fresh random code
@@ -160,6 +180,86 @@ const PeerSync = {
     this._code = null;
     this._hostReady = false;
     this._hostStarting = false;
+  },
+
+  // ------------------------------------------------------------------
+  // TAKEOVER — new admin session signals old host to release AADS40
+  // ------------------------------------------------------------------
+
+  _setupAdminChannel(peer) {
+    if (this._adminBC) this._adminBC.close();
+    try {
+      this._adminBC = new BroadcastChannel('aads_admin_ctrl');
+      this._adminBC.onmessage = (e) => {
+        if (e.data && e.data.type === 'admin-takeover') {
+          console.log('[PeerSync] Same-device takeover — releasing AADS40');
+          this._hostReady = false;
+          this._hostStarting = false;
+          this.connections.forEach(c => { try { c.close(); } catch (x) {} });
+          this.connections = [];
+          this._adminBC.close();
+          this._adminBC = null;
+          if (peer && !peer.destroyed) peer.destroy();
+        }
+      };
+    } catch (e) { /* BroadcastChannel not supported */ }
+  },
+
+  /** Called on successful password entry — takes AADS40 from any existing session */
+  requestTakeover(preferredCode) {
+    const code = (preferredCode || this._preferredCode || '').toUpperCase().slice(0, 6).padEnd(6, '0');
+    if (!code || code === '000000') return;
+
+    // 1. Same-device signal via BroadcastChannel (instant for same-browser tabs)
+    try {
+      const bc = new BroadcastChannel('aads_admin_ctrl');
+      bc.postMessage({ type: 'admin-takeover' });
+      setTimeout(() => bc.close(), 500);
+    } catch (e) { /* ignore */ }
+
+    // 2. Cross-device signal via PeerJS — connect to current host and ask it to step down
+    this._takingOver = true;
+    if (this._retryTimer) { clearTimeout(this._retryTimer); this._retryTimer = null; }
+
+    try {
+      const tempPeer = new Peer(null, { debug: 0 });
+      let done = false;
+
+      const finish = () => {
+        if (done) return;
+        done = true;
+        try { tempPeer.destroy(); } catch (x) {}
+        this._finishTakeover(code);
+      };
+
+      tempPeer.on('open', () => {
+        const conn = tempPeer.connect('darts-' + code, { reliable: true, serialization: 'json' });
+        conn.on('open', () => {
+          conn.send({ type: 'admin-takeover' });
+          // Give the old host time to destroy, then claim the code
+          setTimeout(finish, 1200);
+        });
+        conn.on('error', finish);
+        setTimeout(finish, 3000); // safety timeout
+      });
+
+      tempPeer.on('error', finish);
+      setTimeout(finish, 4000); // outer safety timeout
+
+    } catch (e) {
+      this._finishTakeover(code);
+    }
+  },
+
+  _finishTakeover(code) {
+    if (this.peer && !this.peer.destroyed) { this.peer.destroy(); this.peer = null; }
+    if (this._adminBC) { this._adminBC.close(); this._adminBC = null; }
+    this._hostReady = false;
+    this._hostStarting = false;
+    this._takingOver = false;
+    this.connections = [];
+    // Now immediately claim AADS40 as the new host
+    this.startHost(code).catch(() => {});
   },
 
   // ------------------------------------------------------------------
