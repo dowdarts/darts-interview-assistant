@@ -300,6 +300,7 @@
 // ══════════════════════════════════════════════════════════
 
 const STREAM_KEY     = 'AADS_STREAM_DATA';
+const STATE_KEY      = 'AADS_JASON_STATE';
 const RAW_URL        = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
 const LOCAL_URL      = '../event-data.json';
 
@@ -309,16 +310,53 @@ try { bc = new BroadcastChannel('aads_stream'); } catch(_) {}
 
 // ── STATE ─────────────────────────────────────────────────
 const S = {
-  screen:     'setup',   // setup | live | complete
-  match:      null,      // { matchNum, board, time, player1, player2, ... }
-  p1:         { name: '', avg3DA: 50, checkout: 35 },
-  p2:         { name: '', avg3DA: 50, checkout: 35 },
-  p1Score:    0,
-  p2Score:    0,
-  bullWinner: 0,         // 1 or 2
-  matchPoint: 3,         // legs needed to win (best of 5 = 3)
-  legHistory: []         // [{ leg, winner, expectedStarter, wasBreak }]
+  screen:           'setup',   // setup | live | complete
+  matchIndex:       0,         // index into getBoard1Matches()
+  completedMatches: [],        // matchNums already done
+  match:            null,      // { matchNum, board, time, player1, player2, ... }
+  p1:               { name: '', avg3DA: 50, checkout: 35 },
+  p2:               { name: '', avg3DA: 50, checkout: 35 },
+  p1Score:          0,
+  p2Score:          0,
+  bullWinner:       0,         // 1 or 2
+  matchPoint:       3,         // legs needed to win (best of 5 = 3)
+  legHistory:       []         // [{ leg, winner, expectedStarter, wasBreak }]
 };
+
+// ── MATCH PROGRESSION ────────────────────────────────────
+function getBoard1Matches() {
+  if (!eventData || !eventData.allPairs) return [];
+  return eventData.allPairs
+    .filter(p => p.board1)
+    .map(p => p.board1)
+    .sort((a, b) => a.matchNum - b.matchNum);
+}
+
+function applyMatchToState() {
+  const matches = getBoard1Matches();
+  const m = matches[S.matchIndex];
+  if (!m) return;
+  S.match     = m;
+  S.p1.name   = m.player1 || '';
+  S.p2.name   = m.player2 || '';
+  S.p1.avg3DA = 50; S.p1.checkout = 35;
+  S.p2.avg3DA = 50; S.p2.checkout = 35;
+}
+
+function saveJasonState() {
+  localStorage.setItem(STATE_KEY, JSON.stringify({
+    matchIndex:       S.matchIndex,
+    completedMatches: S.completedMatches
+  }));
+}
+
+function loadJasonState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STATE_KEY) || '{}');
+    if (typeof saved.matchIndex === 'number')    S.matchIndex       = saved.matchIndex;
+    if (Array.isArray(saved.completedMatches))   S.completedMatches = saved.completedMatches;
+  } catch(_) {}
+}
 
 // ── ODDS ENGINE ───────────────────────────────────────────
 // Weights from the "Pro-Bookie" spec:
@@ -546,42 +584,15 @@ async function loadEventData() {
     const r = await fetch(LOCAL_URL + '?t=' + Date.now());
     if (r.ok) { eventData = await r.json(); }
   } catch(_) {}
-
-  // Auto-populate from current match pair
-  if (eventData && eventData.currentPair && eventData.currentPair.board1) {
-    const m = eventData.currentPair.board1;
-    if (!S.p1.name) S.p1.name = m.player1 || '';
-    if (!S.p2.name) S.p2.name = m.player2 || '';
-    if (!S.match)   S.match = m;
-  }
 }
 
 // ── RENDER: SETUP ─────────────────────────────────────────
 function renderSetup() {
-  let matchOptions = '<option value="">— Select or enter names below —</option>';
-  if (eventData) {
-    // Build Board 1 (live stream) matches only from allPairs
-    const allMatches = [];
-    if (eventData.allPairs && eventData.allPairs.length) {
-      for (const pair of eventData.allPairs) {
-        if (pair.board1) allMatches.push(pair.board1);
-      }
-      allMatches.sort((a, b) => a.matchNum - b.matchNum);
-    }
-    // Fallback to upcomingMatches board 1 if allPairs not available
-    if (!allMatches.length) {
-      allMatches.push(...(eventData.upcomingMatches || []).filter(m => m.board === 1));
-    }
-    if (allMatches.length) {
-      matchOptions += allMatches.map(m =>
-        `<option value="${m.matchNum}" ${S.match && S.match.matchNum === m.matchNum ? 'selected' : ''}>
-          M${m.matchNum}: ${m.player1} vs ${m.player2} ${m.time ? '· ' + m.time : ''}
-        </option>`
-      ).join('');
-    }
-  }
-
-  const canStart = S.p1.name && S.p2.name && S.bullWinner;
+  const board1Matches = getBoard1Matches();
+  const totalMatches  = board1Matches.length;
+  const currentMatch  = board1Matches[S.matchIndex] || null;
+  const upcoming      = board1Matches.slice(S.matchIndex + 1);
+  const canStart      = S.p1.name && S.p2.name && S.bullWinner;
 
   return `
     <div style="margin-bottom:1em;">
@@ -590,39 +601,56 @@ function renderSetup() {
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
 
-    <!-- Match Selector -->
-    <div class="card">
-      <div class="card-header"><h2>1 · Select Match</h2></div>
+    <!-- Current Match Card -->
+    <div class="card" style="border-color:rgba(242,101,34,0.45);">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h2>1 · Current Match</h2>
+        ${totalMatches ? `<span style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.06em;color:var(--text-muted);">${S.matchIndex + 1} / ${totalMatches}</span>` : ''}
+      </div>
       <div class="card-body">
-        ${eventData ? `<label>Board 1 Match (live stream schedule)</label><select id="matchPicker">${matchOptions}</select>` : '<p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.7em;">Schedule unavailable — enter player names manually.</p>'}
-        <label>Player 1 Name</label>
-        <input type="text" id="p1Name" value="${S.p1.name}" placeholder="Player 1" autocomplete="off">
-        <label>Player 2 Name</label>
-        <input type="text" id="p2Name" value="${S.p2.name}" placeholder="Player 2" autocomplete="off">
+        ${currentMatch ? `
+          <div style="text-align:center;padding:0.7em 0 0.4em;">
+            <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.12em;text-transform:uppercase;color:var(--orange);margin-bottom:0.6em;">
+              Match ${currentMatch.matchNum} · Board ${currentMatch.board}${currentMatch.time ? ' · ' + currentMatch.time : ''}
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:1em;">
+              <div style="text-align:right;flex:1;">
+                <div style="font-family:var(--font-display);font-size:1.15em;font-weight:700;color:var(--pink);">${currentMatch.player1}</div>
+                ${currentMatch.player1Province ? `<div style="font-size:0.72em;color:var(--text-muted);letter-spacing:0.06em;">${currentMatch.player1Province}</div>` : ''}
+              </div>
+              <div class="vs-dot" style="width:32px;height:32px;font-size:0.62em;flex-shrink:0;">VS</div>
+              <div style="text-align:left;flex:1;">
+                <div style="font-family:var(--font-display);font-size:1.15em;font-weight:700;color:var(--blue);">${currentMatch.player2}</div>
+                ${currentMatch.player2Province ? `<div style="font-size:0.72em;color:var(--text-muted);letter-spacing:0.06em;">${currentMatch.player2Province}</div>` : ''}
+              </div>
+            </div>
+          </div>
+        ` : `<p style="color:var(--text-muted);font-size:0.9em;margin:0;text-align:center;padding:1em 0;">🏆 All Board 1 matches complete!</p>`}
       </div>
     </div>
 
+    ${currentMatch ? `
     <!-- Player Stats -->
     <div class="card">
       <div class="card-header"><h2>2 · Player Stats (for odds &amp; commentary)</h2></div>
       <div class="card-body">
         <div class="row">
           <div style="flex:1;">
-            <label>${S.p1.name || 'Player 1'} — 3-Dart Avg</label>
+            <label>${S.p1.name} — 3-Dart Avg</label>
             <input type="number" id="p1Avg" value="${S.p1.avg3DA}" min="20" max="120" step="0.5">
           </div>
           <div style="flex:1;">
-            <label>${S.p2.name || 'Player 2'} — 3-Dart Avg</label>
+            <label>${S.p2.name} — 3-Dart Avg</label>
             <input type="number" id="p2Avg" value="${S.p2.avg3DA}" min="20" max="120" step="0.5">
           </div>
         </div>
         <div class="row">
           <div style="flex:1;">
-            <label>${S.p1.name || 'Player 1'} — Checkout %</label>
+            <label>${S.p1.name} — Checkout %</label>
             <input type="number" id="p1Chk" value="${S.p1.checkout}" min="0" max="100">
           </div>
           <div style="flex:1;">
-            <label>${S.p2.name || 'Player 2'} — Checkout %</label>
+            <label>${S.p2.name} — Checkout %</label>
             <input type="number" id="p2Chk" value="${S.p2.checkout}" min="0" max="100">
           </div>
         </div>
@@ -642,18 +670,33 @@ function renderSetup() {
         <p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.8em;">Who won the bullseye? They throw Leg 1 and all odd-numbered legs.</p>
         <div class="row">
           <button class="btn bull-btn ${S.bullWinner === 1 ? 'active' : ''}" id="bull1Btn">
-            ${S.p1.name || 'Player 1'}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 1, 3, 5</span>
+            ${S.p1.name}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 1, 3, 5</span>
           </button>
           <button class="btn bull-btn ${S.bullWinner === 2 ? 'active' : ''}" id="bull2Btn">
-            ${S.p2.name || 'Player 2'}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 2, 4</span>
+            ${S.p2.name}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 2, 4</span>
           </button>
         </div>
-        ${S.bullWinner ? `<div style="margin-top:0.7em;text-align:center;font-family:var(--font-display);font-size:0.78em;letter-spacing:0.06em;color:var(--orange);">✓ ${S.bullWinner === 1 ? S.p1.name || 'Player 1' : S.p2.name || 'Player 2'} has the bull — odds set to ${calculateLiveOdds()}% / ${100 - calculateLiveOdds()}%</div>` : ''}
+        ${S.bullWinner ? `<div style="margin-top:0.7em;text-align:center;font-family:var(--font-display);font-size:0.78em;letter-spacing:0.06em;color:var(--orange);">✓ ${S.bullWinner === 1 ? S.p1.name : S.p2.name} has the bull — odds set to ${calculateLiveOdds()}% / ${100 - calculateLiveOdds()}%</div>` : ''}
       </div>
     </div>
 
     <button class="btn ${canStart ? '' : 'disabled'}" id="startMatchBtn">🎥 Start Live Stream Scoring</button>
     <a href="live-odds.html" target="_blank" class="obs-link">Open OBS Odds Overlay ↗</a>
+    ` : ''}
+
+    <!-- Upcoming Matches (locked) -->
+    ${upcoming.length ? `
+    <div class="card" style="margin-top:0.6em;border-color:rgba(255,255,255,0.07);">
+      <div class="card-header"><h2 style="color:var(--text-muted);">Upcoming · Board 1 🔒</h2></div>
+      <div class="card-body" style="padding:0.5em 1em;">
+        ${upcoming.map(m => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.55em 0;border-bottom:1px solid var(--divider);opacity:0.45;">
+            <span style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.06em;color:var(--text-muted);">M${m.matchNum}${m.time ? ' · ' + m.time : ''}</span>
+            <span style="font-family:var(--font-main);font-size:0.85em;">${m.player1} vs ${m.player2}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
   `;
 }
 
@@ -866,7 +909,7 @@ function renderComplete() {
       </div>
     </div>
 
-    <button class="btn" id="newMatchBtn">Set Up Next Match</button>
+    <button class="btn" id="newMatchBtn">Next Match →</button>
   `;
 }
 
@@ -882,48 +925,24 @@ function renderApp() {
 // ── EVENT BINDING ─────────────────────────────────────────
 function bindEvents() {
   if (S.screen === 'setup') {
-    const picker = document.getElementById('matchPicker');
-    if (picker) {
-      picker.onchange = () => {
-        const mNum = parseInt(picker.value, 10);
-        if (isNaN(mNum) || !eventData) return;
-        // Search allPairs first, then fallback to upcomingMatches
-        let m = null;
-        if (eventData.allPairs) {
-          for (const pair of eventData.allPairs) {
-            if (pair.board1 && pair.board1.matchNum === mNum) { m = pair.board1; break; }
-            if (pair.board2 && pair.board2.matchNum === mNum) { m = pair.board2; break; }
-          }
-        }
-        if (!m) m = (eventData.upcomingMatches || []).find(u => u.matchNum === mNum);
-        if (!m) return;
-        S.match  = m;
-        S.p1.name = m.player1;
-        S.p2.name = m.player2;
-        document.getElementById('p1Name').value = m.player1;
-        document.getElementById('p2Name').value = m.player2;
+    // Stat inputs only present when there's a current match
+    const p1Avg = document.getElementById('p1Avg');
+    if (p1Avg) {
+      p1Avg.oninput  = e => { S.p1.avg3DA   = parseFloat(e.target.value) || 50; };
+      document.getElementById('p2Avg').oninput  = e => { S.p2.avg3DA   = parseFloat(e.target.value) || 50; };
+      document.getElementById('p1Chk').oninput  = e => { S.p1.checkout = parseFloat(e.target.value) || 35; };
+      document.getElementById('p2Chk').oninput  = e => { S.p2.checkout = parseFloat(e.target.value) || 35; };
+      document.getElementById('legsToWin').onchange = e => { S.matchPoint  = parseInt(e.target.value, 10); };
+      document.getElementById('bull1Btn').onclick = () => { S.bullWinner = 1; renderApp(); };
+      document.getElementById('bull2Btn').onclick = () => { S.bullWinner = 2; renderApp(); };
+      document.getElementById('startMatchBtn').onclick = () => {
+        if (!S.bullWinner) { alert('Select the bull winner before starting.'); return; }
+        S.p1Score = 0; S.p2Score = 0; S.legHistory = [];
+        S.screen = 'live';
+        pushToOverlay();
+        renderApp();
       };
     }
-
-    document.getElementById('p1Name').oninput = e => { S.p1.name = e.target.value.trim(); };
-    document.getElementById('p2Name').oninput = e => { S.p2.name = e.target.value.trim(); };
-    document.getElementById('p1Avg').oninput  = e => { S.p1.avg3DA   = parseFloat(e.target.value) || 50; };
-    document.getElementById('p2Avg').oninput  = e => { S.p2.avg3DA   = parseFloat(e.target.value) || 50; };
-    document.getElementById('p1Chk').oninput  = e => { S.p1.checkout = parseFloat(e.target.value) || 35; };
-    document.getElementById('p2Chk').oninput  = e => { S.p2.checkout = parseFloat(e.target.value) || 35; };
-    document.getElementById('legsToWin').onchange = e => { S.matchPoint  = parseInt(e.target.value, 10); };
-
-    document.getElementById('bull1Btn').onclick = () => { S.bullWinner = 1; renderApp(); };
-    document.getElementById('bull2Btn').onclick = () => { S.bullWinner = 2; renderApp(); };
-
-    document.getElementById('startMatchBtn').onclick = () => {
-      if (!S.p1.name || !S.p2.name) { alert('Enter both player names first.'); return; }
-      if (!S.bullWinner) { alert('Select the bull winner before starting.'); return; }
-      S.p1Score = 0; S.p2Score = 0; S.legHistory = [];
-      S.screen = 'live';
-      pushToOverlay();
-      renderApp();
-    };
   }
 
   if (S.screen === 'live') {
@@ -947,8 +966,15 @@ function bindEvents() {
 
   if (S.screen === 'complete') {
     document.getElementById('newMatchBtn').onclick = () => {
+      // Save progress and advance to next match
+      S.completedMatches.push(S.match ? S.match.matchNum : null);
+      S.matchIndex++;
+      saveJasonState();
+      // Reset live state
       S.screen = 'setup'; S.p1Score = 0; S.p2Score = 0;
-      S.legHistory = []; S.bullWinner = 0; S.match = null;
+      S.legHistory = []; S.bullWinner = 0;
+      // Load next match players from schedule
+      applyMatchToState();
       renderApp();
     };
   }
@@ -956,7 +982,9 @@ function bindEvents() {
 
 // ── INIT ──────────────────────────────────────────────────
 (async function init() {
+  loadJasonState();         // restore matchIndex from previous session
   await loadEventData();
+  applyMatchToState();      // populate players from the current match
   renderApp();
 })();
 </script>
