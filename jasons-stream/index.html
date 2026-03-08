@@ -320,7 +320,8 @@ const S = {
   p2Score:          0,
   bullWinner:       0,         // 1 or 2
   matchPoint:       3,         // legs needed to win (best of 5 = 3)
-  legHistory:       []         // [{ leg, winner, expectedStarter, wasBreak }]
+  legHistory:       [],        // [{ leg, winner, expectedStarter, wasBreak }]
+  lastCompleted:    null       // snapshot of previous match for editing
 };
 
 // ── MATCH PROGRESSION ────────────────────────────────────
@@ -351,7 +352,8 @@ function applyMatchToState() {
 function saveJasonState() {
   localStorage.setItem(STATE_KEY, JSON.stringify({
     matchIndex:       S.matchIndex,
-    completedMatches: S.completedMatches
+    completedMatches: S.completedMatches,
+    lastCompleted:    S.lastCompleted
   }));
 }
 
@@ -360,6 +362,7 @@ function loadJasonState() {
     const saved = JSON.parse(localStorage.getItem(STATE_KEY) || '{}');
     if (typeof saved.matchIndex === 'number')    S.matchIndex       = saved.matchIndex;
     if (Array.isArray(saved.completedMatches))   S.completedMatches = saved.completedMatches;
+    if (saved.lastCompleted)                      S.lastCompleted    = saved.lastCompleted;
   } catch(_) {}
 }
 
@@ -608,6 +611,11 @@ function renderSetup() {
       <h1>Stream Odds &amp; Statistics</h1>
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
+
+    ${S.matchIndex > 0 && S.lastCompleted ? `
+    <button class="btn" id="editLastMatchBtn" style="margin-bottom:1em;background:#1a1a1a;border:1.5px solid var(--divider);color:var(--text-muted);font-size:0.85em;letter-spacing:0.08em;">
+      ← Edit Last Match (${S.lastCompleted.match ? S.lastCompleted.match.player1 + ' vs ' + S.lastCompleted.match.player2 : 'Previous'})
+    </button>` : ''}
 
     <!-- Current Match Card -->
     <div class="card" style="border-color:rgba(242,101,34,0.45);">
@@ -948,6 +956,7 @@ function renderComplete() {
     </div>
 
     <button class="btn" id="newMatchBtn">Next Match →</button>
+    <button class="btn" id="backToSetupBtn" style="margin-top:0.5em;background:#1a1a1a;border:1.5px solid var(--divider);color:var(--text-muted);font-size:0.85em;letter-spacing:0.08em;">← Back to Setup (keep result)</button>
   `;
 }
 
@@ -963,6 +972,29 @@ function renderApp() {
 // ── EVENT BINDING ─────────────────────────────────────────
 function bindEvents() {
   if (S.screen === 'setup') {
+    const editLastBtn = document.getElementById('editLastMatchBtn');
+    if (editLastBtn) {
+      editLastBtn.onclick = () => {
+        // Restore last completed match into live state so complete screen shows correctly
+        const lc = S.lastCompleted;
+        S.match      = lc.match;
+        S.p1         = { ...lc.p1 };
+        S.p2         = { ...lc.p2 };
+        S.p1Score    = lc.p1Score;
+        S.p2Score    = lc.p2Score;
+        S.bullWinner = lc.bullWinner;
+        S.matchPoint = lc.matchPoint;
+        S.legHistory = [...lc.legHistory];
+        // Roll back the advancement
+        S.matchIndex--;
+        S.completedMatches = S.completedMatches.filter(n => n !== (lc.match ? lc.match.matchNum : null));
+        S.lastCompleted = null;
+        S.screen = 'complete';
+        saveJasonState();
+        renderApp();
+      };
+    }
+
     // Stat inputs only present when there's a current match
     const p1Avg = document.getElementById('p1Avg');
     if (p1Avg) {
@@ -1004,6 +1036,17 @@ function bindEvents() {
 
   if (S.screen === 'complete') {
     document.getElementById('newMatchBtn').onclick = () => {
+      // Snapshot this completed match before advancing
+      S.lastCompleted = {
+        match:      S.match,
+        p1:         { ...S.p1 },
+        p2:         { ...S.p2 },
+        p1Score:    S.p1Score,
+        p2Score:    S.p2Score,
+        bullWinner: S.bullWinner,
+        matchPoint: S.matchPoint,
+        legHistory: [...S.legHistory]
+      };
       // Save progress and advance to next match
       S.completedMatches.push(S.match ? S.match.matchNum : null);
       S.matchIndex++;
@@ -1015,6 +1058,30 @@ function bindEvents() {
       applyMatchToState();
       renderApp();
     };
+
+    const backBtn = document.getElementById('backToSetupBtn');
+    if (backBtn) {
+      backBtn.onclick = () => {
+        // Save this as lastCompleted but don't advance — just go to setup
+        S.lastCompleted = {
+          match:      S.match,
+          p1:         { ...S.p1 },
+          p2:         { ...S.p2 },
+          p1Score:    S.p1Score,
+          p2Score:    S.p2Score,
+          bullWinner: S.bullWinner,
+          matchPoint: S.matchPoint,
+          legHistory: [...S.legHistory]
+        };
+        S.completedMatches.push(S.match ? S.match.matchNum : null);
+        S.matchIndex++;
+        saveJasonState();
+        S.screen = 'setup'; S.p1Score = 0; S.p2Score = 0;
+        S.legHistory = []; S.bullWinner = 0;
+        applyMatchToState();
+        renderApp();
+      };
+    }
   }
 }
 
