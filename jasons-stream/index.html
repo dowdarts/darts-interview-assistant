@@ -6,6 +6,8 @@
   <title>AADS Stream Odds &amp; Statistics — Jason</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="../peer-sync.js"></script>
   <style>
     :root {
       --orange:      #F26522;
@@ -303,6 +305,7 @@ const STREAM_KEY     = 'AADS_STREAM_DATA';
 const STATE_KEY      = 'AADS_JASON_STATE';
 const RAW_URL        = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
 const LOCAL_URL      = '../event-data.json';
+const DENIS_CODE     = 'AADS40';
 
 let eventData = null;
 let bc = null;
@@ -321,7 +324,10 @@ const S = {
   bullWinner:       0,         // 1 or 2
   matchPoint:       3,         // legs needed to win (best of 5 = 3)
   legHistory:       [],        // [{ leg, winner, expectedStarter, wasBreak }]
-  lastCompleted:    null       // snapshot of previous match for editing
+  lastCompleted:    null,      // snapshot of previous match for editing
+  syncStatus:       'connecting', // 'connecting' | 'connected' | 'disconnected'
+  denisLegCount:    0,         // how many legs Denis has recorded for current match
+  editingStatsFor:  null       // null | 1 | 2 — which player's stats form is open
 };
 
 // ── MATCH PROGRESSION ────────────────────────────────────
@@ -365,6 +371,76 @@ function loadJasonState() {
     if (saved.lastCompleted)                      S.lastCompleted    = saved.lastCompleted;
   } catch(_) {}
 }
+
+// ── SYNC WITH DENIS'S APP ───────────────────────────────
+let _denisConnected = false;
+
+function buildLegHistory(legs) {
+  return (legs || []).map(l => {
+    const winnerNum      = l.winner === S.p1.name ? 1 : 2;
+    const expStarterName = expectedStarter(l.legNumber);
+    const expWinnerNum   = expStarterName === S.p1.name ? 1 : 2;
+    return { leg: l.legNumber, winner: winnerNum, wasBreak: winnerNum !== expWinnerNum };
+  });
+}
+
+function applyDenisData(data) {
+  if (!data || !S.match) return;
+
+  // ── Match complete ── Denis finished the match → go to complete screen
+  const matchResult = (data.recentMatches || []).find(m => m.matchNum === S.match.matchNum);
+  if (matchResult) {
+    S.p1Score    = matchResult.score1 || 0;
+    S.p2Score    = matchResult.score2 || 0;
+    S.legHistory = buildLegHistory(matchResult.legs || []);
+    if (S.screen === 'live' || S.screen === 'setup') {
+      S.screen = 'complete';
+      saveJasonState();
+      pushToOverlay();
+      renderApp();
+    }
+    return;
+  }
+
+  // ── In-progress update ── Denis recorded a leg
+  const lmp = data.liveMatchProgress;
+  if (!lmp || lmp.matchNum !== S.match.matchNum) return;
+
+  S.p1Score       = lmp.score1 || 0;
+  S.p2Score       = lmp.score2 || 0;
+  S.legHistory    = buildLegHistory(lmp.legs || []);
+  S.denisLegCount = (lmp.legs || []).length;
+
+  if (S.screen === 'live') {
+    pushToOverlay();
+    renderApp();
+  } else if (S.screen === 'setup') {
+    // Update status indicator without full re-render
+    const el = document.getElementById('denisLiveStatus');
+    if (el) {
+      el.style.display = '';
+      el.innerHTML = lmp.legs && lmp.legs.length > 0
+        ? `<span style="color:var(--orange);">⚡ Denis has started — ${lmp.score1}–${lmp.score2} after ${lmp.legs.length} leg${lmp.legs.length !== 1 ? 's' : ''}</span>`
+        : `<span style="color:var(--green);">● Connected to Denis's app</span>`;
+    }
+  }
+}
+
+function connectToDenis() {
+  if (typeof PeerSync === 'undefined') return;
+  PeerSync.connectAsViewer(DENIS_CODE,
+    (data) => { applyDenisData(data); },
+    (status) => {
+      S.syncStatus     = status;
+      _denisConnected  = (status === 'connected');
+      if (status === 'disconnected' || status === 'error') {
+        setTimeout(() => { if (!_denisConnected) connectToDenis(); }, 8000);
+      }
+    }
+  );
+}
+// Retry every 15 s if not connected
+setInterval(() => { if (!_denisConnected) connectToDenis(); }, 15000);
 
 // ── ODDS ENGINE ───────────────────────────────────────────
 // Weights from the "Pro-Bookie" spec:
@@ -468,9 +544,31 @@ function getPlayerRecord(name) {
   const all = [...(eventData.standingsA || []), ...(eventData.standingsB || [])];
   return all.find(s => s.name === name) || null;
 }
+function getLocalPlayerStats(name) {
+  try {
+    const stored = localStorage.getItem('AADS_PLAYER_STATS');
+    if (!stored) return null;
+    return JSON.parse(stored)[name] || null;
+  } catch(_) { return null; }
+}
+function saveLocalPlayerStats(name, stats) {
+  try {
+    const stored = localStorage.getItem('AADS_PLAYER_STATS');
+    const data = stored ? JSON.parse(stored) : {};
+    data[name] = { careerAvg: stats.careerAvg, careerCheckout: stats.careerCheckout,
+                   careerMatches: stats.careerMatches, careerMatchWins: stats.careerMatchWins,
+                   notes: stats.notes };
+    localStorage.setItem('AADS_PLAYER_STATS', JSON.stringify(data));
+  } catch(_) {}
+}
 function getPlayerCareerStats(name) {
-  if (!eventData || !eventData.playerStats) return null;
-  return eventData.playerStats.find(p => p.name === name) || null;
+  if (!eventData || !eventData.playerStats) return getLocalPlayerStats(name);
+  const base  = eventData.playerStats.find(p => p.name === name) || null;
+  const local = getLocalPlayerStats(name);
+  if (!local) return base;
+  // Local override wins — merge on top of base (or create fresh if no base)
+  return { name, careerAvg: 0, careerCheckout: 0, careerMatches: 0, careerMatchWins: 0, notes: '',
+           ...(base || {}), ...local };
 }
 function getPlayerProvince(name) {
   if (!eventData) return null;
@@ -598,6 +696,68 @@ async function loadEventData() {
 }
 
 // ── RENDER: SETUP ─────────────────────────────────────────
+// ── PLAYER STATS PANEL (setup screen Section 2) ──────────
+function renderPlayerStatsPanel(playerNum, playerName, cs, ev) {
+  const hasCareer = cs && (cs.careerAvg > 0 || cs.careerMatches > 0 || cs.notes);
+  const isEditing = S.editingStatsFor === playerNum;
+  const color     = playerNum === 1 ? 'var(--pink)' : 'var(--blue)';
+  const province  = ev && ev.province ? `<br><span style="font-size:0.68em;color:var(--text-muted);">${ev.province}</span>` : '';
+  const todayLine = ev
+    ? `<div class="h2h-stat" style="margin-top:0.4em;">Today: <strong>${ev.matchWins}W–${ev.matchLosses}L · ${ev.legsWon} legs</strong></div>`
+    : '';
+
+  let statsHtml;
+  if (isEditing) {
+    const def = cs || { careerAvg: 0, careerCheckout: 0, careerMatches: 0, careerMatchWins: 0, notes: '' };
+    statsHtml = `
+      <div style="margin-top:0.5em;">
+        <div class="row" style="gap:0.4em;margin-bottom:0.3em;">
+          <div style="flex:1;">
+            <label style="font-size:0.7em;margin-bottom:0.2em;">3-Dart Avg</label>
+            <input type="number" id="editAvg${playerNum}" value="${def.careerAvg}" min="0" max="200" step="0.5" style="padding:0.3em 0.5em;font-size:0.9em;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:0.7em;margin-bottom:0.2em;">Checkout %</label>
+            <input type="number" id="editChk${playerNum}" value="${def.careerCheckout}" min="0" max="100" style="padding:0.3em 0.5em;font-size:0.9em;">
+          </div>
+        </div>
+        <div class="row" style="gap:0.4em;margin-bottom:0.3em;">
+          <div style="flex:1;">
+            <label style="font-size:0.7em;margin-bottom:0.2em;">Career Matches</label>
+            <input type="number" id="editMatches${playerNum}" value="${def.careerMatches}" min="0" style="padding:0.3em 0.5em;font-size:0.9em;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:0.7em;margin-bottom:0.2em;">Career Wins</label>
+            <input type="number" id="editWins${playerNum}" value="${def.careerMatchWins}" min="0" style="padding:0.3em 0.5em;font-size:0.9em;">
+          </div>
+        </div>
+        <input type="text" id="editNotes${playerNum}" value="${def.notes || ''}" placeholder="Scouting notes (optional)" style="margin-bottom:0.4em;font-size:0.85em;">
+        <div class="row" style="gap:0.4em;">
+          <button class="btn" id="saveStats${playerNum}" style="flex:1;font-size:0.8em;padding:0.4em 0.6em;">💾 Save</button>
+          <button class="btn" id="cancelStats${playerNum}" style="flex:1;font-size:0.8em;padding:0.4em 0.6em;background:#111;border-color:var(--divider);color:var(--text-muted);">Cancel</button>
+        </div>
+      </div>`;
+  } else {
+    const careerBlock = hasCareer ? `
+      <div class="h2h-stat">Career Avg: <strong>${cs.careerAvg}</strong></div>
+      <div class="h2h-stat">Career Checkout: <strong>${cs.careerCheckout}%</strong></div>
+      ${cs.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W – ${cs.careerMatches - cs.careerMatchWins}L</strong></div>` : ''}
+      ${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}
+    ` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.8em;">No career stats on file</div>`;
+    const editLabel = hasCareer ? '✏ Edit Stats' : '+ Add Stats';
+    statsHtml = `
+      ${careerBlock}
+      <button id="editStats${playerNum}Btn" style="margin-top:0.45em;font-size:0.72em;padding:0.25em 0.6em;background:rgba(255,255,255,0.05);border:1px solid var(--divider);border-radius:6px;color:var(--text-muted);cursor:pointer;letter-spacing:0.05em;font-family:var(--font-display);">${editLabel}</button>`;
+  }
+
+  return `<div class="h2h-player">
+    <div class="h2h-name" style="color:${color};">${playerName}${province}</div>
+    ${statsHtml}
+    ${todayLine}
+  </div>`;
+}
+
+// ── RENDER: SETUP ─────────────────────────────────────────
 function renderSetup() {
   const board1Matches = getBoard1Matches();
   const totalMatches  = board1Matches.length;
@@ -611,6 +771,14 @@ function renderSetup() {
       <h1>Stream Odds &amp; Statistics</h1>
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
+
+    <!-- Denis sync status -->
+    <div id="denisLiveStatus" style="text-align:center;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;margin-bottom:0.9em;padding:0.4em 0.8em;border-radius:8px;background:rgba(255,255,255,0.03);display:${S.syncStatus === 'connected' || S.denisLegCount > 0 ? '' : 'none'}">
+      ${S.syncStatus === 'connected'
+        ? (S.denisLegCount > 0 ? `<span style="color:var(--orange);">⚡ Denis has started — ${S.p1Score}–${S.p2Score} after ${S.denisLegCount} leg${S.denisLegCount !== 1 ? 's' : ''}</span>`
+          : `<span style="color:var(--green);">● Connected to Denis's app</span>`)
+        : ''}
+    </div>
 
     ${S.matchIndex > 0 && S.lastCompleted ? `
     <button class="btn" id="editLastMatchBtn" style="margin-bottom:1em;background:#1a1a1a;border:1.5px solid var(--divider);color:var(--text-muted);font-size:0.85em;letter-spacing:0.08em;">
@@ -650,40 +818,12 @@ function renderSetup() {
     <div class="card">
       <div class="card-header"><h2>2 · Player Stats &amp; Career Numbers</h2></div>
       <div class="card-body">
-        ${(() => {
-          const cs1 = getPlayerCareerStats(S.p1.name);
-          const cs2 = getPlayerCareerStats(S.p2.name);
-          const ev1 = getPlayerRecord(S.p1.name);
-          const ev2 = getPlayerRecord(S.p2.name);
-          const hasCareer1 = cs1 && (cs1.careerAvg > 0 || cs1.careerMatches > 0);
-          const hasCareer2 = cs2 && (cs2.careerAvg > 0 || cs2.careerMatches > 0);
-          return `
-          <div class="h2h-grid" style="margin-bottom:0.9em;">
-            <div class="h2h-player">
-              <div class="h2h-name" style="color:var(--pink);">${S.p1.name}${ev1 && ev1.province ? '<br><span style="font-size:0.68em;color:var(--text-muted);">' + ev1.province + '</span>' : ''}</div>
-              ${hasCareer1 ? `
-                <div class="h2h-stat">Career Avg: <strong>${cs1.careerAvg}</strong></div>
-                <div class="h2h-stat">Career Checkout: <strong>${cs1.careerCheckout}%</strong></div>
-                ${cs1.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs1.careerMatchWins}W – ${cs1.careerMatches - cs1.careerMatchWins}L</strong></div>` : ''}
-                ${cs1.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs1.notes}</div>` : ''}
-              ` : '<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.8em;">Career stats not yet loaded</div>'}
-              ${ev1 ? `<div class="h2h-stat" style="margin-top:0.4em;">Today: <strong>${ev1.matchWins}W–${ev1.matchLosses}L · ${ev1.legsWon} legs</strong></div>` : ''}
-            </div>
-            <div class="h2h-player">
-              <div class="h2h-name" style="color:var(--blue);">${S.p2.name}${ev2 && ev2.province ? '<br><span style="font-size:0.68em;color:var(--text-muted);">' + ev2.province + '</span>' : ''}</div>
-              ${hasCareer2 ? `
-                <div class="h2h-stat">Career Avg: <strong>${cs2.careerAvg}</strong></div>
-                <div class="h2h-stat">Career Checkout: <strong>${cs2.careerCheckout}%</strong></div>
-                ${cs2.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs2.careerMatchWins}W – ${cs2.careerMatches - cs2.careerMatchWins}L</strong></div>` : ''}
-                ${cs2.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs2.notes}</div>` : ''}
-              ` : '<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.8em;">Career stats not yet loaded</div>'}
-              ${ev2 ? `<div class="h2h-stat" style="margin-top:0.4em;">Today: <strong>${ev2.matchWins}W–${ev2.matchLosses}L · ${ev2.legsWon} legs</strong></div>` : ''}
-            </div>
-          </div>
-          <div class="divider-line"></div>
-          <div class="sub-label">Odds Engine Values (auto-filled · editable override)</div>
-          `;
-        })()}
+        <div class="h2h-grid" style="margin-bottom:0.9em;">
+          ${renderPlayerStatsPanel(1, S.p1.name, getPlayerCareerStats(S.p1.name), getPlayerRecord(S.p1.name))}
+          ${renderPlayerStatsPanel(2, S.p2.name, getPlayerCareerStats(S.p2.name), getPlayerRecord(S.p2.name))}
+        </div>
+        <div class="divider-line"></div>
+        <div class="sub-label">Odds Engine Values (auto-filled · editable override)</div>
         <div class="row">
           <div style="flex:1;">
             <label>${S.p1.name} — 3-Dart Avg</label>
@@ -798,14 +938,11 @@ function renderLive() {
     ${isMatchPt ? `<div class="match-point-alert">⚡ Match Point — ${S.p1Score > S.p2Score ? S.p1.name : S.p2.name} leads ${Math.max(S.p1Score,S.p2Score)}–${Math.min(S.p1Score,S.p2Score)}</div>` : ''}
     ${isDecider && !isMatchPt ? `<div class="match-point-alert" style="border-color:#4caf50;color:#4caf50;background:rgba(76,175,80,0.1);">🏆 Deciding Leg — Legs level at ${S.p1Score}–${S.p2Score}</div>` : ''}
 
-    <!-- Leg win buttons -->
-    <div class="row" style="margin-bottom:1em;">
-      <button class="btn leg-btn-p1" id="winP1">
-        ${S.p1.name}<br><span style="font-size:0.75em;font-weight:400;opacity:0.85;">Wins Leg ${legNum}</span>
-      </button>
-      <button class="btn leg-btn-p2" id="winP2">
-        ${S.p2.name}<br><span style="font-size:0.75em;font-weight:400;opacity:0.85;">Wins Leg ${legNum}</span>
-      </button>
+    <!-- Leg Tracking (from Denis) -->
+    <div style="text-align:center;padding:0.5em 0 0.8em;">
+      <span style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;text-transform:uppercase;${S.syncStatus === 'connected' ? 'color:var(--green);' : 'color:var(--text-muted);'}">
+        ${S.syncStatus === 'connected' ? '● Live — updating from Denis\'s app' : '◌ Waiting for Denis\u2019s app…'}
+      </span>
     </div>
 
     <!-- Live Odds -->
@@ -888,8 +1025,7 @@ function renderLive() {
 
     <!-- Controls -->
     <div class="row" style="margin-bottom:1.5em;">
-      <button class="btn secondary" id="undoLegBtn" style="flex:1;margin:0;${S.legHistory.length === 0 ? 'opacity:0.4;pointer-events:none;' : ''}">↩ Undo Leg</button>
-      <button class="btn secondary" id="editSetupBtn" style="flex:1;margin:0;">⚙ Setup</button>
+      <button class="btn secondary" id="editSetupBtn" style="margin:0;">⚙ Setup</button>
     </div>
   `;
 }
@@ -998,6 +1134,44 @@ function bindEvents() {
     // Stat inputs only present when there's a current match
     const p1Avg = document.getElementById('p1Avg');
     if (p1Avg) {
+      // Career stats edit / save / cancel buttons
+      function bindStatsPanelButtons(playerNum) {
+        const editBtn   = document.getElementById(`editStats${playerNum}Btn`);
+        const saveBtn   = document.getElementById(`saveStats${playerNum}`);
+        const cancelBtn = document.getElementById(`cancelStats${playerNum}`);
+        const pName     = playerNum === 1 ? S.p1.name : S.p2.name;
+        if (editBtn) {
+          editBtn.onclick = () => { S.editingStatsFor = playerNum; renderApp(); };
+        }
+        if (saveBtn) {
+          saveBtn.onclick = () => {
+            const avg     = parseFloat(document.getElementById(`editAvg${playerNum}`).value)     || 0;
+            const chk     = parseFloat(document.getElementById(`editChk${playerNum}`).value)     || 0;
+            const matches = parseInt(document.getElementById(`editMatches${playerNum}`).value, 10) || 0;
+            const wins    = parseInt(document.getElementById(`editWins${playerNum}`).value, 10)    || 0;
+            const notes   = document.getElementById(`editNotes${playerNum}`).value.trim();
+            saveLocalPlayerStats(pName, { careerAvg: avg, careerCheckout: chk,
+                                          careerMatches: matches, careerMatchWins: wins, notes });
+            // Update the odds engine inputs if they were still at defaults
+            if (avg > 0) {
+              if (playerNum === 1) S.p1.avg3DA = avg;
+              else                 S.p2.avg3DA = avg;
+            }
+            if (chk > 0) {
+              if (playerNum === 1) S.p1.checkout = chk;
+              else                 S.p2.checkout = chk;
+            }
+            S.editingStatsFor = null;
+            renderApp();
+          };
+        }
+        if (cancelBtn) {
+          cancelBtn.onclick = () => { S.editingStatsFor = null; renderApp(); };
+        }
+      }
+      bindStatsPanelButtons(1);
+      bindStatsPanelButtons(2);
+
       p1Avg.oninput  = e => { S.p1.avg3DA   = parseFloat(e.target.value) || 50; };
       document.getElementById('p2Avg').oninput  = e => { S.p2.avg3DA   = parseFloat(e.target.value) || 50; };
       document.getElementById('p1Chk').oninput  = e => { S.p1.checkout = parseFloat(e.target.value) || 35; };
@@ -1016,21 +1190,6 @@ function bindEvents() {
   }
 
   if (S.screen === 'live') {
-    document.getElementById('winP1').onclick = () => recordLegWin(1);
-    document.getElementById('winP2').onclick = () => recordLegWin(2);
-
-    const undoBtn = document.getElementById('undoLegBtn');
-    if (undoBtn && S.legHistory.length > 0) {
-      undoBtn.onclick = () => {
-        const last = S.legHistory.pop();
-        if (last.winner === 1) S.p1Score--;
-        else                   S.p2Score--;
-        S.screen = 'live';
-        pushToOverlay();
-        renderApp();
-      };
-    }
-
     document.getElementById('editSetupBtn').onclick = () => { S.screen = 'setup'; renderApp(); };
   }
 
@@ -1090,6 +1249,7 @@ function bindEvents() {
   loadJasonState();         // restore matchIndex from previous session
   await loadEventData();
   applyMatchToState();      // populate players from the current match
+  connectToDenis();         // start live sync from Denis's app
   renderApp();
 })();
 </script>

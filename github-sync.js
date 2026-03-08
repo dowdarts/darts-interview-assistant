@@ -175,12 +175,33 @@ const GitHubSync = {
     }
     // --- END PAIR-BASED TV DISPLAY ---
 
+    // --- LIVE MATCH PROGRESS (for Jason's stream app) ---
+    // Include the in-progress Board 1 match's current leg scores so Jason
+    // can auto-update odds without inputting legs himself.
+    let liveMatchProgress = null;
+    if (appState.roundRobin.currentMatchState && firstIncompleteBoard1) {
+      const state = appState.roundRobin.currentMatchState;
+      liveMatchProgress = {
+        matchNum:   firstIncompleteBoard1.matchNum,
+        p1:         firstIncompleteBoard1.player1,
+        p2:         firstIncompleteBoard1.player2,
+        score1:     state.score1 || 0,
+        score2:     state.score2 || 0,
+        currentLeg: state.currentLeg || 1,
+        legs: (state.legs || []).map(l => ({
+          legNumber: l.legNumber,
+          winner:    l.winner   // player name string
+        }))
+      };
+    }
+
     return {
       timestamp: new Date().toISOString(),
       eventStarted,
       currentPair,
       nextPair,
       allPairs,
+      liveMatchProgress,
       currentMatch: currentMatch ? {
         matchNum: currentMatch.matchNum,
         board: currentMatch.board,
@@ -201,7 +222,8 @@ const GitHubSync = {
         player2: m.player2,
         score1: m.score1,
         score2: m.score2,
-        winner: m.winner
+        winner: m.winner,
+        legs: (m.legs || []).map(l => ({ legNumber: l.legNumber, winner: l.winner }))
       })),
       upcomingMatches: upcomingMatches.map(m => ({
         matchNum: m.matchNum,
