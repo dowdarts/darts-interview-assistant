@@ -711,12 +711,7 @@
 
     function updateDisplay() {
       if (!eventData) return;
-      // Pre-event: show full pair schedule until any result is entered
-      if (!eventData.eventStarted) {
-        document.getElementById('viewIndicator').innerHTML = '';
-        renderPreEventSchedule();
-        return;
-      }
+      // Always show cycling tabs — views adapt to pre-event / live state
       updateViewIndicator();
       const view = VIEWS[viewIndex];
       if (view === 'current')    renderLiveDisplay();
@@ -793,11 +788,12 @@
       const sim  = pair.simultaneousMatch;
 
       // ---- Current pair section ----
+      const isLive = !!(eventData.eventStarted);
       let liveCard = `
         <div class="current-match live-primary">
           <div class="match-label">
             <span>Match ${live.matchNum}</span>
-            <span class="live-badge"><span class="live-dot"></span> LIVE – BOARD 1</span>
+            <span class="live-badge">${isLive ? '<span class="live-dot"></span> LIVE – BOARD 1' : 'UP NEXT – BOARD 1'}</span>
           </div>
           <div class="players">
             <div class="player">
@@ -1129,6 +1125,11 @@
       if (pairStatus) { pairStatus.style.color = 'var(--text-muted)'; pairStatus.textContent = 'Connecting…'; }
       _peerConnect(code);
     }
+
+    // Keep retrying the peer connection every 12 seconds if not connected
+    setInterval(() => {
+      if (!_peerConnected) _peerConnect(ADMIN_PEER_CODE);
+    }, 12000);
 
     // On load: show display immediately via GitHub polling,
     // then silently attempt live peer connection to the admin app.

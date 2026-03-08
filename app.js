@@ -3691,8 +3691,10 @@ function showAdminPasswordScreen() {
     if (pw === ADMIN_PASSWORD) {
       localStorage.setItem('dartsAdminAuth', '1');
       overlay.remove();
-      // Transfer AADS40 from any existing session to this new sign-in
-      if (window.PeerSync) PeerSync.requestTakeover(ADMIN_PEER_CODE);
+      // Only take over AADS40 from another session if WE aren't already hosting it
+      if (window.PeerSync && !(PeerSync.isHostActive() && PeerSync.getCode() === ADMIN_PEER_CODE)) {
+        PeerSync.requestTakeover(ADMIN_PEER_CODE);
+      }
       _initApp();
     } else {
       status.textContent = 'Incorrect password. Try again.';

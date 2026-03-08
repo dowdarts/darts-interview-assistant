@@ -209,6 +209,8 @@ const PeerSync = {
   requestTakeover(preferredCode) {
     const code = (preferredCode || this._preferredCode || '').toUpperCase().slice(0, 6).padEnd(6, '0');
     if (!code || code === '000000') return;
+    // If THIS tab is already the host on this code, nothing to take over
+    if (this.isHostActive() && this._code === code) return;
 
     // 1. Same-device signal via BroadcastChannel (instant for same-browser tabs)
     try {
