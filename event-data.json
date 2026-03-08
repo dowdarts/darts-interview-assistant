@@ -379,6 +379,18 @@
       "winner": "Drake Berry"
     }
   ],
+  "playerStats": [
+    { "name": "Drake Berry",     "province": "NS",   "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" },
+    { "name": "Cory Wallace",    "province": "NB",   "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" },
+    { "name": "Dana Moss",       "province": "NB",   "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" },
+    { "name": "Dee Cormier",     "province": "NB",   "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" },
+    { "name": "Colby Burke",     "province": "NFLD", "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" },
+    { "name": "Wayne Champman",  "province": "NB",   "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" },
+    { "name": "Jordan Boyd",     "province": "NS",   "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" },
+    { "name": "Kevin Blanchard", "province": "PE",   "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" },
+    { "name": "Don Higgins",     "province": "NB",   "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" },
+    { "name": "Mark MacEachern", "province": "PE",   "careerAvg": 0, "careerCheckout": 0, "careerMatches": 0, "careerMatchWins": 0, "notes": "" }
+  ],
   "upcomingMatches": [
     {
       "matchNum": 5,
