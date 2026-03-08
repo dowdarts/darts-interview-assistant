@@ -573,12 +573,9 @@ function renderSetup() {
   const canStart = S.p1.name && S.p2.name && S.bullWinner;
 
   return `
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5em;margin-bottom:1em;">
-      <div>
-        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts · Jason</div>
-        <h1>Stream Controller</h1>
-      </div>
-      <a href="../index.html" style="flex-shrink:0;display:inline-block;font-family:var(--font-display);font-size:0.72em;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-muted);text-decoration:none;border:1px solid var(--divider);padding:0.4em 0.8em;border-radius:8px;margin-top:0.3em;">← Interview App</a>
+    <div style="margin-bottom:1em;">
+      <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts · Jason</div>
+      <h1>Stream Controller</h1>
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
 
@@ -858,8 +855,7 @@ function renderComplete() {
       </div>
     </div>
 
-    <a href="../index.html" class="btn" style="text-decoration:none;display:block;margin-bottom:0.7em;">🎙 Go to Interview App</a>
-    <button class="btn secondary" id="newMatchBtn">Set Up Next Match</button>
+    <button class="btn" id="newMatchBtn">Set Up Next Match</button>
   `;
 }
 
