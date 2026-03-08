@@ -560,11 +560,23 @@ async function loadEventData() {
 function renderSetup() {
   let matchOptions = '<option value="">— Select or enter names below —</option>';
   if (eventData) {
-    const all = (eventData.upcomingMatches || []).filter(m => m.board === 1);
-    if (all.length) {
-      matchOptions += all.map(m =>
+    // Build full match list from allPairs (all boards, all rounds)
+    const allMatches = [];
+    if (eventData.allPairs && eventData.allPairs.length) {
+      for (const pair of eventData.allPairs) {
+        if (pair.board1) allMatches.push(pair.board1);
+        if (pair.board2) allMatches.push(pair.board2);
+      }
+      allMatches.sort((a, b) => a.matchNum - b.matchNum);
+    }
+    // Fallback to upcomingMatches if allPairs not available
+    if (!allMatches.length) {
+      allMatches.push(...(eventData.upcomingMatches || []));
+    }
+    if (allMatches.length) {
+      matchOptions += allMatches.map(m =>
         `<option value="${m.matchNum}" ${S.match && S.match.matchNum === m.matchNum ? 'selected' : ''}>
-          M${m.matchNum}: ${m.player1} vs ${m.player2} ${m.time ? '· ' + m.time : ''}
+          M${m.matchNum} · B${m.board}: ${m.player1} vs ${m.player2} ${m.time ? '· ' + m.time : ''}
         </option>`
       ).join('');
     }
@@ -583,7 +595,7 @@ function renderSetup() {
     <div class="card">
       <div class="card-header"><h2>1 · Select Match</h2></div>
       <div class="card-body">
-        ${eventData ? `<label>Board 1 Match (auto-loaded from schedule)</label><select id="matchPicker">${matchOptions}</select>` : '<p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.7em;">Schedule unavailable — enter player names manually.</p>'}
+        ${eventData ? `<label>Match (all boards — full schedule)</label><select id="matchPicker">${matchOptions}</select>` : '<p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.7em;">Schedule unavailable — enter player names manually.</p>'}
         <label>Player 1 Name</label>
         <input type="text" id="p1Name" value="${S.p1.name}" placeholder="Player 1" autocomplete="off">
         <label>Player 2 Name</label>
@@ -876,7 +888,15 @@ function bindEvents() {
       picker.onchange = () => {
         const mNum = parseInt(picker.value, 10);
         if (isNaN(mNum) || !eventData) return;
-        const m = (eventData.upcomingMatches || []).find(u => u.matchNum === mNum);
+        // Search allPairs first, then fallback to upcomingMatches
+        let m = null;
+        if (eventData.allPairs) {
+          for (const pair of eventData.allPairs) {
+            if (pair.board1 && pair.board1.matchNum === mNum) { m = pair.board1; break; }
+            if (pair.board2 && pair.board2.matchNum === mNum) { m = pair.board2; break; }
+          }
+        }
+        if (!m) m = (eventData.upcomingMatches || []).find(u => u.matchNum === mNum);
         if (!m) return;
         S.match  = m;
         S.p1.name = m.player1;
