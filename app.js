@@ -3708,10 +3708,16 @@ function showAdminPasswordScreen() {
 function _startAdminHost() {
   if (!window.PeerSync) return;
   PeerSync.startHost(ADMIN_PEER_CODE)
-    .then(code => console.log('[App] Admin host ready, code:', code))
+    .then(code => {
+      console.log('[App] Admin host ready, code:', code);
+      // Push current event state immediately so TV displays get live data on connect
+      saveRoundRobinState();
+    })
     .catch(err => {
       console.warn('[App] Fixed code failed, falling back to random:', err);
-      PeerSync.startHost().catch(() => {});
+      PeerSync.startHost()
+        .then(() => saveRoundRobinState())
+        .catch(() => {});
     });
 }
 

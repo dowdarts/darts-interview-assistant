@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     :root {
       --orange: #F26522;
@@ -676,10 +677,13 @@
       return data;
     }
 
+    // Use raw.githubusercontent.com to bypass GitHub Pages CDN caching
+    const RAW_DATA_URL = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
+
     async function fetchData() {
       try {
         const cacheBuster = Date.now();
-        const response = await fetch(`event-data.json?t=${cacheBuster}`);
+        const response = await fetch(`${RAW_DATA_URL}?t=${cacheBuster}`, { cache: 'no-store' });
         if (response.ok) {
           eventData = normalizeEventData(await response.json());
           updateDisplay();
@@ -1127,6 +1131,5 @@
       }, 9000);
     });
   </script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 </body>
 </html>
