@@ -307,45 +307,6 @@
       filter: drop-shadow(0 0 8px rgba(255,102,0,0.6));
     }
 
-    /* ── Token settings panel (top-right, for PC setup) ── */
-    #tokenPanel {
-      position: fixed;
-      top: 28px; right: 0;
-      z-index: 9999;
-      background: rgba(0,0,0,0.92);
-      border: 1px solid rgba(255,102,0,0.5);
-      border-radius: 0 0 0 6px;
-      padding: 6px 8px;
-      display: none;
-      gap: 5px;
-      align-items: center;
-    }
-    #tokenPanel.open { display: flex; }
-    #tokenPanel input {
-      background: #222; border: 1px solid #555; border-radius: 4px;
-      color: #fff; font-size: 10px; padding: 3px 7px; width: 190px; outline: none;
-    }
-    #tokenPanel button {
-      background: #FF6600; border: none; border-radius: 4px;
-      color: #000; font-size: 9px; font-weight: 900;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      padding: 3px 8px; cursor: pointer;
-    }
-    #tokenToggleBtn {
-      position: fixed;
-      top: 4px; right: 8px;
-      z-index: 9999;
-      font-family: 'Oswald', Arial, sans-serif;
-      font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
-      text-transform: uppercase; color: rgba(255,255,255,0.45);
-      background: rgba(0,0,0,0.65);
-      border: 1px solid rgba(255,102,0,0.35); border-radius: 3px;
-      padding: 2px 7px; cursor: pointer;
-      -webkit-user-select: none; user-select: none;
-      transition: color 0.2s, border-color 0.2s;
-    }
-    #tokenToggleBtn.tok-active { color: #FF6600; border-color: #FF6600; background: rgba(255,102,0,0.12); }
-
     /* ── Setup pin toggle button ── */
     #pinBtn {
       position: fixed;
@@ -377,16 +338,12 @@
 <body>
 
 <button id="pinBtn" onclick="togglePin()" title="Keep bar visible for OBS setup">📌 SETUP</button>
-<button id="tokenToggleBtn" onclick="toggleTokenPanel()" title="Set GitHub token for cross-device sync">🔑 TOKEN</button>
-<div id="tokenPanel">
-  <input id="ghTokenInput" type="password" placeholder="ghp_… (GitHub token for cross-device sync)">
-  <button onclick="saveToken()">SAVE</button>
-</div>
 
 <div class="overlay" id="overlay">
   <div class="waiting" id="waitingMsg">Waiting for stream controller…</div>
 </div>
 
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════
 //  AADS Live Odds — OBS Browser Source Overlay
@@ -396,8 +353,7 @@
 // ══════════════════════════════════════════════════════════
 
 const STREAM_KEY     = 'AADS_STREAM_DATA';
-const GH_STREAM_API  = 'https://api.github.com/repos/dowdarts/darts-interview-assistant/contents/jasons-stream/stream-state.json';
-const GH_STREAM_RAW  = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/jasons-stream/stream-state.json';
+const STREAM_PEER_ID = 'aads-jason-stream-v1';
 let lastTimestamp = 0;
 let prevP1Prob    = 50;   // bar's last displayed position
 let currentData   = null; // most recent silent-update data
@@ -522,29 +478,42 @@ function hidePanel() {
 }
 
 // ── TOKEN PANEL toggle ────────────────────────────────────
-function toggleTokenPanel() {
-  const panel  = document.getElementById('tokenPanel');
-  const btn    = document.getElementById('tokenToggleBtn');
-  const input  = document.getElementById('ghTokenInput');
-  const isOpen = panel.classList.contains('open');
-  if (!isOpen) {
-    input.value = localStorage.getItem('githubToken') || '';
-    panel.classList.add('open');
-    btn.classList.add('tok-active');
-    input.focus();
-  } else {
-    panel.classList.remove('open');
-    btn.classList.remove('tok-active');
-  }
+// (removed — no token needed with PeerJS)
+
+// ── PEERJS VIEWER ─────────────────────────────────────────
+function initViewerPeer() {
+  if (typeof Peer === 'undefined') return;
+  const peer = new Peer(null, { debug: 0 });
+
+  peer.on('open', () => {
+    const conn = peer.connect(STREAM_PEER_ID, { reliable: true, serialization: 'json' });
+
+    conn.on('open', () => {
+      const wm = document.getElementById('waitingMsg');
+      if (wm) wm.style.display = 'none';
+    });
+
+    conn.on('data', (data) => {
+      if (data) handleData(data);
+    });
+
+    conn.on('close', () => {
+      // Controller disconnected — retry after 5s
+      peer.destroy();
+      setTimeout(initViewerPeer, 5000);
+    });
+
+    conn.on('error', () => {
+      peer.destroy();
+      setTimeout(initViewerPeer, 5000);
+    });
+  });
+
+  peer.on('error', () => {
+    setTimeout(initViewerPeer, 5000);
+  });
 }
-function saveToken() {
-  const val = (document.getElementById('ghTokenInput').value || '').trim();
-  if (val) localStorage.setItem('githubToken', val);
-  else     localStorage.removeItem('githubToken');
-  document.getElementById('tokenPanel').classList.remove('open');
-  document.getElementById('tokenToggleBtn').classList.remove('tok-active');
-  pollGitHub(); // immediately try polling with new token
-}
+initViewerPeer();
 
 // ── SETUP PIN toggle ──────────────────────────────────────
 function togglePin() {
@@ -600,31 +569,7 @@ function handleData(data) {
   }
 }
 
-// ── GITHUB POLLING (cross-device sync) ────────────────────
-async function pollGitHub() {
-  const token = localStorage.getItem('githubToken');
-  try {
-    if (token) {
-      const r = await fetch(GH_STREAM_API + '?t=' + Date.now(), {
-        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
-        cache: 'no-store'
-      });
-      if (r.ok) {
-        const d = await r.json();
-        const text = decodeURIComponent(escape(atob(d.content.replace(/\s/g, ''))));
-        handleData(JSON.parse(text));
-      }
-    } else {
-      // No token — raw URL (may be cached up to ~5 min by GitHub CDN)
-      const r = await fetch(GH_STREAM_RAW + '?t=' + Date.now(), { cache: 'no-store' });
-      if (r.ok) handleData(await r.json());
-    }
-  } catch(_) {}
-}
-setInterval(pollGitHub, 3000);
-pollGitHub();
-
-// ── STORAGE / BROADCAST listeners ─────────────────────────
+// ── STORAGE / BROADCAST listeners (same-device fallback) ─
 function readFromStorage() {
   try {
     const raw = localStorage.getItem(STREAM_KEY);
