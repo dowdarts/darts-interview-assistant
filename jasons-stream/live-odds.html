@@ -291,6 +291,22 @@
       padding: 1.6em 0;
     }
 
+    /* ── Sponsor logo — floats above the panel ── */
+    .sponsor-logo-box {
+      position: absolute;
+      top: -45px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .sponsor-logo-box img {
+      height: 55px;
+      width: auto;
+      filter: drop-shadow(0 0 8px rgba(255,102,0,0.6));
+    }
+
     /* ── Setup pin toggle button ── */
     #pinBtn {
       position: fixed;
@@ -355,6 +371,9 @@ function buildPanel(data) {
 
   overlay.innerHTML = `
     <div class="panel" id="panel">
+      <div class="sponsor-logo-box">
+        <img src="sponsor-logo.png" alt="Sponsor">
+      </div>
       <div class="break-alert" id="breakAlert"></div>
       <div class="main-row">
         <div class="player-block p1-block">
