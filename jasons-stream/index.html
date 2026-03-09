@@ -6,8 +6,6 @@
   <title>AADS Stream Odds &amp; Statistics — Jason</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  <script src="../peer-sync.js"></script>
   <style>
     :root {
       --orange:      #F26522;
@@ -305,7 +303,6 @@ const STREAM_KEY     = 'AADS_STREAM_DATA';
 const STATE_KEY      = 'AADS_JASON_STATE';
 const RAW_URL        = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
 const LOCAL_URL      = '../event-data.json';
-const DENIS_CODE     = 'AADS40';
 
 let eventData = null;
 let bc = null;
@@ -325,8 +322,6 @@ const S = {
   matchPoint:       3,         // legs needed to win (best of 5 = 3)
   legHistory:       [],        // [{ leg, winner, expectedStarter, wasBreak }]
   lastCompleted:    null,      // snapshot of previous match for editing
-  syncStatus:       'connecting', // 'connecting' | 'connected' | 'disconnected'
-  denisLegCount:    0,         // how many legs Denis has recorded for current match
   editingStatsFor:  null       // null | 1 | 2 — which player's stats form is open
 };
 
@@ -403,103 +398,7 @@ function loadJasonState() {
   } catch(_) {}
 }
 
-// ── SYNC WITH DENIS'S APP ───────────────────────────────
-let _denisConnected = false;
-
-function buildLegHistory(legs) {
-  return (legs || []).map(l => {
-    const winnerNum      = l.winner === S.p1.name ? 1 : 2;
-    const expStarterName = expectedStarter(l.legNumber);
-    const expWinnerNum   = expStarterName === S.p1.name ? 1 : 2;
-    return { leg: l.legNumber, winner: winnerNum, wasBreak: winnerNum !== expWinnerNum };
-  });
-}
-
-function applyDenisData(data) {
-  if (!data) return;
-
-  // Keep eventData in sync so standings/records are always current
-  if (data.standingsA || data.standingsB) eventData = data;
-
-  // ── Sync completedMatches: Denis is always the source of truth ──
-  const allMatches = getBoard1Matches();
-  const board1Nums = new Set(allMatches.map(m => m.matchNum));
-  const denisBoard1Done = (data.recentMatches || [])
-    .filter(r => r.matchNum && board1Nums.has(r.matchNum))
-    .map(r => r.matchNum);
-
-  const listChanged =
-    denisBoard1Done.length !== S.completedMatches.filter(n => board1Nums.has(n)).length ||
-    denisBoard1Done.some(n => !S.completedMatches.includes(n)) ||
-    S.completedMatches.some(n => board1Nums.has(n) && !denisBoard1Done.includes(n));
-
-  if (listChanged) {
-    S.completedMatches = denisBoard1Done;
-    saveJasonState();
-    if (S.screen === 'matchList') {
-      renderApp();
-      return;
-    }
-  }
-
-  if (!S.match) return;
-
-  // ── Match complete ── Denis finished the match → go to complete screen
-  const matchResult = (data.recentMatches || []).find(m => m.matchNum === S.match.matchNum);
-  if (matchResult) {
-    S.p1Score    = matchResult.score1 || 0;
-    S.p2Score    = matchResult.score2 || 0;
-    S.legHistory = buildLegHistory(matchResult.legs || []);
-    if (S.screen === 'live' || S.screen === 'setup') {
-      S.screen = 'complete';
-      saveJasonState();
-      pushToOverlay();
-      renderApp();
-    }
-    return;
-  }
-
-  // ── In-progress update ── Denis recorded a leg
-  const lmp = data.liveMatchProgress;
-  if (!lmp || lmp.matchNum !== S.match.matchNum) return;
-
-  S.p1Score       = lmp.score1 || 0;
-  S.p2Score       = lmp.score2 || 0;
-  S.legHistory    = buildLegHistory(lmp.legs || []);
-  S.denisLegCount = (lmp.legs || []).length;
-
-  if (S.screen === 'live') {
-    pushToOverlay();
-    renderApp();
-  } else if (S.screen === 'setup') {
-    // Update status indicator without full re-render
-    const el = document.getElementById('denisLiveStatus');
-    if (el) {
-      el.style.display = '';
-      el.innerHTML = lmp.legs && lmp.legs.length > 0
-        ? `<span style="color:var(--orange);">⚡ Denis has started — ${lmp.score1}–${lmp.score2} after ${lmp.legs.length} leg${lmp.legs.length !== 1 ? 's' : ''}</span>`
-        : `<span style="color:var(--green);">● Connected to Denis's app</span>`;
-    }
-  }
-}
-
-function connectToDenis() {
-  if (typeof PeerSync === 'undefined') return;
-  PeerSync.connectAsViewer(DENIS_CODE,
-    (data) => { applyDenisData(data); },
-    (status) => {
-      S.syncStatus     = status;
-      _denisConnected  = (status === 'connected');
-      if (status === 'disconnected' || status === 'error') {
-        setTimeout(() => { if (!_denisConnected) connectToDenis(); }, 8000);
-      }
-    }
-  );
-}
-// Retry every 15 s if not connected
-setInterval(() => { if (!_denisConnected) connectToDenis(); }, 15000);
-
-// ── RESET ALL & SYNC FROM DENIS ───────────────────────────
+// ── RESET ALL ─────────────────────────────────────────────
 function resetAll() {
   // Clear all persisted and in-memory state
   localStorage.removeItem(STATE_KEY);
@@ -514,81 +413,20 @@ function resetAll() {
   S.bullConfirmed    = false;
   S.legHistory       = [];
   S.lastCompleted    = null;
-  S.denisLegCount    = 0;
   S.editingStatsFor  = null;
   S.screen           = 'matchList';
 }
 
-function syncFromDenis(data) {
-  if (!data) return;
-  const allMatches = getBoard1Matches();
-
-  // 1. Mark all matches Denis has completed
-  (data.recentMatches || []).forEach(r => {
-    if (r.matchNum && !S.completedMatches.includes(r.matchNum)) {
-      S.completedMatches.push(r.matchNum);
-    }
-  });
-
-  // 2. If Denis has a live match in progress, jump to it
-  const lmp = data.liveMatchProgress;
-  if (lmp && lmp.matchNum) {
-    const idx = allMatches.findIndex(m => m.matchNum === lmp.matchNum);
-    if (idx >= 0) {
-      S.matchIndex = idx;
-      S.match      = allMatches[idx];
-      S.p1.name    = S.match.player1 || '';
-      S.p2.name    = S.match.player2 || '';
-      const cs1 = getPlayerCareerStats(S.p1.name);
-      const cs2 = getPlayerCareerStats(S.p2.name);
-      S.p1.avg3DA   = (cs1 && cs1.careerAvg   > 0) ? cs1.careerAvg   : 50;
-      S.p1.checkout = (cs1 && cs1.careerCheckout > 0) ? cs1.careerCheckout : 35;
-      S.p2.avg3DA   = (cs2 && cs2.careerAvg   > 0) ? cs2.careerAvg   : 50;
-      S.p2.checkout = (cs2 && cs2.careerCheckout > 0) ? cs2.careerCheckout : 35;
-      S.p1Score       = lmp.score1 || 0;
-      S.p2Score       = lmp.score2 || 0;
-      S.legHistory    = buildLegHistory(lmp.legs || []);
-      S.denisLegCount = (lmp.legs || []).length;
-      // Infer bull winner from leg history if possible
-      if (S.legHistory.length > 0) {
-        // Leg 1 starter = bull winner; we can't know for sure without Denis's data
-        // Leave bullWinner = 0 so Setup screen prompts it
-      }
-      S.screen = 'live';
-      saveJasonState();
-      renderApp();
-      return;
-    }
-  }
-
-  // 3. No live match — just show updated match list
-  saveJasonState();
-  renderApp();
-}
-
 async function resetAndSync() {
   resetAll();
-  // Show spinner immediately
   const app = document.getElementById('app');
-  app.innerHTML = `<div style="text-align:center;padding:3em 1em;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;">Syncing from Denis…</div>`;
-
-  // Try to get Denis's latest data from GitHub (most reliable source)
-  let denisData = null;
+  app.innerHTML = `<div style="text-align:center;padding:3em 1em;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;">Refreshing…</div>`;
   try {
     const r = await fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
-    if (r.ok) {
-      const ed = await r.json();
-      eventData = ed;
-      // Denis broadcasts liveMatchProgress + recentMatches in his PeerSync messages;
-      // the event-data.json has currentPair / allPairs — reconstruct what we need
-      denisData = {
-        recentMatches:     [],                          // ignore stale JSON data; only trust live PeerSync
-        liveMatchProgress: ed.liveMatchProgress || null
-      };
-    }
+    if (r.ok) eventData = await r.json();
   } catch(_) {}
-
-  syncFromDenis(denisData);
+  saveJasonState();
+  renderApp();
 }
 
 // ── ODDS ENGINE ───────────────────────────────────────────
@@ -687,6 +525,34 @@ function pushToOverlay() {
   if (bc) try { bc.postMessage(data); } catch(_) {}
 }
 
+// ── CAREER STATS — Series 1 Events 1-3 (aggregated) ─────
+// Names keyed by "First Last" format matching event-data.json
+// Multi-event players: weighted avg 3DA by matches; combined co_pct by raw counts.
+const CAREER_STATS = {
+  'Tom Holden':       { careerAvg: 73.4, careerCheckout: 30.4, careerMatches: 12, careerMatchWins:  9, highFinish: 160, scores180: 7  },
+  'Darrell Cormier':  { careerAvg: 70.8, careerCheckout: 28.0, careerMatches: 13, careerMatchWins: 10, highFinish: 144, scores180: 7  },
+  'Tyler Stewart':    { careerAvg: 64.1, careerCheckout: 21.6, careerMatches: 10, careerMatchWins:  4, highFinish: 146, scores180: 6  },
+  'Cory Wallace':     { careerAvg: 61.5, careerCheckout: 30.9, careerMatches:  6, careerMatchWins:  5, highFinish: 126, scores180: 1  },
+  'Steve Rushton':    { careerAvg: 59.6, careerCheckout: 18.0, careerMatches: 10, careerMatchWins:  3, highFinish:  92, scores180: 1  },
+  'Miguel Velasquez': { careerAvg: 58.8, careerCheckout: 18.6, careerMatches:  5, careerMatchWins:  2, highFinish: 124, scores180: 0  },
+  'Gerry Johnston':   { careerAvg: 55.8, careerCheckout: 22.6, careerMatches:  5, careerMatchWins:  2, highFinish: 112, scores180: 1  },
+  'Denis Leblanc':    { careerAvg: 58.4, careerCheckout: 17.9, careerMatches: 11, careerMatchWins:  5, highFinish:  78, scores180: 2  },
+  'Michel Leger':     { careerAvg: 54.1, careerCheckout: 13.3, careerMatches:  9, careerMatchWins:  1, highFinish: 140, scores180: 1  },
+  'Royce Milliea':    { careerAvg: 52.5, careerCheckout:  2.9, careerMatches:  4, careerMatchWins:  0, highFinish:   0, scores180: 0  },
+  'Tyler Cyr':        { careerAvg: 69.6, careerCheckout: 27.5, careerMatches: 14, careerMatchWins:  9, highFinish: 124, scores180: 8  },
+  'Kyle Gray':        { careerAvg: 69.5, careerCheckout: 29.9, careerMatches: 12, careerMatchWins:  7, highFinish: 145, scores180: 4  },
+  'Fernand Pellerin': { careerAvg: 66.0, careerCheckout: 15.9, careerMatches: 10, careerMatchWins:  5, highFinish:  76, scores180: 2  },
+  "Corey O'Brien":    { careerAvg: 56.6, careerCheckout: 27.0, careerMatches:  4, careerMatchWins:  1, highFinish:  85, scores180: 0  },
+  'Drake Berry':      { careerAvg: 72.4, careerCheckout: 30.6, careerMatches:  5, careerMatchWins:  4, highFinish:  63, scores180: 1  },
+  'Don Higgins':      { careerAvg: 69.3, careerCheckout: 27.9, careerMatches:  6, careerMatchWins:  3, highFinish:  96, scores180: 0  },
+  'Wayne Champman':   { careerAvg: 68.2, careerCheckout: 24.8, careerMatches:  7, careerMatchWins:  4, highFinish: 140, scores180: 7  },
+  'Wayne Chapman':    { careerAvg: 68.2, careerCheckout: 24.8, careerMatches:  7, careerMatchWins:  4, highFinish: 140, scores180: 7  },
+  'Mark MacEachern':  { careerAvg: 56.8, careerCheckout: 20.4, careerMatches:  6, careerMatchWins:  1, highFinish: 125, scores180: 0  },
+  'Jon Casey':        { careerAvg: 58.0, careerCheckout: 22.4, careerMatches:  5, careerMatchWins:  2, highFinish: 115, scores180: 1  },
+  'Zach Davis':       { careerAvg: 53.2, careerCheckout:  8.3, careerMatches:  4, careerMatchWins:  0, highFinish:  91, scores180: 0  },
+  'Ricky Chaission':  { careerAvg: 49.7, careerCheckout:  9.1, careerMatches:  4, careerMatchWins:  0, highFinish:   0, scores180: 0  }
+};
+
 // ── PLAYER STATS FROM EVENT DATA ─────────────────────────
 function getPlayerRecord(name) {
   if (!eventData) return null;
@@ -711,12 +577,11 @@ function saveLocalPlayerStats(name, stats) {
   } catch(_) {}
 }
 function getPlayerCareerStats(name) {
-  if (!eventData || !eventData.playerStats) return getLocalPlayerStats(name);
-  const base  = eventData.playerStats.find(p => p.name === name) || null;
+  const base  = CAREER_STATS[name] || null;
   const local = getLocalPlayerStats(name);
   if (!local) return base;
-  // Local override wins — merge on top of base (or create fresh if no base)
-  return { name, careerAvg: 0, careerCheckout: 0, careerMatches: 0, careerMatchWins: 0, notes: '',
+  // Local manual override wins — merged on top of embedded stats
+  return { careerAvg: 0, careerCheckout: 0, careerMatches: 0, careerMatchWins: 0, notes: '',
            ...(base || {}), ...local };
 }
 function getPlayerProvince(name) {
@@ -848,18 +713,12 @@ async function loadEventData() {
 function renderMatchList() {
   const matches = getBoard1Matches();
 
-  const syncBadge = `
-    <div style="text-align:center;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;color:${S.syncStatus === 'connected' ? 'var(--green)' : 'var(--text-muted)'};margin-bottom:0.9em;">
-      ${S.syncStatus === 'connected' ? '\u25cf Denis connected' : '\u25cc Connecting to Denis\u2026'}
-    </div>`;
-
   if (!matches.length) {
     return `
       <div style="margin-bottom:1em;">
         <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts \u00b7 Jason</div>
         <h1>Board 1 Matches</h1>
       </div>
-      ${syncBadge}
       <div class="card"><div class="card-body" style="text-align:center;padding:2em;color:var(--text-muted);">No matches found \u2014 check event data.</div></div>`;
   }
 
@@ -900,7 +759,6 @@ function renderMatchList() {
       <button id="resetSyncBtn" style="background:#1a1a1a;border:1.5px solid var(--divider);border-radius:8px;color:var(--text-muted);padding:0.45em 0.9em;font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;">\u21ba Reset &amp; Sync</button>
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
-    ${syncBadge}
     <div class="card" style="overflow:hidden;">
       <div class="card-header"><h2>Tap a match to begin</h2></div>
       <div style="padding:0;">${rows}</div>
@@ -994,14 +852,6 @@ function renderSetup() {
       <button id="backToListBtn" style="background:none;border:1px solid var(--divider);border-radius:8px;color:var(--text-muted);padding:0.45em 0.9em;font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;">← Back</button>
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
-
-    <!-- Denis sync status -->
-    <div id="denisLiveStatus" style="text-align:center;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;margin-bottom:0.9em;padding:0.4em 0.8em;border-radius:8px;background:rgba(255,255,255,0.03);display:${S.syncStatus === 'connected' || S.denisLegCount > 0 ? '' : 'none'}">
-      ${S.syncStatus === 'connected'
-        ? (S.denisLegCount > 0 ? `<span style="color:var(--orange);">⚡ Denis has started — ${S.p1Score}–${S.p2Score} after ${S.denisLegCount} leg${S.denisLegCount !== 1 ? 's' : ''}</span>`
-          : `<span style="color:var(--green);">● Connected to Denis's app</span>`)
-        : ''}
-    </div>
 
     ${S.matchIndex > 0 && S.lastCompleted ? `
     <button class="btn" id="editLastMatchBtn" style="margin-bottom:1em;background:#1a1a1a;border:1.5px solid var(--divider);color:var(--text-muted);font-size:0.85em;letter-spacing:0.08em;">
@@ -1114,10 +964,10 @@ function renderBull() {
 
     <div class="card">
       <div class="card-header">
-        <h2>Who Won the Bull? <span style="font-size:0.8em;font-weight:400;color:var(--text-muted);">(✔ unlocks Denis's app)</span></h2>
+        <h2>Who Won the Bull?</h2>
       </div>
       <div class="card-body">
-        <p style="color:var(--text-muted);font-size:0.85em;margin:0 0 1em;">The bull winner throws Leg 1 and all odd-numbered legs. <strong style="color:var(--orange);">Denis's app will be locked</strong> until you confirm here.</p>
+        <p style="color:var(--text-muted);font-size:0.85em;margin:0 0 1em;">The bull winner throws Leg 1 and all odd-numbered legs.</p>
         ${m ? `
         <div style="text-align:center;font-family:var(--font-display);font-size:0.8em;letter-spacing:0.12em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.8em;">
           Match ${m.matchNum} · ${m.player1} vs ${m.player2}
@@ -1192,12 +1042,7 @@ function renderLive() {
     ${isMatchPt ? `<div class="match-point-alert">⚡ Match Point — ${S.p1Score > S.p2Score ? S.p1.name : S.p2.name} leads ${Math.max(S.p1Score,S.p2Score)}–${Math.min(S.p1Score,S.p2Score)}</div>` : ''}
     ${isDecider && !isMatchPt ? `<div class="match-point-alert" style="border-color:#4caf50;color:#4caf50;background:rgba(76,175,80,0.1);">🏆 Deciding Leg — Legs level at ${S.p1Score}–${S.p2Score}</div>` : ''}
 
-    <!-- Leg Tracking (from Denis) -->
-    <div style="text-align:center;padding:0.5em 0 0.8em;">
-      <span style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;text-transform:uppercase;${S.syncStatus === 'connected' ? 'color:var(--green);' : 'color:var(--text-muted);'}">
-        ${S.syncStatus === 'connected' ? '● Live — updating from Denis\'s app' : '◌ Waiting for Denis\u2019s app…'}
-      </span>
-    </div>
+
 
     <!-- Live Odds -->
     <div class="card">
@@ -1372,7 +1217,7 @@ function bindEvents() {
     });
     const rsBtn = document.getElementById('resetSyncBtn');
     if (rsBtn) rsBtn.onclick = () => {
-      if (!confirm('Reset all match progress and re-sync from Denis\'s app?')) return;
+      if (!confirm('Reset all match progress and refresh from GitHub?')) return;
       resetAndSync();
     };
   }
@@ -1469,14 +1314,6 @@ function bindEvents() {
     if (confirmBtn) {
       confirmBtn.onclick = () => {
         S.bullConfirmed = true;
-        // Notify Denis's app — unlocks his leg-winner buttons
-        if (typeof PeerSync !== 'undefined') {
-          PeerSync.sendToHost({
-            type: 'jasonBull',
-            matchNum:      S.match ? S.match.matchNum : null,
-            bullWinnerName: S.bullWinner === 1 ? S.p1.name : S.p2.name
-          });
-        }
         pushToOverlay();
         S.screen = 'live';
         renderApp();
@@ -1525,8 +1362,14 @@ function bindEvents() {
 (async function init() {
   loadJasonState();
   await loadEventData();
-  connectToDenis();
   renderApp();
+  // Re-poll GitHub every 60 s to keep today's standings fresh
+  setInterval(async () => {
+    try {
+      const r = await fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
+      if (r.ok) { eventData = await r.json(); if (S.screen === 'matchList') renderApp(); }
+    } catch(_) {}
+  }, 60000);
 })();
 </script>
 </body>
