@@ -1006,19 +1006,24 @@ function renderBull() {
 
 // ── RENDER: LIVE ──────────────────────────────────────────
 function renderLive() {
-  const p1Prob = calculateLiveOdds();
-  const p2Prob = 100 - p1Prob;
-  const legNum      = currentLegNum();
-  const thrower     = throwHolder();
-  const lastBreak   = getLastBreak();
-  const narratives  = buildNarratives();
-  const nextOpp     = getNextOpponent();
-  const p1Rec       = getPlayerRecord(S.p1.name);
-  const p2Rec       = getPlayerRecord(S.p2.name);
-  const isMatchPt   = Math.max(S.p1Score, S.p2Score) >= S.matchPoint - 1;
-  const isDecider   = S.p1Score === S.matchPoint - 1 && S.p2Score === S.matchPoint - 1;
-  const p1Prov      = (p1Rec && p1Rec.province) ? p1Rec.province : '';
-  const p2Prov      = (p2Rec && p2Rec.province) ? p2Rec.province : '';
+  const p1Prob    = calculateLiveOdds();
+  const p2Prob    = 100 - p1Prob;
+  const legNum    = currentLegNum();
+  const thrower   = throwHolder();
+  const lastBreak = getLastBreak();
+  const narratives = buildNarratives();
+  const nextOpp   = getNextOpponent();
+  const p1Rec     = getPlayerRecord(S.p1.name);
+  const p2Rec     = getPlayerRecord(S.p2.name);
+  const p1CS      = getPlayerCareerStats(S.p1.name);
+  const p2CS      = getPlayerCareerStats(S.p2.name);
+  const isMatchPt = Math.max(S.p1Score, S.p2Score) >= S.matchPoint - 1;
+  const isDecider = S.p1Score === S.matchPoint - 1 && S.p2Score === S.matchPoint - 1;
+  const p1Prov    = (p1Rec && p1Rec.province) ? p1Rec.province : '';
+  const p2Prov    = (p2Rec && p2Rec.province) ? p2Rec.province : '';
+  const bullName  = S.bullWinner === 1 ? S.p1.name : (S.bullWinner === 2 ? S.p2.name : null);
+  const canRecord = S.bullWinner > 0;
+  const sec = (num, txt) => `<div style="font-family:var(--font-display);font-size:0.65em;letter-spacing:0.14em;color:var(--orange);text-transform:uppercase;margin:1em 0 0.35em;">${num} ${txt}</div>`;
 
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9em;">
@@ -1029,86 +1034,104 @@ function renderLive() {
       <span class="live-badge">Live</span>
     </div>
 
-    <!-- Score panel -->
+    ${sec('①', 'Match &amp; Score')}
     <div class="card">
       <div class="score-display">
         <div class="score-player">
-          <div class="score-name" style="color:${p1Prov ? 'var(--pink)' : 'var(--white)'};">${S.p1.name}${p1Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--pink);">' + p1Prov + '</span>' : ''}</div>
+          <div class="score-name" style="color:var(--pink);">${S.p1.name}${p1Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--pink);">' + p1Prov + '</span>' : ''}</div>
           <div class="score-num ${S.p1Score > S.p2Score ? 'leading' : ''}">${S.p1Score}</div>
           <div class="throw-indicator ${thrower === S.p1.name ? 'throw-on' : 'throw-off'}">Throwing</div>
         </div>
         <div class="vs-dot">VS</div>
         <div class="score-player">
-          <div class="score-name" style="color:${p2Prov ? 'var(--blue)' : 'var(--white)'};">${S.p2.name}${p2Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--blue);">' + p2Prov + '</span>' : ''}</div>
+          <div class="score-name" style="color:var(--blue);">${S.p2.name}${p2Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--blue);">' + p2Prov + '</span>' : ''}</div>
           <div class="score-num ${S.p2Score > S.p1Score ? 'leading' : ''}">${S.p2Score}</div>
           <div class="throw-indicator ${thrower === S.p2.name ? 'throw-on' : 'throw-off'}">Throwing</div>
         </div>
       </div>
-      <div style="padding:0 1em 0.7em;text-align:center;font-family:var(--font-display);font-size:0.76em;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;">
+      <div style="padding:0 1em 0.5em;text-align:center;font-family:var(--font-display);font-size:0.76em;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;">
         Leg ${legNum} · Best of ${S.matchPoint * 2 - 1}
       </div>
-    </div>
+      ${isMatchPt && !isDecider ? `<div class="match-point-alert">⚡ Match Point — ${S.p1Score > S.p2Score ? S.p1.name : S.p2.name} leads ${Math.max(S.p1Score, S.p2Score)}–${Math.min(S.p1Score, S.p2Score)}</div>` : ''}
+      ${isDecider ? `<div class="match-point-alert" style="border-color:#4caf50;color:#4caf50;background:rgba(76,175,80,0.1);">🏆 Deciding Leg — All square ${S.p1Score}–${S.p2Score}</div>` : ''}
 
-    ${isMatchPt ? `<div class="match-point-alert">⚡ Match Point — ${S.p1Score > S.p2Score ? S.p1.name : S.p2.name} leads ${Math.max(S.p1Score,S.p2Score)}–${Math.min(S.p1Score,S.p2Score)}</div>` : ''}
-    ${isDecider && !isMatchPt ? `<div class="match-point-alert" style="border-color:#4caf50;color:#4caf50;background:rgba(76,175,80,0.1);">🏆 Deciding Leg — Legs level at ${S.p1Score}–${S.p2Score}</div>` : ''}
-
-
-
-    <!-- Live Odds -->
-    <div class="card">
-      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-        <h2>Live Odds</h2>
-        <a href="live-odds.html" target="_blank" class="obs-link" style="margin:0;padding:0.3em 0.7em;font-size:0.7em;border-color:var(--divider);">OBS Overlay ↗</a>
+      <!-- Leg Win Buttons -->
+      <div style="padding:0.2em 1em 1em;">
+        <div style="font-family:var(--font-display);font-size:0.65em;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5em;">Leg ${legNum} Winner</div>
+        <div style="display:flex;gap:0.5em;">
+          <button id="legWin1Btn" style="flex:1;padding:0.9em 0.5em;background:${canRecord ? 'rgba(233,30,99,0.15)' : 'rgba(255,255,255,0.04)'};border:2px solid ${canRecord ? 'var(--pink)' : 'var(--divider)'};border-radius:10px;color:${canRecord ? 'var(--pink)' : 'var(--text-muted)'};font-family:var(--font-display);font-size:0.9em;font-weight:700;letter-spacing:0.04em;cursor:${canRecord ? 'pointer' : 'default'};" ${!canRecord ? 'disabled' : ''}>${S.p1.name}<br><span style="font-size:0.72em;font-weight:400;">won leg</span></button>
+          <button id="legWin2Btn" style="flex:1;padding:0.9em 0.5em;background:${canRecord ? 'rgba(33,150,243,0.15)' : 'rgba(255,255,255,0.04)'};border:2px solid ${canRecord ? 'var(--blue)' : 'var(--divider)'};border-radius:10px;color:${canRecord ? 'var(--blue)' : 'var(--text-muted)'};font-family:var(--font-display);font-size:0.9em;font-weight:700;letter-spacing:0.04em;cursor:${canRecord ? 'pointer' : 'default'};" ${!canRecord ? 'disabled' : ''}>${S.p2.name}<br><span style="font-size:0.72em;font-weight:400;">won leg</span></button>
+        </div>
+        ${!canRecord ? `<div style="text-align:center;margin-top:0.5em;font-family:var(--font-display);font-size:0.72em;color:var(--orange);">⚠ Set bull winner in section ② to enable leg recording</div>` : ''}
+        ${S.legHistory.length > 0 ? `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.5em;">
+          <button id="undoLegBtn" style="padding:0.3em 0.8em;background:rgba(255,255,255,0.05);border:1px solid var(--divider);border-radius:6px;color:var(--text-muted);font-family:var(--font-display);font-size:0.7em;letter-spacing:0.06em;cursor:pointer;">↩ Undo Last Leg</button>
+          <div style="font-family:var(--font-display);font-size:0.7em;color:var(--text-muted);">${S.legHistory.map(l => { const n = l.winner === 1 ? S.p1.name : S.p2.name; return n.split(' ')[0] + (l.wasBreak ? '*' : ''); }).join(', ')}</div>
+        </div>
+        ` : ''}
       </div>
-      <div class="card-body">
-        <div class="odds-labels">
-          <span class="odds-p1-label">${S.p1.name} ${p1Prob}%</span>
-          <span class="odds-p2-label">${p2Prob}% ${S.p2.name}</span>
+
+      <!-- Odds bar -->
+      <div style="padding:0 1em 0.9em;border-top:1px solid var(--divider);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:0.7em 0 0.35em;">
+          <span style="font-family:var(--font-display);font-size:0.72em;color:var(--pink);">${S.p1.name} ${p1Prob}%</span>
+          <a href="live-odds.html" target="_blank" class="obs-link" style="margin:0;padding:0.2em 0.6em;font-size:0.65em;border-color:var(--divider);">OBS ↗</a>
+          <span style="font-family:var(--font-display);font-size:0.72em;color:var(--blue);">${p2Prob}% ${S.p2.name}</span>
         </div>
         <div class="odds-track">
           <div class="odds-fill-p1" id="oddsP1Fill" style="width:${p1Prob}%;"></div>
           <div class="odds-fill-p2" id="oddsP2Fill" style="width:${p2Prob}%;"></div>
         </div>
-        ${lastBreak ? `<div style="margin-top:0.7em;"><span class="break-badge">🔴 Break — Leg ${lastBreak.leg}: ${lastBreak.name}</span></div>` : ''}
-        <div style="margin-top:0.6em;font-family:var(--font-display);font-size:0.7em;letter-spacing:0.06em;color:var(--text-muted);text-transform:uppercase;">Live odds are pushing to the OBS overlay</div>
+        ${lastBreak ? `<div style="margin-top:0.5em;"><span class="break-badge">🔴 Break — Leg ${lastBreak.leg}: ${lastBreak.name}</span></div>` : ''}
       </div>
     </div>
 
-    <!-- H2H Commentary Cheat Sheet -->
+    ${sec('②', 'Bull Winner')}
     <div class="card">
-      <div class="card-header"><h2>Commentary Cheat Sheet</h2></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75em 1em;">
+        <div>
+          <div style="font-family:var(--font-display);font-size:0.68em;letter-spacing:0.06em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.25em;">Throwing Legs 1, 3, 5</div>
+          <div style="font-family:var(--font-display);font-size:1.05em;font-weight:700;color:${bullName ? 'var(--orange)' : 'var(--text-muted)'};">${bullName || '— not set —'}</div>
+        </div>
+        <button id="changeBullBtn" style="padding:0.4em 0.85em;background:rgba(242,101,34,0.1);border:1.5px solid rgba(242,101,34,0.4);border-radius:8px;color:var(--orange);font-family:var(--font-display);font-size:0.72em;letter-spacing:0.08em;cursor:pointer;text-transform:uppercase;">${bullName ? '✏ Change' : '⚠ Set Bull'}</button>
+      </div>
+    </div>
+
+    ${sec('③', 'Career Stats &mdash; Events 1&ndash;3')}
+    <div class="card">
       <div class="card-body">
         <div class="h2h-grid">
           <div class="h2h-player">
-            <div class="h2h-name" style="color:var(--pink);">${S.p1.name}${p1Prov ? '<br><span style="font-size:0.68em;color:var(--text-muted);">' + p1Prov + '</span>' : ''}</div>
-            ${(() => { const cs = getPlayerCareerStats(S.p1.name); return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Career Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Career Checkout: <strong>${cs.careerCheckout}%</strong></div>${cs.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W–${cs.careerMatches - cs.careerMatchWins}L</strong></div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat">Avg: <strong>${S.p1.avg3DA}</strong></div><div class="h2h-stat">Checkout: <strong>${S.p1.checkout}%</strong></div>`; })()}
-            ${p1Rec ? `<div class="h2h-stat" style="margin-top:0.3em;">Today: <strong>${p1Rec.matchWins}W–${p1Rec.matchLosses}L · ${p1Rec.legsWon} legs</strong></div>` : ''}
-            <div class="h2h-stat">Bull Throw: <strong>${S.bullWinner === 1 ? 'Yes (Legs 1,3,5)' : 'No (Legs 2,4)'}</strong></div>
+            <div class="h2h-name" style="color:var(--pink);">${S.p1.name}</div>
+            ${(() => { const cs = p1CS; return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Checkout: <strong>${cs.careerCheckout}%</strong></div><div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W–${cs.careerMatches - cs.careerMatchWins}L</strong></div>${cs.highFinish > 0 ? `<div class="h2h-stat">High Fin: <strong>${cs.highFinish}</strong></div>` : ''}${cs.scores180 > 0 ? `<div class="h2h-stat">180s: <strong>${cs.scores180}</strong></div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.85em;">No prior event data</div>`; })()}
           </div>
           <div class="h2h-player">
-            <div class="h2h-name" style="color:var(--blue);">${S.p2.name}${p2Prov ? '<br><span style="font-size:0.68em;color:var(--text-muted);">' + p2Prov + '</span>' : ''}</div>
-            ${(() => { const cs = getPlayerCareerStats(S.p2.name); return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Career Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Career Checkout: <strong>${cs.careerCheckout}%</strong></div>${cs.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W–${cs.careerMatches - cs.careerMatchWins}L</strong></div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat">Avg: <strong>${S.p2.avg3DA}</strong></div><div class="h2h-stat">Checkout: <strong>${S.p2.checkout}%</strong></div>`; })()}
-            ${p2Rec ? `<div class="h2h-stat" style="margin-top:0.3em;">Today: <strong>${p2Rec.matchWins}W–${p2Rec.matchLosses}L · ${p2Rec.legsWon} legs</strong></div>` : ''}
-            <div class="h2h-stat">Bull Throw: <strong>${S.bullWinner === 2 ? 'Yes (Legs 1,3,5)' : 'No (Legs 2,4)'}</strong></div>
+            <div class="h2h-name" style="color:var(--blue);">${S.p2.name}</div>
+            ${(() => { const cs = p2CS; return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Checkout: <strong>${cs.careerCheckout}%</strong></div><div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W–${cs.careerMatches - cs.careerMatchWins}L</strong></div>${cs.highFinish > 0 ? `<div class="h2h-stat">High Fin: <strong>${cs.highFinish}</strong></div>` : ''}${cs.scores180 > 0 ? `<div class="h2h-stat">180s: <strong>${cs.scores180}</strong></div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.85em;">No prior event data</div>`; })()}
           </div>
         </div>
-
-        ${S.legHistory.length > 0 ? `
-        <div class="divider-line"></div>
-        <div class="sub-label">Leg Log</div>
-        ${S.legHistory.map(l => {
-          const wName = l.winner === 1 ? S.p1.name : S.p2.name;
-          const cls   = l.wasBreak ? 'was-break' : 'was-hold';
-          const icon  = l.wasBreak ? '🔴 BREAK' : '✓ Hold';
-          return `<div class="leg-log-row ${cls}">Leg ${l.leg}: ${wName} — ${icon}</div>`;
-        }).join('')}
-        ` : ''}
       </div>
     </div>
 
-    <!-- Narrative Prompts -->
+    ${sec('④', 'Today &mdash; Event 4')}
     <div class="card">
-      <div class="card-header"><h2>Narrative Prompts</h2></div>
+      <div class="card-body">
+        <div class="h2h-grid">
+          <div class="h2h-player">
+            <div class="h2h-name" style="color:var(--pink);">${S.p1.name}</div>
+            ${p1Rec ? `<div class="h2h-stat">Matches: <strong>${p1Rec.matchWins}W–${p1Rec.matchLosses}L</strong></div><div class="h2h-stat">Legs: <strong>${p1Rec.legsWon} won · ${p1Rec.legsLost} lost</strong></div>` : `<div class="h2h-stat" style="color:var(--text-muted);">No matches yet</div>`}
+          </div>
+          <div class="h2h-player">
+            <div class="h2h-name" style="color:var(--blue);">${S.p2.name}</div>
+            ${p2Rec ? `<div class="h2h-stat">Matches: <strong>${p2Rec.matchWins}W–${p2Rec.matchLosses}L</strong></div><div class="h2h-stat">Legs: <strong>${p2Rec.legsWon} won · ${p2Rec.legsLost} lost</strong></div>` : `<div class="h2h-stat" style="color:var(--text-muted);">No matches yet</div>`}
+          </div>
+        </div>
+        <div style="text-align:right;font-family:var(--font-display);font-size:0.62em;color:var(--text-muted);margin-top:0.4em;">synced from Denis · updates every 60s</div>
+      </div>
+    </div>
+
+    ${sec('⑤', 'Narrative Prompts')}
+    <div class="card">
       <div class="card-body">
         ${narratives.map(n => `
           <div class="narrative ${n.style || ''}">
@@ -1119,21 +1142,24 @@ function renderLive() {
       </div>
     </div>
 
-    <!-- Look-Ahead -->
+    ${sec('⑥', 'Upcoming Matches')}
     ${nextOpp ? `
     <div class="card" style="border-color:rgba(33,150,243,0.3);background:rgba(33,150,243,0.05);">
       <div class="card-body">
-        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:0.4em;">Look-Ahead · Next Match</div>
+        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:0.4em;">Next Match</div>
         <div style="font-size:0.9em;">
           ${S.p1Score >= S.p2Score ? S.p1.name : S.p2.name} faces
           <strong>${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''}</strong>
-          in Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} — Board ${nextOpp.board || 1}
+          — Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} · Board ${nextOpp.board || 1}
         </div>
       </div>
-    </div>` : ''}
+    </div>` : `
+    <div class="card">
+      <div class="card-body" style="color:var(--text-muted);font-size:0.85em;text-align:center;padding:1em;">No upcoming matches found</div>
+    </div>`}
 
     <!-- Controls -->
-    <div class="row" style="margin-bottom:0.7em;">
+    <div class="row" style="margin-top:0.5em;margin-bottom:0.7em;">
       <button class="btn secondary" id="editSetupBtn" style="margin:0;">⚙ Setup</button>
       <button class="btn" id="resetMatchBtn" style="margin:0;background:#1a1a1a;border:2px solid #c62828;color:#ef5350;">↺ Reset Match</button>
     </div>
@@ -1340,6 +1366,20 @@ function bindEvents() {
       S.screen = 'setup';
       renderApp();
     };
+    const lw1 = document.getElementById('legWin1Btn');
+    const lw2 = document.getElementById('legWin2Btn');
+    if (lw1) lw1.onclick = () => recordLegWin(1);
+    if (lw2) lw2.onclick = () => recordLegWin(2);
+    const undoLeg = document.getElementById('undoLegBtn');
+    if (undoLeg) undoLeg.onclick = () => {
+      if (S.legHistory.length === 0) return;
+      const last = S.legHistory.pop();
+      if (last.winner === 1) S.p1Score--; else S.p2Score--;
+      pushToOverlay();
+      renderApp();
+    };
+    const changeBull = document.getElementById('changeBullBtn');
+    if (changeBull) changeBull.onclick = () => { S.screen = 'bull'; renderApp(); };
   }
 
   if (S.screen === 'complete') {
