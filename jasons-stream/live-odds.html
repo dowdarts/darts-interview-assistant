@@ -9,7 +9,7 @@
   <style>
     /*
      * OBS Browser Source Settings:
-     *   Width:  1920  Height: 120
+     *   Width:  1920  Height: 80
      *   Custom CSS: body { background: transparent !important; }
      *   Tick: "Shutdown source when not visible"
      *
@@ -22,10 +22,10 @@
     html, body {
       margin: 0; padding: 0;
       background: transparent;
-      font-family: 'Roboto Condensed', 'Segoe UI', Arial, sans-serif;
+      font-family: 'Oswald', 'Arial Narrow', Arial, sans-serif;
       overflow: hidden;
       width: 1920px;
-      height: 120px;
+      height: 80px;
     }
 
     /* ── Overlay wrapper — centred in the 1920px canvas ── */
@@ -33,157 +33,174 @@
       position: absolute;
       bottom: 0; left: 50%;
       transform: translateX(-50%);
-      width: 720px;
-      height: 100px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      align-items: center;
-      padding-bottom: 8px;
+      width: 960px;
+      padding-bottom: 5px;
     }
 
-    /* Match label */
-    .match-label {
-      font-family: 'Oswald', Arial, sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.6);
-      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
-      margin-bottom: 5px;
-    }
-
-    /* Bar container */
-    .bar-container {
-      width: 100%;
+    /* ── AADS Heat Bar panel — solid black, orange border ── */
+    .panel {
       position: relative;
-    }
-
-    /* Player name + percentage labels above bar */
-    .bar-labels {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      margin-bottom: 4px;
-      padding: 0 2px;
-    }
-
-    .bar-name {
-      font-family: 'Oswald', Arial, sans-serif;
-      font-size: 20px;
-      font-weight: 900;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
-      line-height: 1;
-    }
-
-    .bar-pct {
-      font-family: 'Oswald', Arial, sans-serif;
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
-      line-height: 1;
-    }
-
-    .p1-name { color: #e91e63; }
-    .p2-name { color: #2196f3; text-align: right; }
-    .p1-pct  { color: rgba(233,30,99,0.9); }
-    .p2-pct  { color: rgba(33,150,243,0.9); }
-
-    /* The probability bar track */
-    .bar-track {
       width: 100%;
-      height: 28px;
-      border-radius: 14px;
-      background: rgba(20,20,20,0.7);
-      overflow: hidden;
-      display: flex;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.6), inset 0 1px 3px rgba(0,0,0,0.4);
-      position: relative;
+      background: #000000;
+      border: 2px solid #FF6600;
+      border-top: none;
+      box-shadow: 0 0 18px rgba(255,102,0,0.35), 0 4px 24px rgba(0,0,0,0.9);
+      overflow: visible;
+      padding: 7px 16px 7px;
     }
 
-    /* Thin divider line in the centre of the track */
-    .bar-track::after {
+    /* Orange accent stripe across the top */
+    .panel::before {
       content: '';
       position: absolute;
-      left: 50%; top: 20%; bottom: 20%;
-      width: 1px;
-      background: rgba(255,255,255,0.1);
-      transform: translateX(-50%);
-      pointer-events: none;
+      top: 0; left: -2px; right: -2px;
+      height: 3px;
+      background: #FF6600;
+    }
+
+    /* ── Main single-row layout ── */
+    .main-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    /* Player name + score sides */
+    .player-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 256px;
+      flex-shrink: 0;
+    }
+
+    .p1-block { justify-content: flex-end; }
+    .p2-block { justify-content: flex-start; }
+
+    .player-name {
+      font-family: 'Oswald', 'Arial Narrow', Arial, sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1;
+    }
+
+    /* P1 = Safety Orange  |  P2 = White */
+    .p1-name { color: #FF6600; }
+    .p2-name { color: #FFFFFF; }
+
+    .score-chip {
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 30px;
+      font-weight: 900;
+      line-height: 1;
+      min-width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .p1-score { color: #FF6600; }
+    .p2-score { color: #FFFFFF; }
+
+    /* ── Centre: bar + meta row ── */
+    .odds-core {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    /* Probability bar — flat, sharp edges to match tournament aesthetic */
+    .bar-track {
+      height: 12px;
+      background: #333333;
+      overflow: hidden;
+      display: flex;
     }
 
     .bar-fill-p1 {
-      background: linear-gradient(90deg, #c2185b, #e91e63);
+      background: #FF6600;
       height: 100%;
-      transition: width 0.8s ease-in-out;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       flex-shrink: 0;
-      position: relative;
-    }
-
-    /* Gloss sheen on P1 fill */
-    .bar-fill-p1::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 50%;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.18), transparent);
-      border-radius: 14px 0 0 0;
     }
 
     .bar-fill-p2 {
-      background: linear-gradient(90deg, #1976d2, #2196f3);
+      background: #FFFFFF;
       height: 100%;
       flex: 1;
-      position: relative;
     }
 
-    /* Gloss sheen on P2 fill */
-    .bar-fill-p2::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 50%;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.18), transparent);
-      border-radius: 0 14px 0 0;
+    /* Meta row: pct — label — pct */
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    /* Score badges inside bar */
-    .score-badge {
-      position: absolute;
-      top: 50%; transform: translateY(-50%);
+    .pct-label {
       font-family: 'Oswald', Arial, sans-serif;
-      font-size: 18px;
-      font-weight: 900;
-      color: rgba(255,255,255,0.9);
-      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
-      pointer-events: none;
-      z-index: 2;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      text-transform: uppercase;
     }
 
-    .score-p1 { left: 10px; }
-    .score-p2 { right: 10px; }
+    .p1-pct { color: #FF6600; }
+    .p2-pct { color: #A0A0A0; }
 
-    /* Break of throw alert — slides up when a break occurs */
+    .match-label {
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      text-align: center;
+    }
+
+    /* Pulsing orange live dot */
+    .live-dot {
+      display: inline-block;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #FF6600;
+      margin-right: 5px;
+      vertical-align: middle;
+      position: relative;
+      top: -1px;
+      animation: livePulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.25; }
+    }
+
+    /* Break of throw alert — orange banner above panel */
     .break-alert {
       position: absolute;
-      bottom: 100%;
+      top: -26px;
       left: 50%;
-      transform: translateX(-50%) translateY(10px);
-      background: rgba(233,30,99,0.92);
-      color: #fff;
+      transform: translateX(-50%) translateY(4px);
+      background: #FF6600;
+      color: #000000;
       font-family: 'Oswald', Arial, sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
+      font-size: 10.5px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      padding: 5px 16px;
-      border-radius: 20px;
+      padding: 4px 18px;
       white-space: nowrap;
-      box-shadow: 0 2px 14px rgba(233,30,99,0.5);
+      box-shadow: 0 -3px 14px rgba(255,102,0,0.55);
       opacity: 0;
-      transition: opacity 0.4s ease, transform 0.4s ease;
+      transition: opacity 0.35s ease, transform 0.35s ease;
       pointer-events: none;
     }
 
@@ -195,14 +212,13 @@
     /* Waiting state */
     .waiting {
       font-family: 'Oswald', Arial, sans-serif;
-      font-size: 14px;
+      font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.35);
+      color: rgba(255,255,255,0.28);
       text-align: center;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-      padding: 2em 0;
+      padding: 1.6em 0;
     }
   </style>
 </head>
@@ -228,34 +244,38 @@ let breakTimeout  = null;
 
 // Build overlay HTML once data is available
 function renderOverlay(data) {
-  const overlay   = document.getElementById('overlay');
-  const p1Prob    = Math.max(2, Math.min(98, data.p1Prob || 50));
-  const p2Prob    = 100 - p1Prob;
-  const p1Name    = data.p1Name || 'Player 1';
-  const p2Name    = data.p2Name || 'Player 2';
-  const p1Score   = data.p1Score || 0;
-  const p2Score   = data.p2Score || 0;
-  const matchNum  = data.matchNum ? 'Match ' + data.matchNum : 'Board 1';
+  const overlay    = document.getElementById('overlay');
+  const p1Prob     = Math.max(2, Math.min(98, data.p1Prob || 50));
+  const p2Prob     = 100 - p1Prob;
+  const p1Name     = data.p1Name || 'Player 1';
+  const p2Name     = data.p2Name || 'Player 2';
+  const p1Score    = data.p1Score || 0;
+  const p2Score    = data.p2Score || 0;
+  const matchLabel = data.matchNum ? 'Match ' + data.matchNum : 'Board 1';
 
   overlay.innerHTML = `
-    <div class="match-label">${matchNum} · Live Odds</div>
-    <div class="bar-container">
+    <div class="panel">
       <div class="break-alert" id="breakAlert"></div>
-      <div class="bar-labels">
-        <div>
-          <div class="bar-name p1-name">${p1Name}</div>
-          <div class="bar-pct p1-pct">${p1Prob}%</div>
+      <div class="main-row">
+        <div class="player-block p1-block">
+          <span class="player-name p1-name">${p1Name}</span>
+          <span class="score-chip p1-score" id="scoreP1">${p1Score}</span>
         </div>
-        <div style="text-align:right;">
-          <div class="bar-name p2-name">${p2Name}</div>
-          <div class="bar-pct p2-pct">${p2Prob}%</div>
+        <div class="odds-core">
+          <div class="bar-track">
+            <div class="bar-fill-p1" id="fillP1" style="width:${p1Prob}%;"></div>
+            <div class="bar-fill-p2" id="fillP2"></div>
+          </div>
+          <div class="meta-row">
+            <span class="pct-label p1-pct" id="pct1">${p1Prob}%</span>
+            <span class="match-label"><span class="live-dot"></span>${matchLabel} · LIVE ODDS</span>
+            <span class="pct-label p2-pct" id="pct2">${p2Prob}%</span>
+          </div>
         </div>
-      </div>
-      <div class="bar-track">
-        <div class="bar-fill-p1" id="fillP1" style="width:${p1Prob}%;"></div>
-        <div class="bar-fill-p2" id="fillP2" style="width:${p2Prob}%;"></div>
-        <div class="score-badge score-p1">${p1Score}</div>
-        <div class="score-badge score-p2">${p2Score}</div>
+        <div class="player-block p2-block">
+          <span class="score-chip p2-score" id="scoreP2">${p2Score}</span>
+          <span class="player-name p2-name">${p2Name}</span>
+        </div>
       </div>
     </div>
   `;
@@ -267,19 +287,15 @@ function updateBar(data) {
   const p2Prob = 100 - p1Prob;
 
   const fillP1 = document.getElementById('fillP1');
-  const fillP2 = document.getElementById('fillP2');
-
   if (fillP1) fillP1.style.width = p1Prob + '%';
-  if (fillP2) fillP2.style.width = p2Prob + '%';
 
-  // Update percentage labels
-  const labels = document.querySelectorAll('.bar-pct');
-  if (labels[0]) labels[0].textContent = p1Prob + '%';
-  if (labels[1]) labels[1].textContent = p2Prob + '%';
+  const pct1 = document.getElementById('pct1');
+  const pct2 = document.getElementById('pct2');
+  if (pct1) pct1.textContent = p1Prob + '%';
+  if (pct2) pct2.textContent = p2Prob + '%';
 
-  // Update score badges
-  const scoreP1 = document.querySelector('.score-p1');
-  const scoreP2 = document.querySelector('.score-p2');
+  const scoreP1 = document.getElementById('scoreP1');
+  const scoreP2 = document.getElementById('scoreP2');
   if (scoreP1) scoreP1.textContent = data.p1Score || 0;
   if (scoreP2) scoreP2.textContent = data.p2Score || 0;
 

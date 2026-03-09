@@ -627,83 +627,99 @@ function buildNarratives() {
   const p1 = S.p1.name || 'Player 1';
   const p2 = S.p2.name || 'Player 2';
   const lastBreak = getLastBreak();
+  const p1Prob = calculateLiveOdds();
+  const p2Prob = 100 - p1Prob;
 
-  // 1. Comparison prompt (always shown)
-  const gap3DA   = Math.abs(S.p1.avg3DA - S.p2.avg3DA);
-  const p1IsScorer  = S.p1.avg3DA >= S.p2.avg3DA;
+  // 1. Strength Gap prompt (always shown)
+  const gap3DA      = Math.abs(S.p1.avg3DA - S.p2.avg3DA);
+  const stronger    = S.p1.avg3DA >= S.p2.avg3DA ? p1 : p2;
+  const strongerAvg = S.p1.avg3DA >= S.p2.avg3DA ? S.p1.avg3DA : S.p2.avg3DA;
+  const strongerPct = S.p1.avg3DA >= S.p2.avg3DA ? p1Prob : p2Prob;
   const p1IsFinisher = S.p1.checkout >= S.p2.checkout;
   let compText;
   if (gap3DA >= 5 && !p1IsFinisher) {
-    compText = `Jason: Contrast ${p1}'s power scoring (${S.p1.avg3DA} avg) against ${p2}'s clinical finishing (${S.p2.checkout}% checkout). Which style takes the win today?`;
+    compText = `Note the Strength Gap — ${p1} enters with a ${strongerPct}% advantage based on 3DA alone (${S.p1.avg3DA} avg). But ${p2}'s ${S.p2.checkout}% checkout could be the equaliser. Which style takes it today?`;
   } else if (gap3DA >= 5 && p1IsFinisher) {
-    compText = `${p1} holds the edge in both scoring (${S.p1.avg3DA} avg) and checkout (${S.p1.checkout}%). Talk about whether ${p2} at ${S.p2.avg3DA} avg can keep pace.`;
+    compText = `Note the Strength Gap — ${stronger} enters at ${strongerPct}% based on 3DA (${strongerAvg} avg). They hold the edge in both scoring and finishing. Can ${gap3DA >= 10 ? 'anything' : p2} close that gap?`;
   } else {
-    compText = `These two are closely matched — ${p1}: ${S.p1.avg3DA} avg / ${S.p1.checkout}% checkout vs ${p2}: ${S.p2.avg3DA} avg / ${S.p2.checkout}%. Who wins the mental game?`;
+    compText = `These two are closely matched on paper — ${p1}: ${S.p1.avg3DA} avg / ${S.p1.checkout}% checkout vs ${p2}: ${S.p2.avg3DA} avg / ${S.p2.checkout}% checkout. Odds open at ${p1Prob}%–${p2Prob}%. Who wins the mental game?`;
   }
-  items.push({ label: 'Comparison', text: compText, style: '' });
+  items.push({ label: '📊 Strength Gap', text: compText, style: '' });
 
-  // 2. Break of Throw (urgent if one just happened)
+  // 2. Bull Winner Edge
+  if (S.bullWinner && S.screen === 'live' && S.p1Score === 0 && S.p2Score === 0) {
+    const bullName = S.bullWinner === 1 ? p1 : p2;
+    items.push({
+      label: '🎯 Bull Winner Edge',
+      text: `Flag the Bull Winner Edge — ${bullName} won the bull-up and that +8.6% swing puts the pressure on their opponent immediately. The throw advantage in Leg 1 is a real factor. Call it out now.`,
+      style: 'info'
+    });
+  }
+
+  // 3. Break of Throw (urgent if one just happened)
   if (lastBreak) {
+    const breakerProb = lastBreak.winner === 1 ? p1Prob : p2Prob;
     items.push({
       label: '🔴 Break of Throw',
-      text: `${lastBreak.name} broke the throw in Leg ${lastBreak.leg}! This is the darts equivalent of a break of serve and it's just moved the live odds significantly. Tell the audience why this matters — the throw holder is now under extra pressure to break back.`,
+      text: `Highlight the Break of Throw! ${lastBreak.name} just stole the darts in Leg ${lastBreak.leg}. That's a massive 25-point momentum swing — 15% for the leg plus 10% break bonus. Their win probability has surged to ${breakerProb}%. Call out the shift to the audience now.`,
       style: 'urgent'
     });
   } else if (S.legHistory.length > 0 && S.screen === 'live') {
     const holder = throwHolder();
     items.push({
       label: 'Throw Pattern',
-      text: `${holder} has the throw for Leg ${currentLegNum()}. So far no breaks — both players are holding their serve. Watch if the pattern holds or if a break changes the match picture completely.`,
+      text: `${holder} has the throw for Leg ${currentLegNum()}. Clean hold of throw so far — no breaks recorded. The odds are moving on score alone. Watch if the pattern breaks.`,
       style: ''
     });
   }
 
-  // 3. Score-context prompt
+  // 4. Score-context prompt
   const p1Ahead = S.p1Score > S.p2Score;
   const tied    = S.p1Score === S.p2Score && S.p1Score > 0;
   const leader  = p1Ahead ? p1 : p2;
   const trailer = p1Ahead ? p2 : p1;
+  const leaderProb = p1Ahead ? p1Prob : p2Prob;
   const isMatchPoint = Math.max(S.p1Score, S.p2Score) >= S.matchPoint - 1;
   const isDecider    = S.p1Score === S.matchPoint - 1 && S.p2Score === S.matchPoint - 1;
 
   if (S.screen === 'live' && S.p1Score === 0 && S.p2Score === 0) {
     items.push({
-      label: 'Set The Scene',
-      text: `Board 1 is live — ${p1} vs ${p2}. ${getPlayerProvince(p1) ? p1 + ' (' + getPlayerProvince(p1) + ')' : p1} against ${getPlayerProvince(p2) ? p2 + ' (' + getPlayerProvince(p2) + ')' : p2}. Build the atmosphere for the viewers — what do they need to know about these two players going into this match?`,
+      label: '🎙️ Set The Scene',
+      text: `Board 1 is live — ${p1}${getPlayerProvince(p1) ? ' (' + getPlayerProvince(p1) + ')' : ''} vs ${p2}${getPlayerProvince(p2) ? ' (' + getPlayerProvince(p2) + ')' : ''}. Build the atmosphere. Odds open at ${p1Prob}%–${p2Prob}%. What do viewers need to know about these two going in?`,
       style: 'info'
     });
   } else if (isDecider) {
     items.push({
       label: '🏆 Deciding Leg',
-      text: `IT'S THE DECIDING LEG! Legs are level at ${S.p1Score}–${S.p2Score}. Talk about what this win means in the standings — and ask viewers if either player has the mental strength to close it out. The throw holder ${throwHolder()} has a small edge.`,
+      text: `IT'S THE DECIDING LEG — ${S.p1Score}–${S.p2Score}! Activate Match Point Lock — display is clamped at ${p1Prob}%–${p2Prob}% to keep the bar alive. Talk about what this win means in the standings. The throw holder ${throwHolder()} has a slim edge — will it matter?`,
       style: 'urgent'
     });
   } else if (isMatchPoint) {
     items.push({
       label: '⚡ Match Point',
-      text: `${leader} is ONE LEG AWAY from winning! Can ${trailer} find a response and force a decider? Build the tension — this is the biggest moment in the match for the audience.`,
+      text: `Activate Match Point Lock — ${leader} is ONE LEG AWAY and the display is clamped at ${leaderProb}% to keep the bar alive until the final dart. Can ${trailer} break back and force a decider? Build the tension now.`,
       style: 'urgent'
     });
   } else if (tied) {
     items.push({
-      label: 'Evenly Matched',
-      text: `All square at ${S.p1Score}–${S.p2Score}. This match is perfectly poised — talk about who has the momentum and whether the throw pattern gives anyone an edge heading into Leg ${currentLegNum()}.`,
+      label: 'All Square',
+      text: `Clean hold of throw so far — all square at ${S.p1Score}–${S.p2Score} and odds are level at ${p1Prob}%–${p2Prob}%. Talk about who has the momentum heading into Leg ${currentLegNum()} and whether the throw pattern gives anyone a hidden edge.`,
       style: ''
     });
   } else if (S.legHistory.length >= 2) {
     items.push({
       label: 'Match Story',
-      text: `${leader} leads ${Math.max(S.p1Score, S.p2Score)}–${Math.min(S.p1Score, S.p2Score)}. Talk about what's working for ${leader} — is it the scoring, the finishing, or are they benefiting from the throw pattern?`,
+      text: `${leader} leads ${Math.max(S.p1Score, S.p2Score)}–${Math.min(S.p1Score, S.p2Score)} and the probability reflects it at ${leaderProb}%. Is it the scoring, the finishing, or the throw pattern driving this? Give the audience the story behind the number.`,
       style: ''
     });
   }
 
-  // 4. Look-Ahead
+  // 5. Look-Ahead
   const nextOpp = getNextOpponent();
   if (nextOpp) {
     items.push({
-      label: 'Look-Ahead',
-      text: `After this match, keep an eye on ${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''} — Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} on Board ${nextOpp.board || 1}. Worth flagging for viewers.`,
+      label: '👀 Look-Ahead',
+      text: `After this match, flag ${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''} for the audience — Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} on Board ${nextOpp.board || 1} is coming up. Worth teasing now.`,
       style: 'info'
     });
   }
