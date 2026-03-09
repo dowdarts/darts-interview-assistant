@@ -15,8 +15,8 @@
       --divider:     #3C3C3C;
       --white:       #FFFFFF;
       --text-muted:  #C0C0C0;
-      --pink:        #f06292;
-      --blue:        #64b5f6;
+      --pink:        #F26522;
+      --blue:        #66bb6a;
       --green:       #66bb6a;
       --font-main:   'Roboto Condensed', 'Segoe UI', Arial, sans-serif;
       --font-display:'Oswald', 'Segoe UI', Arial, sans-serif;
@@ -154,13 +154,13 @@
     /* ── Leg buttons ── */
     .leg-btn-p1 {
       flex: 1; margin: 0; font-size: 0.95em;
-      background: linear-gradient(135deg, #880e4f, var(--pink));
+      background: linear-gradient(135deg, #b34400, var(--orange));
       box-shadow: 0 4px 18px rgba(233,30,99,0.3);
       padding: 1em 0.5em; line-height: 1.4;
     }
     .leg-btn-p2 {
       flex: 1; margin: 0; font-size: 0.95em;
-      background: linear-gradient(135deg, #0d47a1, var(--blue));
+      background: linear-gradient(135deg, #1b5e20, var(--green));
       box-shadow: 0 4px 18px rgba(33,150,243,0.3);
       padding: 1em 0.5em; line-height: 1.4;
     }
@@ -174,11 +174,11 @@
       background: var(--divider); position: relative;
     }
     .odds-fill-p1 {
-      background: var(--pink); height: 100%;
+      background: var(--orange); height: 100%;
       transition: width 0.8s ease-in-out;
     }
     .odds-fill-p2 {
-      background: var(--blue); height: 100%; flex: 1;
+      background: var(--green); height: 100%; flex: 1;
       transition: width 0.8s ease-in-out;
     }
     .odds-labels {
@@ -186,14 +186,14 @@
       font-family: var(--font-display); font-size: 0.88em; font-weight: 700;
       margin-bottom: 0.4em;
     }
-    .odds-p1-label { color: var(--pink); }
-    .odds-p2-label { color: var(--blue); }
+    .odds-p1-label { color: var(--orange); }
+    .odds-p2-label { color: var(--green); }
 
     /* ── Break badge ── */
     .break-badge {
       display: inline-flex; align-items: center; gap: 0.3em;
-      background: rgba(233,30,99,0.12); border: 1.5px solid var(--pink);
-      color: var(--pink); font-family: var(--font-display);
+      background: rgba(242,101,34,0.12); border: 1.5px solid var(--orange);
+      color: var(--orange); font-family: var(--font-display);
       font-size: 0.75em; font-weight: 700; letter-spacing: 0.06em;
       text-transform: uppercase; padding: 0.25em 0.75em; border-radius: 20px;
       animation: break-pulse 2s ease-in-out 3;
@@ -231,10 +231,10 @@
       letter-spacing: 0.1em; text-transform: uppercase;
       color: var(--orange); margin-bottom: 0.3em;
     }
-    .narrative.urgent { border-left-color: var(--pink); background: rgba(233,30,99,0.07); }
-    .narrative.urgent .narrative-label { color: var(--pink); }
-    .narrative.info   { border-left-color: var(--blue);  background: rgba(33,150,243,0.07); }
-    .narrative.info   .narrative-label   { color: var(--blue); }
+    .narrative.urgent { border-left-color: var(--orange); background: rgba(242,101,34,0.07); }
+    .narrative.urgent .narrative-label { color: var(--orange); }
+    .narrative.info   { border-left-color: var(--green);  background: rgba(102,187,106,0.07); }
+    .narrative.info   .narrative-label   { color: var(--green); }
 
     /* ── Misc ── */
     .live-badge {
@@ -260,7 +260,7 @@
       text-transform: uppercase; margin-bottom: 0.8em;
     }
     .leg-log-row { font-size: 0.82em; margin-bottom: 0.2em; }
-    .leg-log-row.was-break { color: var(--pink); }
+    .leg-log-row.was-break { color: var(--orange); }
     .leg-log-row.was-hold  { color: var(--text-muted); }
     .divider-line { height: 1px; background: var(--divider); margin: 0.8em 0; }
     .sub-label {
@@ -790,7 +790,7 @@ function renderMatchList() {
 // ── PLAYER STATS PANEL (setup screen Section 2) ──────────
 function renderPlayerStatsPanel(playerNum, playerName, cs, ev) {
   const hasCareer = cs && (cs.careerAvg > 0 || cs.careerMatches > 0 || cs.notes);
-  const color     = playerNum === 1 ? 'var(--pink)' : 'var(--blue)';
+  const color     = playerNum === 1 ? 'var(--orange)' : 'var(--green)';
   const province  = ev && ev.province ? `<br><span style="font-size:0.68em;color:var(--text-muted);">${ev.province}</span>` : '';
 
   const statsHtml = hasCareer ? `
@@ -844,12 +844,12 @@ function renderSetup() {
             </div>
             <div style="display:flex;align-items:center;justify-content:center;gap:1em;">
               <div style="text-align:right;flex:1;">
-                <div style="font-family:var(--font-display);font-size:1.15em;font-weight:700;color:var(--pink);">${currentMatch.player1}</div>
+                <div style="font-family:var(--font-display);font-size:1.15em;font-weight:700;color:var(--orange);">${currentMatch.player1}</div>
                 ${currentMatch.player1Province ? `<div style="font-size:0.72em;color:var(--text-muted);letter-spacing:0.06em;">${currentMatch.player1Province}</div>` : ''}
               </div>
               <div class="vs-dot" style="width:32px;height:32px;font-size:0.62em;flex-shrink:0;">VS</div>
               <div style="text-align:left;flex:1;">
-                <div style="font-family:var(--font-display);font-size:1.15em;font-weight:700;color:var(--blue);">${currentMatch.player2}</div>
+                <div style="font-family:var(--font-display);font-size:1.15em;font-weight:700;color:var(--green);">${currentMatch.player2}</div>
                 ${currentMatch.player2Province ? `<div style="font-size:0.72em;color:var(--text-muted);letter-spacing:0.06em;">${currentMatch.player2Province}</div>` : ''}
               </div>
             </div>
@@ -994,13 +994,13 @@ function renderLive() {
     <div class="card">
       <div class="score-display">
         <div class="score-player">
-          <div class="score-name" style="color:var(--pink);">${S.p1.name}${p1Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--pink);">' + p1Prov + '</span>' : ''}</div>
+          <div class="score-name" style="color:var(--orange);">${S.p1.name}${p1Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--orange);">' + p1Prov + '</span>' : ''}</div>
           <div class="score-num ${S.p1Score > S.p2Score ? 'leading' : ''}">${S.p1Score}</div>
           <div class="throw-indicator ${thrower === S.p1.name ? 'throw-on' : 'throw-off'}">Throwing</div>
         </div>
         <div class="vs-dot">VS</div>
         <div class="score-player">
-          <div class="score-name" style="color:var(--blue);">${S.p2.name}${p2Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--blue);">' + p2Prov + '</span>' : ''}</div>
+          <div class="score-name" style="color:var(--green);">${S.p2.name}${p2Prov ? '<br><span style="font-size:0.7em;letter-spacing:0.1em;color:var(--green);">' + p2Prov + '</span>' : ''}</div>
           <div class="score-num ${S.p2Score > S.p1Score ? 'leading' : ''}">${S.p2Score}</div>
           <div class="throw-indicator ${thrower === S.p2.name ? 'throw-on' : 'throw-off'}">Throwing</div>
         </div>
@@ -1015,8 +1015,8 @@ function renderLive() {
       <div style="padding:0.2em 1em 1em;">
         <div style="font-family:var(--font-display);font-size:0.65em;letter-spacing:0.1em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.5em;">Leg ${legNum} Winner</div>
         <div style="display:flex;gap:0.5em;">
-          <button id="legWin1Btn" style="flex:1;padding:0.9em 0.5em;background:${canRecord ? 'rgba(233,30,99,0.15)' : 'rgba(255,255,255,0.04)'};border:2px solid ${canRecord ? 'var(--pink)' : 'var(--divider)'};border-radius:10px;color:${canRecord ? 'var(--pink)' : 'var(--text-muted)'};font-family:var(--font-display);font-size:0.9em;font-weight:700;letter-spacing:0.04em;cursor:${canRecord ? 'pointer' : 'default'};" ${!canRecord ? 'disabled' : ''}>${S.p1.name}<br><span style="font-size:0.72em;font-weight:400;">won leg</span></button>
-          <button id="legWin2Btn" style="flex:1;padding:0.9em 0.5em;background:${canRecord ? 'rgba(33,150,243,0.15)' : 'rgba(255,255,255,0.04)'};border:2px solid ${canRecord ? 'var(--blue)' : 'var(--divider)'};border-radius:10px;color:${canRecord ? 'var(--blue)' : 'var(--text-muted)'};font-family:var(--font-display);font-size:0.9em;font-weight:700;letter-spacing:0.04em;cursor:${canRecord ? 'pointer' : 'default'};" ${!canRecord ? 'disabled' : ''}>${S.p2.name}<br><span style="font-size:0.72em;font-weight:400;">won leg</span></button>
+          <button id="legWin1Btn" style="flex:1;padding:0.9em 0.5em;background:${canRecord ? 'rgba(242,101,34,0.15)' : 'rgba(255,255,255,0.04)'};border:2px solid ${canRecord ? 'var(--orange)' : 'var(--divider)'};border-radius:10px;color:${canRecord ? 'var(--orange)' : 'var(--text-muted)'};font-family:var(--font-display);font-size:0.9em;font-weight:700;letter-spacing:0.04em;cursor:${canRecord ? 'pointer' : 'default'};" ${!canRecord ? 'disabled' : ''}>${S.p1.name}<br><span style="font-size:0.72em;font-weight:400;">won leg</span></button>
+          <button id="legWin2Btn" style="flex:1;padding:0.9em 0.5em;background:${canRecord ? 'rgba(102,187,106,0.15)' : 'rgba(255,255,255,0.04)'};border:2px solid ${canRecord ? 'var(--green)' : 'var(--divider)'};border-radius:10px;color:${canRecord ? 'var(--green)' : 'var(--text-muted)'};font-family:var(--font-display);font-size:0.9em;font-weight:700;letter-spacing:0.04em;cursor:${canRecord ? 'pointer' : 'default'};" ${!canRecord ? 'disabled' : ''}>${S.p2.name}<br><span style="font-size:0.72em;font-weight:400;">won leg</span></button>
         </div>
         ${!canRecord ? `<div style="text-align:center;margin-top:0.5em;font-family:var(--font-display);font-size:0.72em;color:var(--orange);">⚠ Set bull winner in section ② to enable leg recording</div>` : ''}
         ${S.legHistory.length > 0 ? `
@@ -1030,9 +1030,9 @@ function renderLive() {
       <!-- Odds bar -->
       <div style="padding:0 1em 0.9em;border-top:1px solid var(--divider);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin:0.7em 0 0.35em;">
-          <span style="font-family:var(--font-display);font-size:0.72em;color:var(--pink);">${S.p1.name} ${p1Prob}%</span>
+          <span style="font-family:var(--font-display);font-size:0.72em;color:var(--orange);">${S.p1.name} ${p1Prob}%</span>
           <a href="live-odds.html" target="_blank" class="obs-link" style="margin:0;padding:0.2em 0.6em;font-size:0.65em;border-color:var(--divider);">OBS ↗</a>
-          <span style="font-family:var(--font-display);font-size:0.72em;color:var(--blue);">${p2Prob}% ${S.p2.name}</span>
+          <span style="font-family:var(--font-display);font-size:0.72em;color:var(--green);">${p2Prob}% ${S.p2.name}</span>
         </div>
         <div class="odds-track">
           <div class="odds-fill-p1" id="oddsP1Fill" style="width:${p1Prob}%;"></div>
@@ -1058,11 +1058,11 @@ function renderLive() {
       <div class="card-body">
         <div class="h2h-grid">
           <div class="h2h-player">
-            <div class="h2h-name" style="color:var(--pink);">${S.p1.name}</div>
+            <div class="h2h-name" style="color:var(--orange);">${S.p1.name}</div>
             ${(() => { const cs = p1CS; return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Checkout: <strong>${cs.careerCheckout}%</strong></div><div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W–${cs.careerMatches - cs.careerMatchWins}L</strong></div>${cs.highFinish > 0 ? `<div class="h2h-stat">High Fin: <strong>${cs.highFinish}</strong></div>` : ''}${cs.scores180 > 0 ? `<div class="h2h-stat">180s: <strong>${cs.scores180}</strong></div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.85em;">No prior event data</div>`; })()}
           </div>
           <div class="h2h-player">
-            <div class="h2h-name" style="color:var(--blue);">${S.p2.name}</div>
+            <div class="h2h-name" style="color:var(--green);">${S.p2.name}</div>
             ${(() => { const cs = p2CS; return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Checkout: <strong>${cs.careerCheckout}%</strong></div><div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W–${cs.careerMatches - cs.careerMatchWins}L</strong></div>${cs.highFinish > 0 ? `<div class="h2h-stat">High Fin: <strong>${cs.highFinish}</strong></div>` : ''}${cs.scores180 > 0 ? `<div class="h2h-stat">180s: <strong>${cs.scores180}</strong></div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.85em;">No prior event data</div>`; })()}
           </div>
         </div>
@@ -1085,7 +1085,7 @@ function renderLive() {
     ${nextOpp ? `
     <div class="card" style="border-color:rgba(33,150,243,0.3);background:rgba(33,150,243,0.05);">
       <div class="card-body">
-        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:0.4em;">Next Match</div>
+        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);margin-bottom:0.4em;">Next Match</div>
         <div style="font-size:0.9em;">
           ${S.p1Score >= S.p2Score ? S.p1.name : S.p2.name} faces
           <strong>${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''}</strong>
@@ -1141,7 +1141,7 @@ function renderComplete() {
     ${nextOpp ? `
     <div class="card" style="border-color:rgba(33,150,243,0.3);background:rgba(33,150,243,0.05);">
       <div class="card-body">
-        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:0.4em;">${winner}'s Next Match</div>
+        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--green);margin-bottom:0.4em;">${winner}'s Next Match</div>
         <div style="font-size:0.9em;">
           ${winner} faces <strong>${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''}</strong>
           in Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} — Board ${nextOpp.board || 1}
