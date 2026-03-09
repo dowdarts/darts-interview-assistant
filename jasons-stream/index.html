@@ -304,6 +304,12 @@ const STATE_KEY      = 'AADS_JASON_STATE';
 const RAW_URL        = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
 const LOCAL_URL      = '../event-data.json';
 
+// GitHub relay — pushes live odds so display can run on another device
+const GH_OWNER       = 'dowdarts';
+const GH_REPO        = 'darts-interview-assistant';
+const GH_STREAM_FILE = 'jasons-stream/stream-state.json';
+const GH_API_BASE    = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_STREAM_FILE}`;
+
 let eventData = null;
 let bc = null;
 try { bc = new BroadcastChannel('aads_stream'); } catch(_) {}
@@ -531,6 +537,53 @@ function pushToOverlay(show = false) {
   };
   localStorage.setItem(STREAM_KEY, JSON.stringify(data));
   if (bc) try { bc.postMessage(data); } catch(_) {}
+  pushStreamToGitHub(data); // cross-device relay
+}
+
+// ── GITHUB STREAM PUSH ────────────────────────────────────
+let _ghSha = null; // cached SHA to avoid extra GET on every push
+
+async function pushStreamToGitHub(data) {
+  const token = localStorage.getItem('githubToken');
+  if (!token) return;
+  try {
+    // Fetch current SHA if we don't have it yet
+    if (!_ghSha) {
+      try {
+        const r = await fetch(GH_API_BASE, {
+          headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (r.ok) { const d = await r.json(); _ghSha = d.sha; }
+      } catch(_) {}
+    }
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    const body = { message: 'stream update', content, branch: 'main' };
+    if (_ghSha) body.sha = _ghSha;
+    const put = await fetch(GH_API_BASE, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (put.ok) {
+      const result = await put.json();
+      _ghSha = result.content ? result.content.sha : null;
+      updateSyncStatus('✓ synced');
+    } else {
+      _ghSha = null; // force re-fetch on next push if PUT fails
+      updateSyncStatus('⚠ sync failed');
+    }
+  } catch(e) {
+    updateSyncStatus('⚠ no network');
+  }
+}
+
+function updateSyncStatus(msg) {
+  const el = document.getElementById('ghSyncStatus');
+  if (el) { el.textContent = msg; setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 4000); }
 }
 
 // ── CAREER STATS — Series 1 Events 1-3 (aggregated) ─────
@@ -807,6 +860,22 @@ function renderMatchList() {
         <div style="font-family:var(--font-display);font-size:1.1em;color:var(--green);letter-spacing:0.06em;">\uD83C\uDFC6 All Board 1 Matches Complete!</div>
       </div>
     </div>` : ''}
+    <div class="card" style="margin-top:0.5em;">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h2 style="font-size:0.85em;">\uD83D\uDD17 GitHub Sync (cross-device display)</h2>
+        <span id="ghSyncStatus" style="font-size:0.7em;color:var(--green);font-family:var(--font-main);"></span>
+      </div>
+      <div class="card-body" style="padding:0.8em 1em;">
+        <label for="ghTokenInput" style="font-size:0.7em;">GitHub Personal Access Token</label>
+        <div style="display:flex;gap:0.5em;">
+          <input id="ghTokenInput" type="password" placeholder="ghp_…" value="${localStorage.getItem('githubToken') || ''}" style="flex:1;font-size:0.88em;">
+          <button id="ghTokenSaveBtn" style="background:var(--orange);border:none;border-radius:8px;color:#fff;font-family:var(--font-display);font-size:0.8em;font-weight:700;letter-spacing:0.06em;padding:0 1em;cursor:pointer;white-space:nowrap;">Save</button>
+        </div>
+        <div style="margin-top:0.5em;font-size:0.75em;color:var(--text-muted);">
+          Needs <code>contents:write</code> scope. Once saved here and on the display browser, odds update live across devices via GitHub.
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -1257,6 +1326,12 @@ function bindEvents() {
     if (rsBtn) rsBtn.onclick = () => {
       if (!confirm('Reset all match progress and refresh from GitHub?')) return;
       resetAndSync();
+    };
+    const saveBtn = document.getElementById('ghTokenSaveBtn');
+    if (saveBtn) saveBtn.onclick = () => {
+      const val = (document.getElementById('ghTokenInput').value || '').trim();
+      if (val) { localStorage.setItem('githubToken', val); _ghSha = null; updateSyncStatus('Token saved'); }
+      else { localStorage.removeItem('githubToken'); updateSyncStatus('Token cleared'); }
     };
   }
 

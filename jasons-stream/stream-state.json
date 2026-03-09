@@ -1,0 +1,14 @@
+{
+  "phase": "idle",
+  "showOverlay": false,
+  "p1Name": "",
+  "p2Name": "",
+  "p1Prob": 50,
+  "p2Prob": 50,
+  "p1Score": 0,
+  "p2Score": 0,
+  "matchPoint": 3,
+  "lastBreak": null,
+  "matchNum": null,
+  "timestamp": 0
+}
