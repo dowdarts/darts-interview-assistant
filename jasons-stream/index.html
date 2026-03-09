@@ -418,6 +418,9 @@ function buildLegHistory(legs) {
 function applyDenisData(data) {
   if (!data) return;
 
+  // Keep eventData in sync so standings/records are always current
+  if (data.standingsA || data.standingsB) eventData = data;
+
   // ── Sync completedMatches: Denis is always the source of truth ──
   const allMatches = getBoard1Matches();
   const board1Nums = new Set(allMatches.map(m => m.matchNum));
