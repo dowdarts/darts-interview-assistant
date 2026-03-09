@@ -1377,7 +1377,11 @@ function bindEvents() {
   setInterval(async () => {
     try {
       const r = await fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
-      if (r.ok) { eventData = await r.json(); if (S.screen === 'matchList') renderApp(); }
+      if (r.ok) {
+        eventData = await r.json();
+        // Re-render on all screens so today's W/L records stay current
+        if (S.screen === 'matchList' || S.screen === 'setup' || S.screen === 'live') renderApp();
+      }
     } catch(_) {}
   }, 60000);
 })();
