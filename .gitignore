@@ -1,4 +1,4 @@
-# GitHub Pages deployment
+﻿# GitHub Pages deployment
 
 # Serve from root for SPA
 /
@@ -7,4 +7,3 @@
 !style.css
 !package.json
 
-event-data.json
