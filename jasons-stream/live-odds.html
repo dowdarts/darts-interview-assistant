@@ -256,6 +256,40 @@
     .score-chip.setup-mode {
       opacity: 0;
     }
+
+    /* ── Panel pop-up animation ── */
+    /* Panel starts hidden below the canvas, slides up when shown */
+    .panel {
+      position: relative;
+      width: 100%;
+      background: #000000;
+      border: 2px solid #FF6600;
+      border-top: none;
+      box-shadow: 0 0 18px rgba(255,102,0,0.35), 0 4px 24px rgba(0,0,0,0.9);
+      overflow: visible;
+      padding: 7px 16px 7px;
+      transform: translateY(110%);
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                  opacity   0.3s ease;
+    }
+
+    .panel.panel-visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Waiting state */
+    .waiting {
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.28);
+      text-align: center;
+      padding: 1.6em 0;
+    }
   </style>
 </head>
 <body>
@@ -267,126 +301,159 @@
 <script>
 // ══════════════════════════════════════════════════════════
 //  AADS Live Odds — OBS Browser Source Overlay
-//  Receives data from the Stream Controller (index.html)
-//  via localStorage and BroadcastChannel.
-//
-//  Same-machine, same-origin: storage events fire reliably.
-//  Polling fallback every 500ms for OBS Chromium contexts.
+//  Pop-up behaviour: hidden until Jason presses a button.
+//  Shows on bull confirm + each leg win. Auto-hides after 5s.
+//  Animates bar from previous odds → new odds on each pop-up.
 // ══════════════════════════════════════════════════════════
 
 const STREAM_KEY = 'AADS_STREAM_DATA';
 let lastTimestamp = 0;
+let prevP1Prob    = 50;   // bar's last displayed position
+let currentData   = null; // most recent silent-update data
+let isVisible     = false;
+let hideTimer     = null;
 let breakTimeout  = null;
+let lastBreakLeg  = null;
+let builtOnce     = false; // panel DOM exists?
 
-// Build overlay HTML once data is available
-function renderOverlay(data) {
-  const overlay    = document.getElementById('overlay');
-  const isSetup    = data.phase === 'setup';
-  // Setup phase: show strength-gap base odds (dimmed). Live phase: show full live odds.
-  const dispProb   = isSetup
-    ? Math.max(4, Math.min(96, data.baseProb || 50))
-    : Math.max(2, Math.min(98, data.p1Prob  || 50));
-  const dispP2     = 100 - dispProb;
-  const p1Name     = data.p1Name || 'Player 1';
-  const p2Name     = data.p2Name || 'Player 2';
-  const p1Score    = data.p1Score || 0;
-  const p2Score    = data.p2Score || 0;
+// ── RENDER panel HTML (always hidden after build) ──────────
+function buildPanel(data) {
+  const overlay   = document.getElementById('overlay');
+  const p1Name    = data.p1Name  || 'Player 1';
+  const p2Name    = data.p2Name  || 'Player 2';
   const matchLabel = data.matchNum ? 'Match ' + data.matchNum : 'Board 1';
-  const setupClass = isSetup ? ' setup-mode' : '';
-  const centerBadge = isSetup
-    ? `<span class="upnext-badge">UP NEXT</span>${matchLabel} · BULL UP`
-    : `<span class="live-dot"></span>${matchLabel} · LIVE ODDS`;
 
   overlay.innerHTML = `
-    <div class="panel">
+    <div class="panel" id="panel">
       <div class="break-alert" id="breakAlert"></div>
       <div class="main-row">
         <div class="player-block p1-block">
-          <span class="player-name p1-name">${p1Name}</span>
-          <span class="score-chip p1-score${setupClass}" id="scoreP1">${p1Score}</span>
+          <span class="player-name p1-name" id="p1Name">${p1Name}</span>
+          <span class="score-chip p1-score" id="scoreP1">0</span>
         </div>
         <div class="odds-core">
           <div class="bar-track">
-            <div class="bar-fill-p1${setupClass}" id="fillP1" style="width:${dispProb}%;"></div>
-            <div class="bar-fill-p2${setupClass}" id="fillP2"></div>
+            <div class="bar-fill-p1" id="fillP1" style="width:50%;"></div>
+            <div class="bar-fill-p2" id="fillP2"></div>
           </div>
           <div class="meta-row">
-            <span class="pct-label p1-pct${setupClass}" id="pct1">${dispProb}%</span>
-            <span class="match-label">${centerBadge}</span>
-            <span class="pct-label p2-pct${setupClass}" id="pct2">${dispP2}%</span>
+            <span class="pct-label p1-pct" id="pct1">50%</span>
+            <span class="match-label" id="matchLabel"><span class="live-dot"></span>${matchLabel} &middot; LIVE ODDS</span>
+            <span class="pct-label p2-pct" id="pct2">50%</span>
           </div>
         </div>
         <div class="player-block p2-block">
-          <span class="score-chip p2-score${setupClass}" id="scoreP2">${p2Score}</span>
-          <span class="player-name p2-name">${p2Name}</span>
+          <span class="score-chip p2-score" id="scoreP2">0</span>
+          <span class="player-name p2-name" id="p2Name">${p2Name}</span>
         </div>
       </div>
     </div>
   `;
+  builtOnce = true;
 }
 
-// Animate bar width changes without full re-render
-function updateBar(data) {
-  const p1Prob = Math.max(2, Math.min(98, data.p1Prob || 50));
-  const p2Prob = 100 - p1Prob;
+// ── UPDATE panel content silently (no show/hide change) ────
+function updatePanelContent(data) {
+  const p1 = document.getElementById('p1Name');
+  const p2 = document.getElementById('p2Name');
+  const s1 = document.getElementById('scoreP1');
+  const s2 = document.getElementById('scoreP2');
+  const ml = document.getElementById('matchLabel');
+  if (p1) p1.textContent = data.p1Name || 'Player 1';
+  if (p2) p2.textContent = data.p2Name || 'Player 2';
+  if (s1) s1.textContent = data.p1Score || 0;
+  if (s2) s2.textContent = data.p2Score || 0;
+  if (ml) {
+    const matchLabel = data.matchNum ? 'Match ' + data.matchNum : 'Board 1';
+    ml.innerHTML = `<span class="live-dot"></span>${matchLabel} &middot; LIVE ODDS`;
+  }
+}
 
-  const fillP1 = document.getElementById('fillP1');
-  if (fillP1) fillP1.style.width = p1Prob + '%';
+// ── SHOW panel with prev→new odds animation ──────────────────
+function showPanel(data) {
+  const newProb = Math.max(2, Math.min(98, data.p1Prob || 50));
+  const newP2   = 100 - newProb;
 
+  // Build DOM on first use
+  if (!builtOnce) buildPanel(data);
+
+  // Update all content fields
+  updatePanelContent(data);
+
+  // 1. Snap bar to PREVIOUS odds instantly (viewer sees the "before" position)
+  const fill = document.getElementById('fillP1');
   const pct1 = document.getElementById('pct1');
   const pct2 = document.getElementById('pct2');
-  if (pct1) pct1.textContent = p1Prob + '%';
-  if (pct2) pct2.textContent = p2Prob + '%';
+  if (fill) { fill.style.transition = 'none'; fill.style.width = prevP1Prob + '%'; }
+  if (pct1) pct1.textContent = prevP1Prob + '%';
+  if (pct2) pct2.textContent = (100 - prevP1Prob) + '%';
 
-  const scoreP1 = document.getElementById('scoreP1');
-  const scoreP2 = document.getElementById('scoreP2');
-  if (scoreP1) scoreP1.textContent = data.p1Score || 0;
-  if (scoreP2) scoreP2.textContent = data.p2Score || 0;
+  // 2. Slide panel in
+  const panel = document.getElementById('panel');
+  if (panel) {
+    void panel.offsetHeight; // force reflow
+    panel.classList.add('panel-visible');
+  }
 
-  // Break of throw alert
+  // 3. After 300ms, animate bar to NEW odds (viewer sees the change)
+  setTimeout(() => {
+    if (fill) {
+      fill.style.transition = 'width 0.7s cubic-bezier(0.4, 0, 0.2, 1)';
+      fill.style.width = newProb + '%';
+    }
+    if (pct1) pct1.textContent = newProb + '%';
+    if (pct2) pct2.textContent = newP2  + '%';
+  }, 300);
+
+  // 4. Handle break alert
   triggerBreakAlert(data.lastBreak);
+
+  // 5. Record new prob as "previous" for next pop-up
+  prevP1Prob = newProb;
+  isVisible  = true;
+
+  // 6. Auto-hide 5 seconds after bar finishes animating (~1.2s)
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(hidePanel, 5000);
 }
 
-let lastBreakLeg = null;
+// ── HIDE panel (slide back down) ───────────────────────────
+function hidePanel() {
+  const panel = document.getElementById('panel');
+  if (panel) panel.classList.remove('panel-visible');
+  isVisible = false;
+}
 
+// ── BREAK OF THROW alert ───────────────────────────────────
 function triggerBreakAlert(breakData) {
   const alertEl = document.getElementById('breakAlert');
   if (!alertEl) return;
-
   if (breakData && breakData.leg !== lastBreakLeg) {
     lastBreakLeg = breakData.leg;
-    alertEl.textContent = '🔴 Break of Throw — Leg ' + breakData.leg + ': ' + (breakData.name || '');
+    alertEl.textContent = '\ud83d\udd34 Break of Throw \u2014 Leg ' + breakData.leg + ': ' + (breakData.name || '');
     alertEl.classList.add('visible');
-
     clearTimeout(breakTimeout);
-    breakTimeout = setTimeout(() => {
-      alertEl.classList.remove('visible');
-    }, 6000);
+    breakTimeout = setTimeout(() => alertEl.classList.remove('visible'), 6000);
   }
 }
 
-// Process any incoming data object
-let lastPhase = null;
-
+// ── HANDLE incoming data ───────────────────────────────────
 function handleData(data) {
   if (!data || data.timestamp === lastTimestamp) return;
   lastTimestamp = data.timestamp;
+  currentData   = data;
 
-  const waitMsg  = document.getElementById('waitingMsg');
-  const phaseChanged = data.phase !== lastPhase;
-  lastPhase = data.phase;
-
-  if (waitMsg || phaseChanged) {
-    // First data ever, or phase changed (e.g. setup→live, complete→setup) — full re-render
-    renderOverlay(data);
-    return;
+  if (data.showOverlay) {
+    // Triggered event (bull confirm or leg win) — pop up the overlay
+    showPanel(data);
+  } else {
+    // Silent update — just keep content current in background
+    if (builtOnce) updatePanelContent(data);
+    else buildPanel(data);  // build DOM silently so it's ready
   }
-
-  // Already rendered in same phase — just update bar and scores
-  updateBar(data);
 }
 
-// Read from localStorage (works for polling and cross-context)
+// ── STORAGE / BROADCAST listeners ─────────────────────────
 function readFromStorage() {
   try {
     const raw = localStorage.getItem(STREAM_KEY);
@@ -394,23 +461,19 @@ function readFromStorage() {
   } catch(_) {}
 }
 
-// BroadcastChannel (same-browser, same-origin)
 try {
   const bc = new BroadcastChannel('aads_stream');
   bc.onmessage = (e) => { if (e.data) handleData(e.data); };
 } catch(_) {}
 
-// Storage event (fires in other tabs/windows of same origin)
 window.addEventListener('storage', (e) => {
   if (e.key === STREAM_KEY && e.newValue) {
     try { handleData(JSON.parse(e.newValue)); } catch(_) {}
   }
 });
 
-// Polling fallback (500ms) — ensures OBS Chromium contexts pick up updates
+// Polling fallback — 500ms for OBS Chromium contexts
 setInterval(readFromStorage, 500);
-
-// Initial read on load
 readFromStorage();
 </script>
 </body>

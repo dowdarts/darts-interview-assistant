@@ -378,7 +378,7 @@ function selectMatch(matchNum) {
   S.p2Score     = 0;
   S.legHistory  = [];
   S.screen      = 'setup';
-  pushToOverlay();   // immediately update overlay with new match / UP NEXT state
+  pushToOverlay(false);   // silent — update player info but don't show overlay
   renderApp();
 }
 
@@ -503,24 +503,25 @@ function recordLegWin(winner) {
     S.screen = 'complete';
   }
 
-  pushToOverlay();
+  pushToOverlay(true);   // ← SHOW overlay on every leg win
   renderApp();
 }
 
 // ── PUSH TO OBS OVERLAY ───────────────────────────────────
-function pushToOverlay() {
+function pushToOverlay(show = false) {
   // Base (strength-gap only) probability — used in setup/UP NEXT state
   const baseProb = Math.min(96, Math.max(4, Math.round(
     50 + (S.p1.avg3DA - S.p2.avg3DA) * 1.5
   )));
   const p1Prob = calculateLiveOdds();
   const data = {
-    phase:     S.screen,          // 'setup' | 'live' | 'complete'
+    phase:       S.screen,          // 'setup' | 'live' | 'complete'
+    showOverlay: show,              // true = pop up, false = silent update
     p1Name:    S.p1.name,
     p2Name:    S.p2.name,
     p1Prob,
     p2Prob:    100 - p1Prob,
-    baseProb,                     // pre-bull strength-gap odds
+    baseProb,                       // pre-bull strength-gap odds
     p1Score:   S.p1Score,
     p2Score:   S.p2Score,
     matchPoint: S.matchPoint,
@@ -1319,7 +1320,7 @@ function bindEvents() {
     if (confirmBtn) {
       confirmBtn.onclick = () => {
         S.bullConfirmed = true;
-        pushToOverlay();
+        pushToOverlay(true);   // ← SHOW overlay: bull confirmed, initial odds pop up
         S.screen = 'live';
         renderApp();
       };
@@ -1344,7 +1345,7 @@ function bindEvents() {
       if (S.legHistory.length === 0) return;
       const last = S.legHistory.pop();
       if (last.winner === 1) S.p1Score--; else S.p2Score--;
-      pushToOverlay();
+      pushToOverlay(false);   // silent — don't flash overlay on undo
       renderApp();
     };
     const changeBull = document.getElementById('changeBullBtn');
