@@ -240,7 +240,7 @@ const GitHubSync = {
         {name:'Drake Berry',     province:'NS',   careerAvg:72.42, careerCheckout:30.61, careerMatches:5,  careerMatchWins:4, notes:''},
         {name:'Cory Wallace',    province:'NB',   careerAvg:61.45, careerCheckout:30.86, careerMatches:6,  careerMatchWins:5, notes:''},
         {name:'Dana Moss',       province:'NB',   careerAvg:0,     careerCheckout:0,     careerMatches:0,  careerMatchWins:0, notes:''},
-        {name:'Dee Cormier',     province:'NB',   careerAvg:0,     careerCheckout:0,     careerMatches:0,  careerMatchWins:0, notes:''},
+        {name:'Dee Cormier',     province:'NB',   careerAvg:70.80, careerCheckout:28.00, careerMatches:13, careerMatchWins:10, notes:''},
         {name:'Colby Burke',     province:'NFLD', careerAvg:0,     careerCheckout:0,     careerMatches:0,  careerMatchWins:0, notes:''},
         {name:'Wayne Champman',  province:'NB',   careerAvg:68.23, careerCheckout:24.84, careerMatches:7,  careerMatchWins:4, notes:''},
         {name:'Jordan Boyd',     province:'NS',   careerAvg:0,     careerCheckout:0,     careerMatches:0,  careerMatchWins:0, notes:''},
