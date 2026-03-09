@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AADS Stream Odds &amp; Statistics — Jason</title>
+  <title>AADS Stream Odds &amp; Statistics â€” Jason</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -45,7 +45,7 @@
       padding: 1.2em 1em 3em;
     }
 
-    /* ── Typography ── */
+    /* â”€â”€ Typography â”€â”€ */
     h1 {
       font-family: var(--font-display);
       font-size: 1.9em; font-weight: 700;
@@ -76,7 +76,7 @@
     input[type=number] { -moz-appearance: textfield; }
     select option { background: #141414; color: var(--white); }
 
-    /* ── Cards ── */
+    /* â”€â”€ Cards â”€â”€ */
     .card {
       background: var(--card-black);
       border-radius: 12px; border: 1px solid var(--divider);
@@ -89,7 +89,7 @@
     }
     .card-body { padding: 0.9em 1em; }
 
-    /* ── Buttons ── */
+    /* â”€â”€ Buttons â”€â”€ */
     .btn {
       display: block; width: 100%;
       padding: 0.85em 1.2em; margin-bottom: 0.7em;
@@ -113,7 +113,7 @@
     .row { display: flex; gap: 0.7em; }
     .row .btn { flex: 1; margin-bottom: 0; }
 
-    /* ── Bull buttons ── */
+    /* â”€â”€ Bull buttons â”€â”€ */
     .bull-btn {
       flex: 1; margin: 0;
       background: #141414; border: 2px solid var(--divider);
@@ -123,7 +123,7 @@
     }
     .bull-btn.active { border-color: var(--orange); color: var(--orange); background: rgba(242,101,34,0.1); }
 
-    /* ── Score display ── */
+    /* â”€â”€ Score display â”€â”€ */
     .score-display {
       display: flex; justify-content: space-between;
       align-items: center; text-align: center; padding: 1.2em 1em;
@@ -153,7 +153,7 @@
     .throw-on  { background: rgba(242,101,34,0.15); border: 1px solid var(--orange); color: var(--orange); }
     .throw-off { border: 1px solid transparent; color: transparent; }
 
-    /* ── Leg buttons ── */
+    /* â”€â”€ Leg buttons â”€â”€ */
     .leg-btn-p1 {
       flex: 1; margin: 0; font-size: 0.95em;
       background: linear-gradient(135deg, #880e4f, var(--pink));
@@ -169,7 +169,7 @@
     .leg-btn-p1:hover { background: linear-gradient(135deg, #ad1457, #f06292); }
     .leg-btn-p2:hover { background: linear-gradient(135deg, #1565c0, #64b5f6); }
 
-    /* ── Odds bar ── */
+    /* â”€â”€ Odds bar â”€â”€ */
     .odds-track {
       width: 100%; height: 24px; border-radius: 12px;
       overflow: hidden; display: flex;
@@ -191,7 +191,7 @@
     .odds-p1-label { color: var(--pink); }
     .odds-p2-label { color: var(--blue); }
 
-    /* ── Break badge ── */
+    /* â”€â”€ Break badge â”€â”€ */
     .break-badge {
       display: inline-flex; align-items: center; gap: 0.3em;
       background: rgba(233,30,99,0.12); border: 1.5px solid var(--pink);
@@ -205,7 +205,7 @@
       50%      { box-shadow: 0 0 18px rgba(233,30,99,0.55); }
     }
 
-    /* ── H2H cheat sheet ── */
+    /* â”€â”€ H2H cheat sheet â”€â”€ */
     .h2h-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7em; }
     .h2h-player {
       background: #111; border-radius: 10px;
@@ -221,7 +221,7 @@
     }
     .h2h-stat strong { color: var(--orange); }
 
-    /* ── Narrative prompts ── */
+    /* â”€â”€ Narrative prompts â”€â”€ */
     .narrative {
       background: rgba(242,101,34,0.06); border-left: 3px solid var(--orange);
       border-radius: 0 8px 8px 0; padding: 0.7em 0.9em; margin-bottom: 0.6em;
@@ -238,7 +238,7 @@
     .narrative.info   { border-left-color: var(--blue);  background: rgba(33,150,243,0.07); }
     .narrative.info   .narrative-label   { color: var(--blue); }
 
-    /* ── Misc ── */
+    /* â”€â”€ Misc â”€â”€ */
     .live-badge {
       display: inline-flex; align-items: center; gap: 0.35em;
       background: var(--orange); color: #000;
@@ -292,45 +292,45 @@
 <body>
 <div id="app">
   <div style="text-align:center;padding:3em 1em;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;">
-    Loading schedule…
+    Loading scheduleâ€¦
   </div>
 </div>
 <script>
-// ══════════════════════════════════════════════════════════
-//  AADS Stream Controller — Jason's Live Broadcast Tool
-//  Standalone app (separated from the main interview app)
-// ══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//  AADS Stream Controller â€” Jason's Live Broadcast Tool
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-const STREAM_KEY     = 'AADS_STREAM_DATA';
-const STATE_KEY      = 'AADS_JASON_STATE';
-const RAW_URL        = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
-const LOCAL_URL      = '../event-data.json';
-const DENIS_CODE     = 'AADS40';
+const STREAM_KEY = 'AADS_STREAM_DATA';
+const STATE_KEY  = 'AADS_JASON_STATE';
+const RAW_URL    = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
+const LOCAL_URL  = '../event-data.json';
+const DENIS_CODE = 'AADS40';
 
 let eventData = null;
 let bc = null;
 try { bc = new BroadcastChannel('aads_stream'); } catch(_) {}
 
-// ── STATE ─────────────────────────────────────────────────
+// â”€â”€ STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const S = {
-  screen:           'setup',   // setup | live | complete
-  matchIndex:       0,         // index into getBoard1Matches()
-  completedMatches: [],        // matchNums already done
-  match:            null,      // { matchNum, board, time, player1, player2, ... }
+  screen:           'matchList',   // matchList | matchSetup | live | complete
+  selectedMatchNum: null,
+  availableMatches: [],
+  completedMatches: [],
+  currentMatch:     null,
   p1:               { name: '', avg3DA: 50, checkout: 35 },
   p2:               { name: '', avg3DA: 50, checkout: 35 },
   p1Score:          0,
   p2Score:          0,
-  bullWinner:       0,         // 1 or 2
-  matchPoint:       3,         // legs needed to win (best of 5 = 3)
-  legHistory:       [],        // [{ leg, winner, expectedStarter, wasBreak }]
-  lastCompleted:    null,      // snapshot of previous match for editing
-  syncStatus:       'connecting', // 'connecting' | 'connected' | 'disconnected'
-  denisLegCount:    0,         // how many legs Denis has recorded for current match
-  editingStatsFor:  null       // null | 1 | 2 — which player's stats form is open
+  bullWinner:       0,
+  bullConfirmed:    false,
+  matchPoint:       3,
+  legHistory:       [],
+  syncStatus:       'disconnected',
+  denisLegCount:    0,
+  editingStatsFor:  null
 };
 
-// ── MATCH PROGRESSION ────────────────────────────────────
+// â”€â”€ MATCH DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function getBoard1Matches() {
   if (!eventData || !eventData.allPairs) return [];
   return eventData.allPairs
@@ -339,72 +339,88 @@ function getBoard1Matches() {
     .sort((a, b) => a.matchNum - b.matchNum);
 }
 
-function applyMatchToState() {
+function isMatchUnlocked(matchNum, allMatches) {
+  const idx = allMatches.findIndex(m => m.matchNum === matchNum);
+  if (idx <= 0) return true;
+  for (let i = 0; i < idx; i++) {
+    if (!S.completedMatches.includes(allMatches[i].matchNum)) return false;
+  }
+  return true;
+}
+
+function selectMatch(matchNum) {
   const matches = getBoard1Matches();
-  const m = matches[S.matchIndex];
-  if (!m) return;
-  S.match     = m;
-  S.p1.name   = m.player1 || '';
-  S.p2.name   = m.player2 || '';
-  // Auto-fill career stats if available
+  const m = matches.find(match => match.matchNum === matchNum);
+  if (!m || !isMatchUnlocked(matchNum, matches)) return;
+  S.currentMatch     = m;
+  S.selectedMatchNum = m.matchNum;
+  S.p1.name          = m.player1 || '';
+  S.p2.name          = m.player2 || '';
   const cs1 = getPlayerCareerStats(S.p1.name);
   const cs2 = getPlayerCareerStats(S.p2.name);
   S.p1.avg3DA   = (cs1 && cs1.careerAvg   > 0) ? cs1.careerAvg   : 50;
   S.p1.checkout = (cs1 && cs1.careerCheckout > 0) ? cs1.careerCheckout : 35;
   S.p2.avg3DA   = (cs2 && cs2.careerAvg   > 0) ? cs2.careerAvg   : 50;
   S.p2.checkout = (cs2 && cs2.careerCheckout > 0) ? cs2.careerCheckout : 35;
+  S.bullWinner    = 0;
+  S.bullConfirmed = false;
+  S.p1Score       = 0;
+  S.p2Score       = 0;
+  S.legHistory    = [];
+  S.matchPoint    = 3;
+  S.screen        = 'matchSetup';
+  renderApp();
 }
 
+// â”€â”€ PERSISTENCE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function saveJasonState() {
   localStorage.setItem(STATE_KEY, JSON.stringify({
-    matchIndex:       S.matchIndex,
-    completedMatches: S.completedMatches,
-    lastCompleted:    S.lastCompleted
+    completedMatches: S.completedMatches
   }));
 }
 
 function loadJasonState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STATE_KEY) || '{}');
-    if (typeof saved.matchIndex === 'number')    S.matchIndex       = saved.matchIndex;
-    if (Array.isArray(saved.completedMatches))   S.completedMatches = saved.completedMatches;
-    if (saved.lastCompleted)                      S.lastCompleted    = saved.lastCompleted;
+    if (Array.isArray(saved.completedMatches)) S.completedMatches = saved.completedMatches;
   } catch(_) {}
 }
 
-// ── SYNC WITH DENIS'S APP ───────────────────────────────
+// â”€â”€ SYNC WITH DENIS'S APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let _denisConnected = false;
 
 function buildLegHistory(legs) {
   return (legs || []).map(l => {
-    const winnerNum      = l.winner === S.p1.name ? 1 : 2;
-    const expStarterName = expectedStarter(l.legNumber);
-    const expWinnerNum   = expStarterName === S.p1.name ? 1 : 2;
-    return { leg: l.legNumber, winner: winnerNum, wasBreak: winnerNum !== expWinnerNum };
+    const winnerNum = l.winner === S.p1.name ? 1 : 2;
+    const expNum    = expectedStarter(l.legNumber);
+    return { leg: l.legNumber, winner: winnerNum, wasBreak: winnerNum !== expNum };
   });
 }
 
 function applyDenisData(data) {
-  if (!data || !S.match) return;
+  if (!data || !S.currentMatch) return;
 
-  // ── Match complete ── Denis finished the match → go to complete screen
-  const matchResult = (data.recentMatches || []).find(m => m.matchNum === S.match.matchNum);
+  // Match complete â€” Denis finished it
+  const matchResult = (data.recentMatches || []).find(m => m.matchNum === S.currentMatch.matchNum);
   if (matchResult) {
     S.p1Score    = matchResult.score1 || 0;
     S.p2Score    = matchResult.score2 || 0;
     S.legHistory = buildLegHistory(matchResult.legs || []);
-    if (S.screen === 'live' || S.screen === 'setup') {
+    if (S.screen === 'live' || S.screen === 'matchSetup') {
+      if (!S.completedMatches.includes(S.currentMatch.matchNum)) {
+        S.completedMatches.push(S.currentMatch.matchNum);
+        saveJasonState();
+      }
       S.screen = 'complete';
-      saveJasonState();
       pushToOverlay();
       renderApp();
     }
     return;
   }
 
-  // ── In-progress update ── Denis recorded a leg
+  // In-progress update
   const lmp = data.liveMatchProgress;
-  if (!lmp || lmp.matchNum !== S.match.matchNum) return;
+  if (!lmp || lmp.matchNum !== S.currentMatch.matchNum) return;
 
   S.p1Score       = lmp.score1 || 0;
   S.p2Score       = lmp.score2 || 0;
@@ -414,15 +430,6 @@ function applyDenisData(data) {
   if (S.screen === 'live') {
     pushToOverlay();
     renderApp();
-  } else if (S.screen === 'setup') {
-    // Update status indicator without full re-render
-    const el = document.getElementById('denisLiveStatus');
-    if (el) {
-      el.style.display = '';
-      el.innerHTML = lmp.legs && lmp.legs.length > 0
-        ? `<span style="color:var(--orange);">⚡ Denis has started — ${lmp.score1}–${lmp.score2} after ${lmp.legs.length} leg${lmp.legs.length !== 1 ? 's' : ''}</span>`
-        : `<span style="color:var(--green);">● Connected to Denis's app</span>`;
-    }
   }
 }
 
@@ -431,63 +438,42 @@ function connectToDenis() {
   PeerSync.connectAsViewer(DENIS_CODE,
     (data) => { applyDenisData(data); },
     (status) => {
-      S.syncStatus     = status;
-      _denisConnected  = (status === 'connected');
+      S.syncStatus    = status;
+      _denisConnected = (status === 'connected');
+      const el = document.getElementById('syncStatusBadge');
+      if (el) {
+        el.textContent = status === 'connected' ? 'â— Denis connected' : 'â—Œ Connecting to Denisâ€¦';
+        el.style.color = status === 'connected' ? 'var(--green)' : 'var(--text-muted)';
+      }
       if (status === 'disconnected' || status === 'error') {
         setTimeout(() => { if (!_denisConnected) connectToDenis(); }, 8000);
       }
     }
   );
 }
-// Retry every 15 s if not connected
 setInterval(() => { if (!_denisConnected) connectToDenis(); }, 15000);
 
-// ── ODDS ENGINE ───────────────────────────────────────────
-// Weights from the "Pro-Bookie" spec:
-//   Base: 50/50 ± (p1.3DA − p2.3DA) × 1.5   [Strength Gap]
-//   Bull winner:  +8.6%
-//   Each leg won: +15%
-//   Break bonus:  +10% per break (one-time, accumulated)
-//   Match point:  lock to 5%–95%
-
+// â”€â”€ ODDS ENGINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function calculateLiveOdds() {
   if (!S.bullWinner) return 50;
-
-  // 1. Base + strength gap
   let p = 50 + (S.p1.avg3DA - S.p2.avg3DA) * 1.5;
-
-  // 2. Bull winner edge (+8.6% to the player who won the bull)
   p += (S.bullWinner === 1) ? 8.6 : -8.6;
-
-  // 3. Leg differential (+15% per leg lead)
   p += (S.p1Score - S.p2Score) * 15;
-
-  // 4. Break of Throw bonuses (+10% to breaker, accumulated)
   S.legHistory.forEach(leg => {
     if (leg.wasBreak) p += (leg.winner === 1) ? 10 : -10;
   });
-
-  // 5. Match point lock — keep bar alive until the final dart
   if (Math.max(S.p1Score, S.p2Score) >= S.matchPoint - 1) {
     p = Math.min(95, Math.max(5, p));
   }
-
   return Math.min(98, Math.max(2, Math.round(p)));
 }
-
-// ── BREAK OF THROW ────────────────────────────────────────
-// In a Best-of-N, the bull winner starts odd-numbered legs (1,3,5…)
-// and the other player starts even-numbered legs (2,4…).
-// Winning a leg when you did NOT have the opening throw = "Break".
 
 function expectedStarter(legNum) {
   const bw = S.bullWinner;
   return (legNum % 2 === 1) ? bw : (bw === 1 ? 2 : 1);
 }
 
-function currentLegNum() {
-  return S.p1Score + S.p2Score + 1;
-}
+function currentLegNum() { return S.p1Score + S.p2Score + 1; }
 
 function throwHolder() {
   const starter = expectedStarter(currentLegNum());
@@ -501,25 +487,7 @@ function getLastBreak() {
   return { winner: last.winner, name: last.winner === 1 ? S.p1.name : S.p2.name, leg: last.leg };
 }
 
-// ── RECORD LEG WIN ────────────────────────────────────────
-function recordLegWin(winner) {
-  const legNum  = currentLegNum();
-  const starter = expectedStarter(legNum);
-  const wasBreak = (winner !== starter);
-
-  S.legHistory.push({ leg: legNum, winner, expectedStarter: starter, wasBreak });
-  if (winner === 1) S.p1Score++;
-  else              S.p2Score++;
-
-  if (S.p1Score >= S.matchPoint || S.p2Score >= S.matchPoint) {
-    S.screen = 'complete';
-  }
-
-  pushToOverlay();
-  renderApp();
-}
-
-// ── PUSH TO OBS OVERLAY ───────────────────────────────────
+// â”€â”€ PUSH TO OBS OVERLAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function pushToOverlay() {
   const p1Prob = calculateLiveOdds();
   const data = {
@@ -531,14 +499,14 @@ function pushToOverlay() {
     p2Score:   S.p2Score,
     matchPoint: S.matchPoint,
     lastBreak:  getLastBreak(),
-    matchNum:   S.match ? S.match.matchNum : null,
+    matchNum:   S.currentMatch ? S.currentMatch.matchNum : null,
     timestamp:  Date.now()
   };
   localStorage.setItem(STREAM_KEY, JSON.stringify(data));
   if (bc) try { bc.postMessage(data); } catch(_) {}
 }
 
-// ── PLAYER STATS FROM EVENT DATA ─────────────────────────
+// â”€â”€ PLAYER STATS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function getPlayerRecord(name) {
   if (!eventData) return null;
   const all = [...(eventData.standingsA || []), ...(eventData.standingsB || [])];
@@ -566,7 +534,6 @@ function getPlayerCareerStats(name) {
   const base  = eventData.playerStats.find(p => p.name === name) || null;
   const local = getLocalPlayerStats(name);
   if (!local) return base;
-  // Local override wins — merge on top of base (or create fresh if no base)
   return { name, careerAvg: 0, careerCheckout: 0, careerMatches: 0, careerMatchWins: 0, notes: '',
            ...(base || {}), ...local };
 }
@@ -576,11 +543,11 @@ function getPlayerProvince(name) {
   return rec ? rec.province : null;
 }
 
-// ── NEXT OPPONENT LOOKUP ──────────────────────────────────
+// â”€â”€ NEXT OPPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function getNextOpponent(forPlayerName) {
-  if (!eventData || !S.match) return null;
-  const track  = forPlayerName || (S.p1Score >= S.p2Score ? S.p1.name : S.p2.name);
-  const curNum = S.match.matchNum;
+  if (!eventData || !S.currentMatch) return null;
+  const track   = forPlayerName || (S.p1Score >= S.p2Score ? S.p1.name : S.p2.name);
+  const curNum  = S.currentMatch.matchNum;
   const upcoming = eventData.upcomingMatches || [];
   for (const m of upcoming) {
     if (m.matchNum <= curNum) continue;
@@ -593,16 +560,14 @@ function getNextOpponent(forPlayerName) {
   return null;
 }
 
-// ── NARRATIVE GENERATOR ───────────────────────────────────
+// â”€â”€ NARRATIVE GENERATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function buildNarratives() {
   const items = [];
   const p1 = S.p1.name || 'Player 1';
   const p2 = S.p2.name || 'Player 2';
   const lastBreak = getLastBreak();
 
-  // 1. Comparison prompt (always shown)
-  const gap3DA   = Math.abs(S.p1.avg3DA - S.p2.avg3DA);
-  const p1IsScorer  = S.p1.avg3DA >= S.p2.avg3DA;
+  const gap3DA       = Math.abs(S.p1.avg3DA - S.p2.avg3DA);
   const p1IsFinisher = S.p1.checkout >= S.p2.checkout;
   let compText;
   if (gap3DA >= 5 && !p1IsFinisher) {
@@ -610,27 +575,25 @@ function buildNarratives() {
   } else if (gap3DA >= 5 && p1IsFinisher) {
     compText = `${p1} holds the edge in both scoring (${S.p1.avg3DA} avg) and checkout (${S.p1.checkout}%). Talk about whether ${p2} at ${S.p2.avg3DA} avg can keep pace.`;
   } else {
-    compText = `These two are closely matched — ${p1}: ${S.p1.avg3DA} avg / ${S.p1.checkout}% checkout vs ${p2}: ${S.p2.avg3DA} avg / ${S.p2.checkout}%. Who wins the mental game?`;
+    compText = `These two are closely matched â€” ${p1}: ${S.p1.avg3DA} avg / ${S.p1.checkout}% checkout vs ${p2}: ${S.p2.avg3DA} avg / ${S.p2.checkout}%. Who wins the mental game?`;
   }
   items.push({ label: 'Comparison', text: compText, style: '' });
 
-  // 2. Break of Throw (urgent if one just happened)
   if (lastBreak) {
     items.push({
-      label: '🔴 Break of Throw',
-      text: `${lastBreak.name} broke the throw in Leg ${lastBreak.leg}! This is the darts equivalent of a break of serve and it's just moved the live odds significantly. Tell the audience why this matters — the throw holder is now under extra pressure to break back.`,
+      label: 'ðŸ”´ Break of Throw',
+      text: `${lastBreak.name} broke the throw in Leg ${lastBreak.leg}! This is the darts equivalent of a break of serve and it's just moved the live odds significantly. Tell the audience why this matters â€” the throw holder is now under extra pressure to break back.`,
       style: 'urgent'
     });
   } else if (S.legHistory.length > 0 && S.screen === 'live') {
     const holder = throwHolder();
     items.push({
       label: 'Throw Pattern',
-      text: `${holder} has the throw for Leg ${currentLegNum()}. So far no breaks — both players are holding their serve. Watch if the pattern holds or if a break changes the match picture completely.`,
+      text: `${holder} has the throw for Leg ${currentLegNum()}. So far no breaks â€” both players are holding their serve. Watch if the pattern holds or if a break changes the match picture completely.`,
       style: ''
     });
   }
 
-  // 3. Score-context prompt
   const p1Ahead = S.p1Score > S.p2Score;
   const tied    = S.p1Score === S.p2Score && S.p1Score > 0;
   const leader  = p1Ahead ? p1 : p2;
@@ -641,49 +604,47 @@ function buildNarratives() {
   if (S.screen === 'live' && S.p1Score === 0 && S.p2Score === 0) {
     items.push({
       label: 'Set The Scene',
-      text: `Board 1 is live — ${p1} vs ${p2}. ${getPlayerProvince(p1) ? p1 + ' (' + getPlayerProvince(p1) + ')' : p1} against ${getPlayerProvince(p2) ? p2 + ' (' + getPlayerProvince(p2) + ')' : p2}. Build the atmosphere for the viewers — what do they need to know about these two players going into this match?`,
+      text: `Board 1 is live â€” ${p1} vs ${p2}. ${getPlayerProvince(p1) ? p1 + ' (' + getPlayerProvince(p1) + ')' : p1} against ${getPlayerProvince(p2) ? p2 + ' (' + getPlayerProvince(p2) + ')' : p2}. Build the atmosphere for the viewers â€” what do they need to know about these two players going into this match?`,
       style: 'info'
     });
   } else if (isDecider) {
     items.push({
-      label: '🏆 Deciding Leg',
-      text: `IT'S THE DECIDING LEG! Legs are level at ${S.p1Score}–${S.p2Score}. Talk about what this win means in the standings — and ask viewers if either player has the mental strength to close it out. The throw holder ${throwHolder()} has a small edge.`,
+      label: 'ðŸ† Deciding Leg',
+      text: `IT'S THE DECIDING LEG! Legs are level at ${S.p1Score}â€“${S.p2Score}. Talk about what this win means in the standings â€” and ask viewers if either player has the mental strength to close it out. The throw holder ${throwHolder()} has a small edge.`,
       style: 'urgent'
     });
   } else if (isMatchPoint) {
     items.push({
-      label: '⚡ Match Point',
-      text: `${leader} is ONE LEG AWAY from winning! Can ${trailer} find a response and force a decider? Build the tension — this is the biggest moment in the match for the audience.`,
+      label: 'âš¡ Match Point',
+      text: `${leader} is ONE LEG AWAY from winning! Can ${trailer} find a response and force a decider? Build the tension â€” this is the biggest moment in the match for the audience.`,
       style: 'urgent'
     });
   } else if (tied) {
     items.push({
       label: 'Evenly Matched',
-      text: `All square at ${S.p1Score}–${S.p2Score}. This match is perfectly poised — talk about who has the momentum and whether the throw pattern gives anyone an edge heading into Leg ${currentLegNum()}.`,
+      text: `All square at ${S.p1Score}â€“${S.p2Score}. This match is perfectly poised â€” talk about who has the momentum and whether the throw pattern gives anyone an edge heading into Leg ${currentLegNum()}.`,
       style: ''
     });
   } else if (S.legHistory.length >= 2) {
     items.push({
       label: 'Match Story',
-      text: `${leader} leads ${Math.max(S.p1Score, S.p2Score)}–${Math.min(S.p1Score, S.p2Score)}. Talk about what's working for ${leader} — is it the scoring, the finishing, or are they benefiting from the throw pattern?`,
+      text: `${leader} leads ${Math.max(S.p1Score, S.p2Score)}â€“${Math.min(S.p1Score, S.p2Score)}. Talk about what's working for ${leader} â€” is it the scoring, the finishing, or are they benefiting from the throw pattern?`,
       style: ''
     });
   }
 
-  // 4. Look-Ahead
   const nextOpp = getNextOpponent();
   if (nextOpp) {
     items.push({
       label: 'Look-Ahead',
-      text: `After this match, keep an eye on ${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''} — Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} on Board ${nextOpp.board || 1}. Worth flagging for viewers.`,
+      text: `After this match, keep an eye on ${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''} â€” Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} on Board ${nextOpp.board || 1}. Worth flagging for viewers.`,
       style: 'info'
     });
   }
-
   return items;
 }
 
-// ── DATA FETCH ────────────────────────────────────────────
+// â”€â”€ DATA FETCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadEventData() {
   try {
     const r = await fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
@@ -695,15 +656,83 @@ async function loadEventData() {
   } catch(_) {}
 }
 
-// ── RENDER: SETUP ─────────────────────────────────────────
-// ── PLAYER STATS PANEL (setup screen Section 2) ──────────
+// â”€â”€ RENDER: MATCH LIST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderMatchList() {
+  const matches = getBoard1Matches();
+
+  const syncBadge = `
+    <div id="syncStatusBadge" style="text-align:center;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;color:${S.syncStatus === 'connected' ? 'var(--green)' : 'var(--text-muted)'};margin-bottom:0.9em;">
+      ${S.syncStatus === 'connected' ? 'â— Denis connected' : 'â—Œ Connecting to Denis\u2026'}
+    </div>`;
+
+  if (!matches.length) {
+    return `
+      <div style="margin-bottom:1em;">
+        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts Â· Jason</div>
+        <h1>Board 1 Matches</h1>
+      </div>
+      ${syncBadge}
+      <div class="card"><div class="card-body" style="text-align:center;padding:2em;color:var(--text-muted);">No Board 1 matches found â€” check your event data.</div></div>`;
+  }
+
+  const rows = matches.map(m => {
+    const isDone   = S.completedMatches.includes(m.matchNum);
+    const unlocked = isMatchUnlocked(m.matchNum, matches);
+    const timeStr  = m.time ? ` Â· ${m.time}` : '';
+    const heading  = `<div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;color:${isDone ? 'var(--green)' : (unlocked ? 'var(--orange)' : 'var(--text-muted)')};text-transform:uppercase;margin-bottom:0.25em;">Match ${m.matchNum}${timeStr}</div>`;
+    const names    = `<div style="font-size:0.95em;font-weight:700;">${m.player1} <span style="color:var(--text-muted);font-weight:400;font-size:0.85em;">vs</span> ${m.player2}</div>`;
+
+    if (isDone) {
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.85em 1em;border-bottom:1px solid var(--divider);opacity:0.6;">
+          <div>${heading}${names}</div>
+          <div style="font-family:var(--font-display);font-size:0.9em;color:var(--green);letter-spacing:0.06em;">âœ“ Done</div>
+        </div>`;
+    } else if (unlocked) {
+      return `
+        <button id="matchBtn${m.matchNum}" style="width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;padding:0.85em 1em;background:rgba(242,101,34,0.07);border:none;border-bottom:1px solid var(--divider);cursor:pointer;color:var(--white);transition:background 0.15s;" onmouseover="this.style.background='rgba(242,101,34,0.14)'" onmouseout="this.style.background='rgba(242,101,34,0.07)'">
+          <div>${heading}${names}</div>
+          <div style="font-family:var(--font-display);font-size:1.4em;color:var(--orange);">â€º</div>
+        </button>`;
+    } else {
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.85em 1em;border-bottom:1px solid var(--divider);opacity:0.3;">
+          <div>${heading}${names}</div>
+          <div style="font-size:1em;">ðŸ”’</div>
+        </div>`;
+    }
+  }).join('');
+
+  const allDone = S.completedMatches.length >= matches.length;
+
+  return `
+    <div style="margin-bottom:1em;">
+      <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts Â· Jason</div>
+      <h1>Board 1 Matches</h1>
+    </div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
+    ${syncBadge}
+    <div class="card" style="overflow:hidden;">
+      <div class="card-header"><h2>Tap a match to begin</h2></div>
+      <div style="padding:0;">${rows}</div>
+    </div>
+    ${allDone ? `
+    <div class="card" style="border-color:rgba(76,175,80,0.4);background:rgba(76,175,80,0.05);">
+      <div class="card-body" style="text-align:center;padding:1.5em;">
+        <div style="font-family:var(--font-display);font-size:1.1em;color:var(--green);letter-spacing:0.06em;">ðŸ† All Board 1 Matches Complete!</div>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+// â”€â”€ RENDER: PLAYER STATS PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderPlayerStatsPanel(playerNum, playerName, cs, ev) {
   const hasCareer = cs && (cs.careerAvg > 0 || cs.careerMatches > 0 || cs.notes);
   const isEditing = S.editingStatsFor === playerNum;
   const color     = playerNum === 1 ? 'var(--pink)' : 'var(--blue)';
   const province  = ev && ev.province ? `<br><span style="font-size:0.68em;color:var(--text-muted);">${ev.province}</span>` : '';
   const todayLine = ev
-    ? `<div class="h2h-stat" style="margin-top:0.4em;">Today: <strong>${ev.matchWins}W–${ev.matchLosses}L · ${ev.legsWon} legs</strong></div>`
+    ? `<div class="h2h-stat" style="margin-top:0.4em;">Today: <strong>${ev.matchWins}Wâ€“${ev.matchLosses}L Â· ${ev.legsWon} legs</strong></div>`
     : '';
 
   let statsHtml;
@@ -712,28 +741,20 @@ function renderPlayerStatsPanel(playerNum, playerName, cs, ev) {
     statsHtml = `
       <div style="margin-top:0.5em;">
         <div class="row" style="gap:0.4em;margin-bottom:0.3em;">
-          <div style="flex:1;">
-            <label style="font-size:0.7em;margin-bottom:0.2em;">3-Dart Avg</label>
-            <input type="number" id="editAvg${playerNum}" value="${def.careerAvg}" min="0" max="200" step="0.5" style="padding:0.3em 0.5em;font-size:0.9em;">
-          </div>
-          <div style="flex:1;">
-            <label style="font-size:0.7em;margin-bottom:0.2em;">Checkout %</label>
-            <input type="number" id="editChk${playerNum}" value="${def.careerCheckout}" min="0" max="100" style="padding:0.3em 0.5em;font-size:0.9em;">
-          </div>
+          <div style="flex:1;"><label style="font-size:0.7em;margin-bottom:0.2em;">3-Dart Avg</label>
+            <input type="number" id="editAvg${playerNum}" value="${def.careerAvg}" min="0" max="200" step="0.5" style="padding:0.3em 0.5em;font-size:0.9em;"></div>
+          <div style="flex:1;"><label style="font-size:0.7em;margin-bottom:0.2em;">Checkout %</label>
+            <input type="number" id="editChk${playerNum}" value="${def.careerCheckout}" min="0" max="100" style="padding:0.3em 0.5em;font-size:0.9em;"></div>
         </div>
         <div class="row" style="gap:0.4em;margin-bottom:0.3em;">
-          <div style="flex:1;">
-            <label style="font-size:0.7em;margin-bottom:0.2em;">Career Matches</label>
-            <input type="number" id="editMatches${playerNum}" value="${def.careerMatches}" min="0" style="padding:0.3em 0.5em;font-size:0.9em;">
-          </div>
-          <div style="flex:1;">
-            <label style="font-size:0.7em;margin-bottom:0.2em;">Career Wins</label>
-            <input type="number" id="editWins${playerNum}" value="${def.careerMatchWins}" min="0" style="padding:0.3em 0.5em;font-size:0.9em;">
-          </div>
+          <div style="flex:1;"><label style="font-size:0.7em;margin-bottom:0.2em;">Career Matches</label>
+            <input type="number" id="editMatches${playerNum}" value="${def.careerMatches}" min="0" style="padding:0.3em 0.5em;font-size:0.9em;"></div>
+          <div style="flex:1;"><label style="font-size:0.7em;margin-bottom:0.2em;">Career Wins</label>
+            <input type="number" id="editWins${playerNum}" value="${def.careerMatchWins}" min="0" style="padding:0.3em 0.5em;font-size:0.9em;"></div>
         </div>
         <input type="text" id="editNotes${playerNum}" value="${def.notes || ''}" placeholder="Scouting notes (optional)" style="margin-bottom:0.4em;font-size:0.85em;">
         <div class="row" style="gap:0.4em;">
-          <button class="btn" id="saveStats${playerNum}" style="flex:1;font-size:0.8em;padding:0.4em 0.6em;">💾 Save</button>
+          <button class="btn" id="saveStats${playerNum}" style="flex:1;font-size:0.8em;padding:0.4em 0.6em;">ðŸ’¾ Save</button>
           <button class="btn" id="cancelStats${playerNum}" style="flex:1;font-size:0.8em;padding:0.4em 0.6em;background:#111;border-color:var(--divider);color:var(--text-muted);">Cancel</button>
         </div>
       </div>`;
@@ -741,10 +762,10 @@ function renderPlayerStatsPanel(playerNum, playerName, cs, ev) {
     const careerBlock = hasCareer ? `
       <div class="h2h-stat">Career Avg: <strong>${cs.careerAvg}</strong></div>
       <div class="h2h-stat">Career Checkout: <strong>${cs.careerCheckout}%</strong></div>
-      ${cs.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W – ${cs.careerMatches - cs.careerMatchWins}L</strong></div>` : ''}
+      ${cs.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W â€“ ${cs.careerMatches - cs.careerMatchWins}L</strong></div>` : ''}
       ${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}
     ` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.8em;">No career stats on file</div>`;
-    const editLabel = hasCareer ? '✏ Edit Stats' : '+ Add Stats';
+    const editLabel = hasCareer ? 'âœ Edit Stats' : '+ Add Stats';
     statsHtml = `
       ${careerBlock}
       <button id="editStats${playerNum}Btn" style="margin-top:0.45em;font-size:0.72em;padding:0.25em 0.6em;background:rgba(255,255,255,0.05);border:1px solid var(--divider);border-radius:6px;color:var(--text-muted);cursor:pointer;letter-spacing:0.05em;font-family:var(--font-display);">${editLabel}</button>`;
@@ -757,165 +778,104 @@ function renderPlayerStatsPanel(playerNum, playerName, cs, ev) {
   </div>`;
 }
 
-// ── RENDER: SETUP ─────────────────────────────────────────
-function renderSetup() {
-  const board1Matches = getBoard1Matches();
-  const totalMatches  = board1Matches.length;
-  const currentMatch  = board1Matches[S.matchIndex] || null;
-  const upcoming      = board1Matches.slice(S.matchIndex + 1);
-  const canStart      = S.p1.name && S.p2.name && S.bullWinner;
+// â”€â”€ RENDER: MATCH SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderMatchSetup() {
+  const m = S.currentMatch;
+  if (!m) { S.screen = 'matchList'; return renderMatchList(); }
+  const canConfirm = S.bullWinner > 0;
 
   return `
-    <div style="margin-bottom:1em;">
-      <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts · Jason</div>
-      <h1>Stream Odds &amp; Statistics</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1em;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">Match ${m.matchNum}${m.time ? ' Â· ' + m.time : ''}</div>
+        <h1 style="margin:0;">Match Setup</h1>
+      </div>
+      <button id="backToListBtn" style="background:none;border:1px solid var(--divider);border-radius:8px;color:var(--text-muted);padding:0.45em 0.9em;font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;">â† Back</button>
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
 
-    <!-- Denis sync status -->
-    <div id="denisLiveStatus" style="text-align:center;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;margin-bottom:0.9em;padding:0.4em 0.8em;border-radius:8px;background:rgba(255,255,255,0.03);display:${S.syncStatus === 'connected' || S.denisLegCount > 0 ? '' : 'none'}">
-      ${S.syncStatus === 'connected'
-        ? (S.denisLegCount > 0 ? `<span style="color:var(--orange);">⚡ Denis has started — ${S.p1Score}–${S.p2Score} after ${S.denisLegCount} leg${S.denisLegCount !== 1 ? 's' : ''}</span>`
-          : `<span style="color:var(--green);">● Connected to Denis's app</span>`)
-        : ''}
-    </div>
-
-    ${S.matchIndex > 0 && S.lastCompleted ? `
-    <button class="btn" id="editLastMatchBtn" style="margin-bottom:1em;background:#1a1a1a;border:1.5px solid var(--divider);color:var(--text-muted);font-size:0.85em;letter-spacing:0.08em;">
-      ← Edit Last Match (${S.lastCompleted.match ? S.lastCompleted.match.player1 + ' vs ' + S.lastCompleted.match.player2 : 'Previous'})
-    </button>` : ''}
-
-    <!-- Current Match Card -->
+    <!-- 1 Â· Current Match -->
     <div class="card" style="border-color:rgba(242,101,34,0.45);">
-      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
-        <h2>1 · Current Match</h2>
-        ${totalMatches ? `<span style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.06em;color:var(--text-muted);">${S.matchIndex + 1} / ${totalMatches}</span>` : ''}
-      </div>
+      <div class="card-header"><h2>1 Â· Current Match</h2></div>
       <div class="card-body">
-        ${currentMatch ? `
-          <div style="text-align:center;padding:0.7em 0 0.4em;">
-            <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.12em;text-transform:uppercase;color:var(--orange);margin-bottom:0.6em;">
-              Match ${currentMatch.matchNum} · Board ${currentMatch.board}${currentMatch.time ? ' · ' + currentMatch.time : ''}
+        <div style="text-align:center;padding:0.5em 0 0.3em;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:1em;">
+            <div style="text-align:right;flex:1;">
+              <div style="font-family:var(--font-display);font-size:1.2em;font-weight:700;color:var(--pink);">${m.player1}</div>
+              ${m.player1Province ? `<div style="font-size:0.72em;color:var(--text-muted);">${m.player1Province}</div>` : ''}
             </div>
-            <div style="display:flex;align-items:center;justify-content:center;gap:1em;">
-              <div style="text-align:right;flex:1;">
-                <div style="font-family:var(--font-display);font-size:1.15em;font-weight:700;color:var(--pink);">${currentMatch.player1}</div>
-                ${currentMatch.player1Province ? `<div style="font-size:0.72em;color:var(--text-muted);letter-spacing:0.06em;">${currentMatch.player1Province}</div>` : ''}
-              </div>
-              <div class="vs-dot" style="width:32px;height:32px;font-size:0.62em;flex-shrink:0;">VS</div>
-              <div style="text-align:left;flex:1;">
-                <div style="font-family:var(--font-display);font-size:1.15em;font-weight:700;color:var(--blue);">${currentMatch.player2}</div>
-                ${currentMatch.player2Province ? `<div style="font-size:0.72em;color:var(--text-muted);letter-spacing:0.06em;">${currentMatch.player2Province}</div>` : ''}
-              </div>
+            <div class="vs-dot" style="width:32px;height:32px;font-size:0.62em;flex-shrink:0;">VS</div>
+            <div style="text-align:left;flex:1;">
+              <div style="font-family:var(--font-display);font-size:1.2em;font-weight:700;color:var(--blue);">${m.player2}</div>
+              ${m.player2Province ? `<div style="font-size:0.72em;color:var(--text-muted);">${m.player2Province}</div>` : ''}
             </div>
           </div>
-        ` : `<p style="color:var(--text-muted);font-size:0.9em;margin:0;text-align:center;padding:1em 0;">🏆 All Board 1 matches complete!</p>`}
+        </div>
       </div>
     </div>
 
-    ${currentMatch ? `
-    <!-- Player Stats -->
-    <div class="card">
-      <div class="card-header"><h2>2 · Player Stats &amp; Career Numbers</h2></div>
+    <!-- 2 Â· Bull Winner -->
+    <div class="card" style="${canConfirm ? 'border-color:rgba(242,101,34,0.6);' : ''}">
+      <div class="card-header">
+        <h2>2 Â· Bull Winner <span style="font-size:0.8em;font-weight:400;color:var(--text-muted);letter-spacing:0.04em;">(+8.6% live odds edge)</span></h2>
+      </div>
       <div class="card-body">
-        <div class="h2h-grid" style="margin-bottom:0.9em;">
+        <p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.8em;">Tap the player who won the bullseye â€” they throw Leg 1 and all odd-numbered legs.</p>
+        <div class="row">
+          <button class="btn bull-btn ${S.bullWinner === 1 ? 'active' : ''}" id="bull1Btn" style="font-size:1.05em;padding:1em 0.5em;line-height:1.4;">
+            ${m.player1}<br><span style="font-size:0.68em;font-weight:400;color:${S.bullWinner === 1 ? 'var(--orange)' : 'var(--text-muted)'};">Throws Legs 1, 3, 5</span>
+          </button>
+          <button class="btn bull-btn ${S.bullWinner === 2 ? 'active' : ''}" id="bull2Btn" style="font-size:1.05em;padding:1em 0.5em;line-height:1.4;">
+            ${m.player2}<br><span style="font-size:0.68em;font-weight:400;color:${S.bullWinner === 2 ? 'var(--orange)' : 'var(--text-muted)'};">Throws Legs 2, 4</span>
+          </button>
+        </div>
+        ${canConfirm ? `
+        <button class="btn" id="confirmBullBtn" style="margin-top:1em;font-size:1.1em;">
+          âœ“ Confirm â€” ${S.bullWinner === 1 ? m.player1 : m.player2} Throws First
+        </button>` : ''}
+      </div>
+    </div>
+
+    <!-- 3 Â· Player Stats -->
+    <div class="card">
+      <div class="card-header"><h2>3 Â· Player Stats</h2></div>
+      <div class="card-body">
+        <div class="h2h-grid">
           ${renderPlayerStatsPanel(1, S.p1.name, getPlayerCareerStats(S.p1.name), getPlayerRecord(S.p1.name))}
           ${renderPlayerStatsPanel(2, S.p2.name, getPlayerCareerStats(S.p2.name), getPlayerRecord(S.p2.name))}
         </div>
-        <div class="divider-line"></div>
-        <div class="sub-label">Odds Engine Values (auto-filled · editable override)</div>
-        <div class="row">
-          <div style="flex:1;">
-            <label>${S.p1.name} — 3-Dart Avg</label>
-            <input type="number" id="p1Avg" value="${S.p1.avg3DA}" min="20" max="120" step="0.5">
-          </div>
-          <div style="flex:1;">
-            <label>${S.p2.name} — 3-Dart Avg</label>
-            <input type="number" id="p2Avg" value="${S.p2.avg3DA}" min="20" max="120" step="0.5">
-          </div>
-        </div>
-        <div class="row">
-          <div style="flex:1;">
-            <label>${S.p1.name} — Checkout %</label>
-            <input type="number" id="p1Chk" value="${S.p1.checkout}" min="0" max="100">
-          </div>
-          <div style="flex:1;">
-            <label>${S.p2.name} — Checkout %</label>
-            <input type="number" id="p2Chk" value="${S.p2.checkout}" min="0" max="100">
-          </div>
-        </div>
-        <label>Match Format</label>
-        <select id="legsToWin">
-          <option value="2" ${S.matchPoint === 2 ? 'selected' : ''}>Best of 3 (first to 2)</option>
-          <option value="3" ${S.matchPoint === 3 ? 'selected' : ''}>Best of 5 (first to 3) ✦ default</option>
-          <option value="4" ${S.matchPoint === 4 ? 'selected' : ''}>Best of 7 (first to 4)</option>
-        </select>
       </div>
     </div>
 
-    <!-- Bull Winner -->
-    <div class="card">
-      <div class="card-header"><h2>3 · Bull Winner <span style="font-size:0.8em;font-weight:400;color:var(--text-muted);letter-spacing:0.04em;">(+8.6% live odds edge)</span></h2></div>
-      <div class="card-body">
-        <p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.8em;">Who won the bullseye? They throw Leg 1 and all odd-numbered legs.</p>
-        <div class="row">
-          <button class="btn bull-btn ${S.bullWinner === 1 ? 'active' : ''}" id="bull1Btn">
-            ${S.p1.name}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 1, 3, 5</span>
-          </button>
-          <button class="btn bull-btn ${S.bullWinner === 2 ? 'active' : ''}" id="bull2Btn">
-            ${S.p2.name}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 2, 4</span>
-          </button>
-        </div>
-        ${S.bullWinner ? `<div style="margin-top:0.7em;text-align:center;font-family:var(--font-display);font-size:0.78em;letter-spacing:0.06em;color:var(--orange);">✓ ${S.bullWinner === 1 ? S.p1.name : S.p2.name} has the bull — odds set to ${calculateLiveOdds()}% / ${100 - calculateLiveOdds()}%</div>` : ''}
-      </div>
-    </div>
-
-    <button class="btn ${canStart ? '' : 'disabled'}" id="startMatchBtn">🎥 Start Live Stream Scoring</button>
-    <a href="live-odds.html" target="_blank" class="obs-link">Open OBS Odds Overlay ↗</a>
-    ` : ''}
-
-    <!-- Upcoming Matches (locked) -->
-    ${upcoming.length ? `
-    <div class="card" style="margin-top:0.6em;border-color:rgba(255,255,255,0.07);">
-      <div class="card-header"><h2 style="color:var(--text-muted);">Upcoming · Board 1 🔒</h2></div>
-      <div class="card-body" style="padding:0.5em 1em;">
-        ${upcoming.map(m => `
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:0.55em 0;border-bottom:1px solid var(--divider);opacity:0.45;">
-            <span style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.06em;color:var(--text-muted);">M${m.matchNum}${m.time ? ' · ' + m.time : ''}</span>
-            <span style="font-family:var(--font-main);font-size:0.85em;">${m.player1} vs ${m.player2}</span>
-          </div>
-        `).join('')}
-      </div>
-    </div>` : ''}
+    <a href="live-odds.html" target="_blank" class="obs-link">Open OBS Odds Overlay â†—</a>
   `;
 }
 
-// ── RENDER: LIVE ──────────────────────────────────────────
+// â”€â”€ RENDER: LIVE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderLive() {
-  const p1Prob = calculateLiveOdds();
-  const p2Prob = 100 - p1Prob;
-  const legNum      = currentLegNum();
-  const thrower     = throwHolder();
-  const lastBreak   = getLastBreak();
-  const narratives  = buildNarratives();
-  const nextOpp     = getNextOpponent();
-  const p1Rec       = getPlayerRecord(S.p1.name);
-  const p2Rec       = getPlayerRecord(S.p2.name);
-  const isMatchPt   = Math.max(S.p1Score, S.p2Score) >= S.matchPoint - 1;
-  const isDecider   = S.p1Score === S.matchPoint - 1 && S.p2Score === S.matchPoint - 1;
-  const p1Prov      = (p1Rec && p1Rec.province) ? p1Rec.province : '';
-  const p2Prov      = (p2Rec && p2Rec.province) ? p2Rec.province : '';
+  const p1Prob  = calculateLiveOdds();
+  const p2Prob  = 100 - p1Prob;
+  const legNum  = currentLegNum();
+  const thrower = throwHolder();
+  const lastBreak  = getLastBreak();
+  const narratives = buildNarratives();
+  const nextOpp    = getNextOpponent();
+  const p1Rec      = getPlayerRecord(S.p1.name);
+  const p2Rec      = getPlayerRecord(S.p2.name);
+  const isMatchPt  = Math.max(S.p1Score, S.p2Score) >= S.matchPoint - 1;
+  const isDecider  = S.p1Score === S.matchPoint - 1 && S.p2Score === S.matchPoint - 1;
+  const p1Prov     = (p1Rec && p1Rec.province) ? p1Rec.province : '';
+  const p2Prov     = (p2Rec && p2Rec.province) ? p2Rec.province : '';
 
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9em;">
       <div>
-        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">Board ${S.match ? S.match.board || 1 : 1} · Match ${S.match ? S.match.matchNum || '' : ''} ${S.match && S.match.time ? '· ' + S.match.time : ''}</div>
+        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">Board ${S.currentMatch ? S.currentMatch.board || 1 : 1} Â· Match ${S.currentMatch ? S.currentMatch.matchNum || '' : ''}${S.currentMatch && S.currentMatch.time ? ' Â· ' + S.currentMatch.time : ''}</div>
         <h1 style="margin:0;">Live</h1>
       </div>
       <span class="live-badge">Live</span>
     </div>
 
-    <!-- Score panel -->
     <div class="card">
       <div class="score-display">
         <div class="score-player">
@@ -931,25 +891,23 @@ function renderLive() {
         </div>
       </div>
       <div style="padding:0 1em 0.7em;text-align:center;font-family:var(--font-display);font-size:0.76em;color:var(--text-muted);letter-spacing:0.06em;text-transform:uppercase;">
-        Leg ${legNum} · Best of ${S.matchPoint * 2 - 1}
+        Leg ${legNum} Â· Best of ${S.matchPoint * 2 - 1}
       </div>
     </div>
 
-    ${isMatchPt ? `<div class="match-point-alert">⚡ Match Point — ${S.p1Score > S.p2Score ? S.p1.name : S.p2.name} leads ${Math.max(S.p1Score,S.p2Score)}–${Math.min(S.p1Score,S.p2Score)}</div>` : ''}
-    ${isDecider && !isMatchPt ? `<div class="match-point-alert" style="border-color:#4caf50;color:#4caf50;background:rgba(76,175,80,0.1);">🏆 Deciding Leg — Legs level at ${S.p1Score}–${S.p2Score}</div>` : ''}
+    ${isMatchPt ? `<div class="match-point-alert">âš¡ Match Point â€” ${S.p1Score > S.p2Score ? S.p1.name : S.p2.name} leads ${Math.max(S.p1Score,S.p2Score)}â€“${Math.min(S.p1Score,S.p2Score)}</div>` : ''}
+    ${isDecider && !isMatchPt ? `<div class="match-point-alert" style="border-color:var(--green);color:var(--green);background:rgba(76,175,80,0.1);">ðŸ† Deciding Leg â€” Legs level at ${S.p1Score}â€“${S.p2Score}</div>` : ''}
 
-    <!-- Leg Tracking (from Denis) -->
     <div style="text-align:center;padding:0.5em 0 0.8em;">
-      <span style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;text-transform:uppercase;${S.syncStatus === 'connected' ? 'color:var(--green);' : 'color:var(--text-muted);'}">
-        ${S.syncStatus === 'connected' ? '● Live — updating from Denis\'s app' : '◌ Waiting for Denis\u2019s app…'}
+      <span id="syncStatusBadge" style="font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;text-transform:uppercase;color:${S.syncStatus === 'connected' ? 'var(--green)' : 'var(--text-muted)'};">
+        ${S.syncStatus === 'connected' ? 'â— Live \u2014 updating from Denis\u2019s app' : '\u25cc Waiting for Denis\u2019s app\u2026'}
       </span>
     </div>
 
-    <!-- Live Odds -->
     <div class="card">
       <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
         <h2>Live Odds</h2>
-        <a href="live-odds.html" target="_blank" class="obs-link" style="margin:0;padding:0.3em 0.7em;font-size:0.7em;border-color:var(--divider);">OBS Overlay ↗</a>
+        <a href="live-odds.html" target="_blank" class="obs-link" style="margin:0;padding:0.3em 0.7em;font-size:0.7em;border-color:var(--divider);">OBS Overlay â†—</a>
       </div>
       <div class="card-body">
         <div class="odds-labels">
@@ -957,47 +915,41 @@ function renderLive() {
           <span class="odds-p2-label">${p2Prob}% ${S.p2.name}</span>
         </div>
         <div class="odds-track">
-          <div class="odds-fill-p1" id="oddsP1Fill" style="width:${p1Prob}%;"></div>
-          <div class="odds-fill-p2" id="oddsP2Fill" style="width:${p2Prob}%;"></div>
+          <div class="odds-fill-p1" style="width:${p1Prob}%;"></div>
+          <div class="odds-fill-p2" style="width:${p2Prob}%;"></div>
         </div>
-        ${lastBreak ? `<div style="margin-top:0.7em;"><span class="break-badge">🔴 Break — Leg ${lastBreak.leg}: ${lastBreak.name}</span></div>` : ''}
-        <div style="margin-top:0.6em;font-family:var(--font-display);font-size:0.7em;letter-spacing:0.06em;color:var(--text-muted);text-transform:uppercase;">Live odds are pushing to the OBS overlay</div>
+        ${lastBreak ? `<div style="margin-top:0.7em;"><span class="break-badge">ðŸ”´ Break â€” Leg ${lastBreak.leg}: ${lastBreak.name}</span></div>` : ''}
+        <div style="margin-top:0.6em;font-family:var(--font-display);font-size:0.7em;letter-spacing:0.06em;color:var(--text-muted);text-transform:uppercase;">Live odds pushing to OBS overlay</div>
       </div>
     </div>
 
-    <!-- H2H Commentary Cheat Sheet -->
     <div class="card">
       <div class="card-header"><h2>Commentary Cheat Sheet</h2></div>
       <div class="card-body">
         <div class="h2h-grid">
           <div class="h2h-player">
             <div class="h2h-name" style="color:var(--pink);">${S.p1.name}${p1Prov ? '<br><span style="font-size:0.68em;color:var(--text-muted);">' + p1Prov + '</span>' : ''}</div>
-            ${(() => { const cs = getPlayerCareerStats(S.p1.name); return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Career Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Career Checkout: <strong>${cs.careerCheckout}%</strong></div>${cs.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W–${cs.careerMatches - cs.careerMatchWins}L</strong></div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat">Avg: <strong>${S.p1.avg3DA}</strong></div><div class="h2h-stat">Checkout: <strong>${S.p1.checkout}%</strong></div>`; })()}
-            ${p1Rec ? `<div class="h2h-stat" style="margin-top:0.3em;">Today: <strong>${p1Rec.matchWins}W–${p1Rec.matchLosses}L · ${p1Rec.legsWon} legs</strong></div>` : ''}
-            <div class="h2h-stat">Bull Throw: <strong>${S.bullWinner === 1 ? 'Yes (Legs 1,3,5)' : 'No (Legs 2,4)'}</strong></div>
+            ${(() => { const cs = getPlayerCareerStats(S.p1.name); return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Checkout: <strong>${cs.careerCheckout}%</strong></div>${cs.careerMatches > 0 ? `<div class="h2h-stat">${cs.careerMatchWins}Wâ€“${cs.careerMatches - cs.careerMatchWins}L</div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat">Avg: <strong>${S.p1.avg3DA}</strong></div><div class="h2h-stat">Checkout: <strong>${S.p1.checkout}%</strong></div>`; })()}
+            ${p1Rec ? `<div class="h2h-stat" style="margin-top:0.3em;">Today: <strong>${p1Rec.matchWins}Wâ€“${p1Rec.matchLosses}L</strong></div>` : ''}
+            <div class="h2h-stat">Bull: <strong>${S.bullWinner === 1 ? 'Yes (Legs 1,3,5)' : 'No (Legs 2,4)'}</strong></div>
           </div>
           <div class="h2h-player">
             <div class="h2h-name" style="color:var(--blue);">${S.p2.name}${p2Prov ? '<br><span style="font-size:0.68em;color:var(--text-muted);">' + p2Prov + '</span>' : ''}</div>
-            ${(() => { const cs = getPlayerCareerStats(S.p2.name); return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Career Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Career Checkout: <strong>${cs.careerCheckout}%</strong></div>${cs.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W–${cs.careerMatches - cs.careerMatchWins}L</strong></div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat">Avg: <strong>${S.p2.avg3DA}</strong></div><div class="h2h-stat">Checkout: <strong>${S.p2.checkout}%</strong></div>`; })()}
-            ${p2Rec ? `<div class="h2h-stat" style="margin-top:0.3em;">Today: <strong>${p2Rec.matchWins}W–${p2Rec.matchLosses}L · ${p2Rec.legsWon} legs</strong></div>` : ''}
-            <div class="h2h-stat">Bull Throw: <strong>${S.bullWinner === 2 ? 'Yes (Legs 1,3,5)' : 'No (Legs 2,4)'}</strong></div>
+            ${(() => { const cs = getPlayerCareerStats(S.p2.name); return cs && cs.careerAvg > 0 ? `<div class="h2h-stat">Avg: <strong>${cs.careerAvg}</strong></div><div class="h2h-stat">Checkout: <strong>${cs.careerCheckout}%</strong></div>${cs.careerMatches > 0 ? `<div class="h2h-stat">${cs.careerMatchWins}Wâ€“${cs.careerMatches - cs.careerMatchWins}L</div>` : ''}${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}` : `<div class="h2h-stat">Avg: <strong>${S.p2.avg3DA}</strong></div><div class="h2h-stat">Checkout: <strong>${S.p2.checkout}%</strong></div>`; })()}
+            ${p2Rec ? `<div class="h2h-stat" style="margin-top:0.3em;">Today: <strong>${p2Rec.matchWins}Wâ€“${p2Rec.matchLosses}L</strong></div>` : ''}
+            <div class="h2h-stat">Bull: <strong>${S.bullWinner === 2 ? 'Yes (Legs 1,3,5)' : 'No (Legs 2,4)'}</strong></div>
           </div>
         </div>
-
         ${S.legHistory.length > 0 ? `
         <div class="divider-line"></div>
         <div class="sub-label">Leg Log</div>
         ${S.legHistory.map(l => {
           const wName = l.winner === 1 ? S.p1.name : S.p2.name;
-          const cls   = l.wasBreak ? 'was-break' : 'was-hold';
-          const icon  = l.wasBreak ? '🔴 BREAK' : '✓ Hold';
-          return `<div class="leg-log-row ${cls}">Leg ${l.leg}: ${wName} — ${icon}</div>`;
-        }).join('')}
-        ` : ''}
+          return `<div class="leg-log-row ${l.wasBreak ? 'was-break' : 'was-hold'}">Leg ${l.leg}: ${wName} â€” ${l.wasBreak ? 'ðŸ”´ BREAK' : 'âœ“ Hold'}</div>`;
+        }).join('')}` : ''}
       </div>
     </div>
 
-    <!-- Narrative Prompts -->
     <div class="card">
       <div class="card-header"><h2>Narrative Prompts</h2></div>
       <div class="card-body">
@@ -1010,34 +962,31 @@ function renderLive() {
       </div>
     </div>
 
-    <!-- Look-Ahead -->
     ${nextOpp ? `
     <div class="card" style="border-color:rgba(33,150,243,0.3);background:rgba(33,150,243,0.05);">
       <div class="card-body">
-        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:0.4em;">Look-Ahead · Next Match</div>
+        <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:0.4em;">Look-Ahead Â· Next Match</div>
         <div style="font-size:0.9em;">
           ${S.p1Score >= S.p2Score ? S.p1.name : S.p2.name} faces
           <strong>${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''}</strong>
-          in Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} — Board ${nextOpp.board || 1}
+          in Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} â€” Board ${nextOpp.board || 1}
         </div>
       </div>
     </div>` : ''}
 
-    <!-- Controls -->
     <div class="row" style="margin-bottom:1.5em;">
-      <button class="btn secondary" id="editSetupBtn" style="margin:0;">⚙ Setup</button>
+      <button class="btn secondary" id="editSetupBtn" style="margin:0;">âš™ Match Setup</button>
     </div>
   `;
 }
 
-// ── RENDER: COMPLETE ──────────────────────────────────────
+// â”€â”€ RENDER: COMPLETE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderComplete() {
-  const winnerNum = S.p1Score >= S.matchPoint ? 1 : 2;
-  const winner    = winnerNum === 1 ? S.p1.name : S.p2.name;
-  const loser     = winnerNum === 1 ? S.p2.name : S.p1.name;
-  const wScore    = Math.max(S.p1Score, S.p2Score);
-  const lScore    = Math.min(S.p1Score, S.p2Score);
-  const breaks    = S.legHistory.filter(l => l.wasBreak).length;
+  const winnerNum  = S.p1Score >= S.matchPoint ? 1 : 2;
+  const winner     = winnerNum === 1 ? S.p1.name : S.p2.name;
+  const wScore     = Math.max(S.p1Score, S.p2Score);
+  const lScore     = Math.min(S.p1Score, S.p2Score);
+  const breaks     = S.legHistory.filter(l => l.wasBreak).length;
   const narratives = buildNarratives();
   const nextOpp    = getNextOpponent(winner);
 
@@ -1045,20 +994,18 @@ function renderComplete() {
     <div style="text-align:center;padding:1.5em 0 1.2em;">
       <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.3em;">Match Complete</div>
       <div class="complete-winner">${winner}</div>
-      <div class="complete-score">${wScore}–${lScore}</div>
+      <div class="complete-score">${wScore}â€“${lScore}</div>
       <div style="font-size:0.84em;color:var(--text-muted);margin-top:0.3em;">
-        ${breaks} break${breaks !== 1 ? 's' : ''} of throw · Best of ${S.matchPoint * 2 - 1}
+        ${breaks} break${breaks !== 1 ? 's' : ''} of throw Â· Best of ${S.matchPoint * 2 - 1}
       </div>
     </div>
 
-    <!-- Leg summary -->
     <div class="card">
       <div class="card-header"><h2>Match Summary</h2></div>
       <div class="card-body">
         ${S.legHistory.map(l => {
           const wName = l.winner === 1 ? S.p1.name : S.p2.name;
-          const cls  = l.wasBreak ? 'was-break' : 'was-hold';
-          return `<div class="leg-log-row ${cls}">Leg ${l.leg}: ${wName} ${l.wasBreak ? '🔴 BREAK of Throw' : '✓ Hold'}</div>`;
+          return `<div class="leg-log-row ${l.wasBreak ? 'was-break' : 'was-hold'}">Leg ${l.leg}: ${wName} ${l.wasBreak ? 'ðŸ”´ BREAK of Throw' : 'âœ“ Hold'}</div>`;
         }).join('')}
       </div>
     </div>
@@ -1069,12 +1016,11 @@ function renderComplete() {
         <div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue);margin-bottom:0.4em;">${winner}'s Next Match</div>
         <div style="font-size:0.9em;">
           ${winner} faces <strong>${nextOpp.name}${nextOpp.province ? ' (' + nextOpp.province + ')' : ''}</strong>
-          in Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} — Board ${nextOpp.board || 1}
+          in Match ${nextOpp.matchNum} at ${nextOpp.time || 'TBD'} â€” Board ${nextOpp.board || 1}
         </div>
       </div>
     </div>` : ''}
 
-    <!-- Post-match narratives -->
     <div class="card">
       <div class="card-header"><h2>Post-Match Narrative</h2></div>
       <div class="card-body">
@@ -1086,170 +1032,109 @@ function renderComplete() {
         `).join('')}
         <div class="narrative info">
           <div class="narrative-label">Interview Trigger</div>
-          Once ${winner} finishes the handshake, open the Interview App to start the post-match interview questions — the system will auto-generate questions based on today's leg data.
+          Once ${winner} finishes the handshake, open the Interview App â€” the system will auto-generate post-match questions based on today's leg data.
         </div>
       </div>
     </div>
 
-    <button class="btn" id="newMatchBtn">Next Match →</button>
-    <button class="btn" id="backToSetupBtn" style="margin-top:0.5em;background:#1a1a1a;border:1.5px solid var(--divider);color:var(--text-muted);font-size:0.85em;letter-spacing:0.08em;">← Back to Setup (keep result)</button>
+    <button class="btn" id="backToListBtn">â† Back to Match List</button>
   `;
 }
 
-// ── RENDER: MAIN ──────────────────────────────────────────
+// â”€â”€ RENDER: MAIN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderApp() {
   const app = document.getElementById('app');
-  if      (S.screen === 'setup')    app.innerHTML = renderSetup();
-  else if (S.screen === 'live')     app.innerHTML = renderLive();
-  else                              app.innerHTML = renderComplete();
+  if      (S.screen === 'matchList')  app.innerHTML = renderMatchList();
+  else if (S.screen === 'matchSetup') app.innerHTML = renderMatchSetup();
+  else if (S.screen === 'live')       app.innerHTML = renderLive();
+  else                                app.innerHTML = renderComplete();
   bindEvents();
 }
 
-// ── EVENT BINDING ─────────────────────────────────────────
+// â”€â”€ EVENT BINDING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function bindEvents() {
-  if (S.screen === 'setup') {
-    const editLastBtn = document.getElementById('editLastMatchBtn');
-    if (editLastBtn) {
-      editLastBtn.onclick = () => {
-        // Restore last completed match into live state so complete screen shows correctly
-        const lc = S.lastCompleted;
-        S.match      = lc.match;
-        S.p1         = { ...lc.p1 };
-        S.p2         = { ...lc.p2 };
-        S.p1Score    = lc.p1Score;
-        S.p2Score    = lc.p2Score;
-        S.bullWinner = lc.bullWinner;
-        S.matchPoint = lc.matchPoint;
-        S.legHistory = [...lc.legHistory];
-        // Roll back the advancement
-        S.matchIndex--;
-        S.completedMatches = S.completedMatches.filter(n => n !== (lc.match ? lc.match.matchNum : null));
-        S.lastCompleted = null;
-        S.screen = 'complete';
-        saveJasonState();
-        renderApp();
-      };
-    }
+  if (S.screen === 'matchList') {
+    const matches = getBoard1Matches();
+    matches.forEach(m => {
+      const btn = document.getElementById('matchBtn' + m.matchNum);
+      if (btn) btn.onclick = () => selectMatch(m.matchNum);
+    });
+  }
 
-    // Stat inputs only present when there's a current match
-    const p1Avg = document.getElementById('p1Avg');
-    if (p1Avg) {
-      // Career stats edit / save / cancel buttons
-      function bindStatsPanelButtons(playerNum) {
-        const editBtn   = document.getElementById(`editStats${playerNum}Btn`);
-        const saveBtn   = document.getElementById(`saveStats${playerNum}`);
-        const cancelBtn = document.getElementById(`cancelStats${playerNum}`);
-        const pName     = playerNum === 1 ? S.p1.name : S.p2.name;
-        if (editBtn) {
-          editBtn.onclick = () => { S.editingStatsFor = playerNum; renderApp(); };
-        }
-        if (saveBtn) {
-          saveBtn.onclick = () => {
-            const avg     = parseFloat(document.getElementById(`editAvg${playerNum}`).value)     || 0;
-            const chk     = parseFloat(document.getElementById(`editChk${playerNum}`).value)     || 0;
-            const matches = parseInt(document.getElementById(`editMatches${playerNum}`).value, 10) || 0;
-            const wins    = parseInt(document.getElementById(`editWins${playerNum}`).value, 10)    || 0;
-            const notes   = document.getElementById(`editNotes${playerNum}`).value.trim();
-            saveLocalPlayerStats(pName, { careerAvg: avg, careerCheckout: chk,
-                                          careerMatches: matches, careerMatchWins: wins, notes });
-            // Update the odds engine inputs if they were still at defaults
-            if (avg > 0) {
-              if (playerNum === 1) S.p1.avg3DA = avg;
-              else                 S.p2.avg3DA = avg;
-            }
-            if (chk > 0) {
-              if (playerNum === 1) S.p1.checkout = chk;
-              else                 S.p2.checkout = chk;
-            }
-            S.editingStatsFor = null;
-            renderApp();
-          };
-        }
-        if (cancelBtn) {
-          cancelBtn.onclick = () => { S.editingStatsFor = null; renderApp(); };
-        }
-      }
-      bindStatsPanelButtons(1);
-      bindStatsPanelButtons(2);
+  if (S.screen === 'matchSetup') {
+    document.getElementById('backToListBtn').onclick = () => { S.screen = 'matchList'; renderApp(); };
+    document.getElementById('bull1Btn').onclick = () => { S.bullWinner = 1; renderApp(); };
+    document.getElementById('bull2Btn').onclick = () => { S.bullWinner = 2; renderApp(); };
 
-      p1Avg.oninput  = e => { S.p1.avg3DA   = parseFloat(e.target.value) || 50; };
-      document.getElementById('p2Avg').oninput  = e => { S.p2.avg3DA   = parseFloat(e.target.value) || 50; };
-      document.getElementById('p1Chk').oninput  = e => { S.p1.checkout = parseFloat(e.target.value) || 35; };
-      document.getElementById('p2Chk').oninput  = e => { S.p2.checkout = parseFloat(e.target.value) || 35; };
-      document.getElementById('legsToWin').onchange = e => { S.matchPoint  = parseInt(e.target.value, 10); };
-      document.getElementById('bull1Btn').onclick = () => { S.bullWinner = 1; renderApp(); };
-      document.getElementById('bull2Btn').onclick = () => { S.bullWinner = 2; renderApp(); };
-      document.getElementById('startMatchBtn').onclick = () => {
-        if (!S.bullWinner) { alert('Select the bull winner before starting.'); return; }
-        S.p1Score = 0; S.p2Score = 0; S.legHistory = [];
+    const confirmBtn = document.getElementById('confirmBullBtn');
+    if (confirmBtn) {
+      confirmBtn.onclick = () => {
+        S.bullConfirmed = true;
         S.screen = 'live';
         pushToOverlay();
         renderApp();
       };
     }
+
+    // Stats editing
+    [1, 2].forEach(playerNum => {
+      const pName     = playerNum === 1 ? S.p1.name : S.p2.name;
+      const editBtn   = document.getElementById(`editStats${playerNum}Btn`);
+      const saveBtn   = document.getElementById(`saveStats${playerNum}`);
+      const cancelBtn = document.getElementById(`cancelStats${playerNum}`);
+      if (editBtn)   editBtn.onclick = () => { S.editingStatsFor = playerNum; renderApp(); };
+      if (cancelBtn) cancelBtn.onclick = () => { S.editingStatsFor = null; renderApp(); };
+      if (saveBtn) {
+        saveBtn.onclick = () => {
+          const avg     = parseFloat(document.getElementById(`editAvg${playerNum}`).value)      || 0;
+          const chk     = parseFloat(document.getElementById(`editChk${playerNum}`).value)      || 0;
+          const matches = parseInt(document.getElementById(`editMatches${playerNum}`).value, 10) || 0;
+          const wins    = parseInt(document.getElementById(`editWins${playerNum}`).value, 10)    || 0;
+          const notes   = document.getElementById(`editNotes${playerNum}`).value.trim();
+          saveLocalPlayerStats(pName, { careerAvg: avg, careerCheckout: chk,
+                                        careerMatches: matches, careerMatchWins: wins, notes });
+          if (avg > 0) { if (playerNum === 1) S.p1.avg3DA   = avg;  else S.p2.avg3DA   = avg; }
+          if (chk > 0) { if (playerNum === 1) S.p1.checkout = chk;  else S.p2.checkout = chk; }
+          S.editingStatsFor = null;
+          renderApp();
+        };
+      }
+    });
   }
 
   if (S.screen === 'live') {
-    document.getElementById('editSetupBtn').onclick = () => { S.screen = 'setup'; renderApp(); };
+    const editBtn = document.getElementById('editSetupBtn');
+    if (editBtn) editBtn.onclick = () => { S.screen = 'matchSetup'; renderApp(); };
   }
 
   if (S.screen === 'complete') {
-    document.getElementById('newMatchBtn').onclick = () => {
-      // Snapshot this completed match before advancing
-      S.lastCompleted = {
-        match:      S.match,
-        p1:         { ...S.p1 },
-        p2:         { ...S.p2 },
-        p1Score:    S.p1Score,
-        p2Score:    S.p2Score,
-        bullWinner: S.bullWinner,
-        matchPoint: S.matchPoint,
-        legHistory: [...S.legHistory]
-      };
-      // Save progress and advance to next match
-      S.completedMatches.push(S.match ? S.match.matchNum : null);
-      S.matchIndex++;
-      saveJasonState();
-      // Reset live state
-      S.screen = 'setup'; S.p1Score = 0; S.p2Score = 0;
-      S.legHistory = []; S.bullWinner = 0;
-      // Load next match players from schedule
-      applyMatchToState();
-      renderApp();
-    };
-
-    const backBtn = document.getElementById('backToSetupBtn');
+    const backBtn = document.getElementById('backToListBtn');
     if (backBtn) {
       backBtn.onclick = () => {
-        // Save this as lastCompleted but don't advance — just go to setup
-        S.lastCompleted = {
-          match:      S.match,
-          p1:         { ...S.p1 },
-          p2:         { ...S.p2 },
-          p1Score:    S.p1Score,
-          p2Score:    S.p2Score,
-          bullWinner: S.bullWinner,
-          matchPoint: S.matchPoint,
-          legHistory: [...S.legHistory]
-        };
-        S.completedMatches.push(S.match ? S.match.matchNum : null);
-        S.matchIndex++;
-        saveJasonState();
-        S.screen = 'setup'; S.p1Score = 0; S.p2Score = 0;
-        S.legHistory = []; S.bullWinner = 0;
-        applyMatchToState();
+        if (S.currentMatch && !S.completedMatches.includes(S.currentMatch.matchNum)) {
+          S.completedMatches.push(S.currentMatch.matchNum);
+          saveJasonState();
+        }
+        S.screen        = 'matchList';
+        S.currentMatch  = null;
+        S.selectedMatchNum = null;
+        S.bullWinner    = 0;
+        S.bullConfirmed = false;
+        S.p1Score       = 0;
+        S.p2Score       = 0;
+        S.legHistory    = [];
+        S.denisLegCount = 0;
         renderApp();
       };
     }
   }
 }
 
-// ── INIT ──────────────────────────────────────────────────
+// â”€â”€ INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 (async function init() {
-  loadJasonState();         // restore matchIndex from previous session
+  loadJasonState();
   await loadEventData();
-  applyMatchToState();      // populate players from the current match
-  connectToDenis();         // start live sync from Denis's app
+  connectToDenis();  // connect early; applyDenisData() won't act until a match is selected
   renderApp();
 })();
 </script>
