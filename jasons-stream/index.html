@@ -1098,6 +1098,52 @@ function renderSetup() {
   `;
 }
 
+// ── RENDER: BULL WINNER ────────────────────────────────────────────────────
+function renderBull() {
+  const m = S.match;
+  const bullName = S.bullWinner === 1 ? S.p1.name : (S.bullWinner === 2 ? S.p2.name : null);
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1em;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts · Jason</div>
+        <h1 style="margin:0;">Bull Winner</h1>
+      </div>
+      <button id="backToBullSetupBtn" style="background:none;border:1px solid var(--divider);border-radius:8px;color:var(--text-muted);padding:0.45em 0.9em;font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;">← Back</button>
+    </div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.5em;box-shadow:0 0 10px var(--orange);"></div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Who Won the Bull? <span style="font-size:0.8em;font-weight:400;color:var(--text-muted);">(✔ unlocks Denis's app)</span></h2>
+      </div>
+      <div class="card-body">
+        <p style="color:var(--text-muted);font-size:0.85em;margin:0 0 1em;">The bull winner throws Leg 1 and all odd-numbered legs. <strong style="color:var(--orange);">Denis's app will be locked</strong> until you confirm here.</p>
+        ${m ? `
+        <div style="text-align:center;font-family:var(--font-display);font-size:0.8em;letter-spacing:0.12em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.8em;">
+          Match ${m.matchNum} · ${m.player1} vs ${m.player2}
+        </div>` : ''}
+        <div class="row">
+          <button class="btn bull-btn ${S.bullWinner === 1 ? 'active' : ''}" id="bull1Btn">
+            ${S.p1.name}<br><span style="font-size:0.72em;font-weight:400;color:var(--text-muted);">Throws Legs 1, 3, 5</span>
+          </button>
+          <button class="btn bull-btn ${S.bullWinner === 2 ? 'active' : ''}" id="bull2Btn">
+            ${S.p2.name}<br><span style="font-size:0.72em;font-weight:400;color:var(--text-muted);">Throws Legs 2, 4</span>
+          </button>
+        </div>
+        ${bullName ? `
+        <button class="btn" id="confirmBullBtn" style="margin-top:1.2em;background:linear-gradient(135deg,var(--orange),var(--orange-glow));font-size:1em;letter-spacing:0.08em;">
+          ✔ Confirm — ${bullName} Starts First
+        </button>
+        <div style="margin-top:0.6em;text-align:center;font-family:var(--font-display);font-size:0.72em;letter-spacing:0.06em;color:var(--text-muted);">
+          Odds edge: ${calculateLiveOdds()}% / ${100 - calculateLiveOdds()}%
+        </div>` : `
+        <div style="margin-top:1em;text-align:center;color:var(--text-muted);font-family:var(--font-display);font-size:0.78em;letter-spacing:0.06em;">Tap a player above to continue</div>
+        `}
+      </div>
+    </div>
+  `;
+}
+
 // ── RENDER: LIVE ──────────────────────────────────────────
 function renderLive() {
   const p1Prob = calculateLiveOdds();
