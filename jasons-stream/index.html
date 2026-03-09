@@ -473,6 +473,98 @@ function connectToDenis() {
 // Retry every 15 s if not connected
 setInterval(() => { if (!_denisConnected) connectToDenis(); }, 15000);
 
+// ── RESET ALL & SYNC FROM DENIS ───────────────────────────
+function resetAll() {
+  // Clear all persisted and in-memory state
+  localStorage.removeItem(STATE_KEY);
+  S.completedMatches = [];
+  S.matchIndex       = 0;
+  S.match            = null;
+  S.p1               = { name: '', avg3DA: 50, checkout: 35 };
+  S.p2               = { name: '', avg3DA: 50, checkout: 35 };
+  S.p1Score          = 0;
+  S.p2Score          = 0;
+  S.bullWinner       = 0;
+  S.bullConfirmed    = false;
+  S.legHistory       = [];
+  S.lastCompleted    = null;
+  S.denisLegCount    = 0;
+  S.editingStatsFor  = null;
+  S.screen           = 'matchList';
+}
+
+function syncFromDenis(data) {
+  if (!data) return;
+  const allMatches = getBoard1Matches();
+
+  // 1. Mark all matches Denis has completed
+  (data.recentMatches || []).forEach(r => {
+    if (r.matchNum && !S.completedMatches.includes(r.matchNum)) {
+      S.completedMatches.push(r.matchNum);
+    }
+  });
+
+  // 2. If Denis has a live match in progress, jump to it
+  const lmp = data.liveMatchProgress;
+  if (lmp && lmp.matchNum) {
+    const idx = allMatches.findIndex(m => m.matchNum === lmp.matchNum);
+    if (idx >= 0) {
+      S.matchIndex = idx;
+      S.match      = allMatches[idx];
+      S.p1.name    = S.match.player1 || '';
+      S.p2.name    = S.match.player2 || '';
+      const cs1 = getPlayerCareerStats(S.p1.name);
+      const cs2 = getPlayerCareerStats(S.p2.name);
+      S.p1.avg3DA   = (cs1 && cs1.careerAvg   > 0) ? cs1.careerAvg   : 50;
+      S.p1.checkout = (cs1 && cs1.careerCheckout > 0) ? cs1.careerCheckout : 35;
+      S.p2.avg3DA   = (cs2 && cs2.careerAvg   > 0) ? cs2.careerAvg   : 50;
+      S.p2.checkout = (cs2 && cs2.careerCheckout > 0) ? cs2.careerCheckout : 35;
+      S.p1Score       = lmp.score1 || 0;
+      S.p2Score       = lmp.score2 || 0;
+      S.legHistory    = buildLegHistory(lmp.legs || []);
+      S.denisLegCount = (lmp.legs || []).length;
+      // Infer bull winner from leg history if possible
+      if (S.legHistory.length > 0) {
+        // Leg 1 starter = bull winner; we can't know for sure without Denis's data
+        // Leave bullWinner = 0 so Setup screen prompts it
+      }
+      S.screen = 'live';
+      saveJasonState();
+      renderApp();
+      return;
+    }
+  }
+
+  // 3. No live match — just show updated match list
+  saveJasonState();
+  renderApp();
+}
+
+async function resetAndSync() {
+  resetAll();
+  // Show spinner immediately
+  const app = document.getElementById('app');
+  app.innerHTML = `<div style="text-align:center;padding:3em 1em;color:var(--text-muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;">Syncing from Denis…</div>`;
+
+  // Try to get Denis's latest data from GitHub (most reliable source)
+  let denisData = null;
+  try {
+    const r = await fetch(RAW_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) {
+      const ed = await r.json();
+      eventData = ed;
+      // Denis broadcasts liveMatchProgress + recentMatches in his PeerSync messages;
+      // the event-data.json has currentPair / allPairs — reconstruct what we need
+      denisData = {
+        recentMatches:     ed.recentMatches     || [],
+        liveMatchProgress: ed.liveMatchProgress || null
+      };
+    }
+  } catch(_) {}
+
+  syncFromDenis(denisData);
+}
+
 // ── ODDS ENGINE ───────────────────────────────────────────
 // Weights from the "Pro-Bookie" spec:
 //   Base: 50/50 ± (p1.3DA − p2.3DA) × 1.5   [Strength Gap]
@@ -774,9 +866,12 @@ function renderMatchList() {
 
   const allDone = matches.every(m => S.completedMatches.includes(m.matchNum));
   return `
-    <div style="margin-bottom:1em;">
-      <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts \u00b7 Jason</div>
-      <h1>Board 1 Matches</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1em;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts \u00b7 Jason</div>
+        <h1>Board 1 Matches</h1>
+      </div>
+      <button id="resetSyncBtn" style="background:#1a1a1a;border:1.5px solid var(--divider);border-radius:8px;color:var(--text-muted);padding:0.45em 0.9em;font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;">\u21ba Reset &amp; Sync</button>
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
     ${syncBadge}
@@ -1217,6 +1312,11 @@ function bindEvents() {
       const btn = document.getElementById('matchBtn' + m.matchNum);
       if (btn) btn.onclick = () => selectMatch(m.matchNum);
     });
+    const rsBtn = document.getElementById('resetSyncBtn');
+    if (rsBtn) rsBtn.onclick = () => {
+      if (!confirm('Reset all match progress and re-sync from Denis\'s app?')) return;
+      resetAndSync();
+    };
   }
 
   if (S.screen === 'setup') {
