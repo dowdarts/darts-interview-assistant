@@ -463,13 +463,18 @@ function calculateLiveOdds() {
 }
 
 // ── BREAK OF THROW ────────────────────────────────────────
-// In a Best-of-N, the bull winner starts odd-numbered legs (1,3,5…)
-// and the other player starts even-numbered legs (2,4…).
-// Winning a leg when you did NOT have the opening throw = "Break".
+// The bull winner throws first in Leg 1.
+// After each leg, the WINNER of that leg throws first in the next leg.
+// Break of throw = winning a leg when your opponent threw first.
+// You cannot break back-to-back: after a break you now have the throw,
+// so winning the next leg is a HOLD, not another break.
 
 function expectedStarter(legNum) {
-  const bw = S.bullWinner;
-  return (legNum % 2 === 1) ? bw : (bw === 1 ? 2 : 1);
+  if (legNum === 1) return S.bullWinner;
+  // Winner of the previous leg throws first in this leg
+  const prevLeg = S.legHistory.find(l => l.leg === legNum - 1);
+  if (prevLeg) return prevLeg.winner;
+  return S.bullWinner;
 }
 
 function currentLegNum() {
@@ -940,10 +945,10 @@ function renderBull() {
         </div>` : ''}
         <div class="row">
           <button class="btn bull-btn ${S.bullWinner === 1 ? 'active' : ''}" id="bull1Btn">
-            ${S.p1.name}<br><span style="font-size:0.72em;font-weight:400;color:var(--text-muted);">Throws Legs 1, 3, 5</span>
+            ${S.p1.name}<br><span style="font-size:0.72em;font-weight:400;color:var(--text-muted);">Throws first in Leg 1</span>
           </button>
           <button class="btn bull-btn ${S.bullWinner === 2 ? 'active' : ''}" id="bull2Btn">
-            ${S.p2.name}<br><span style="font-size:0.72em;font-weight:400;color:var(--text-muted);">Throws Legs 2, 4</span>
+            ${S.p2.name}<br><span style="font-size:0.72em;font-weight:400;color:var(--text-muted);">Throws first in Leg 2 (if Leg 1 held)</span>
           </button>
         </div>
         ${bullName ? `
@@ -1046,7 +1051,7 @@ function renderLive() {
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75em 1em;">
         <div>
-          <div style="font-family:var(--font-display);font-size:0.68em;letter-spacing:0.06em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.25em;">Throwing Legs 1, 3, 5</div>
+          <div style="font-family:var(--font-display);font-size:0.68em;letter-spacing:0.06em;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.25em;">Throws First &mdash; Leg 1</div>
           <div style="font-family:var(--font-display);font-size:1.05em;font-weight:700;color:${bullName ? 'var(--orange)' : 'var(--text-muted)'};">${bullName || '— not set —'}</div>
         </div>
         <button id="changeBullBtn" style="padding:0.4em 0.85em;background:rgba(242,101,34,0.1);border:1.5px solid rgba(242,101,34,0.4);border-radius:8px;color:var(--orange);font-family:var(--font-display);font-size:0.72em;letter-spacing:0.08em;cursor:pointer;text-transform:uppercase;">${bullName ? '✏ Change' : '⚠ Set Bull'}</button>
