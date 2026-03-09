@@ -313,8 +313,8 @@ try { bc = new BroadcastChannel('aads_stream'); } catch(_) {}
 
 // ── STATE ─────────────────────────────────────────────────
 const S = {
-  screen:           'setup',   // setup | live | complete
-  matchIndex:       0,         // index into getBoard1Matches()
+  screen:           'matchList',   // matchList | setup | live | complete
+  matchIndex:       0,             // index into getBoard1Matches()
   completedMatches: [],        // matchNums already done
   match:            null,      // { matchNum, board, time, player1, player2, ... }
   p1:               { name: '', avg3DA: 50, checkout: 35 },
@@ -353,6 +353,37 @@ function applyMatchToState() {
   S.p1.checkout = (cs1 && cs1.careerCheckout > 0) ? cs1.careerCheckout : 35;
   S.p2.avg3DA   = (cs2 && cs2.careerAvg   > 0) ? cs2.careerAvg   : 50;
   S.p2.checkout = (cs2 && cs2.careerCheckout > 0) ? cs2.careerCheckout : 35;
+}
+
+function isMatchUnlocked(matchNum, allMatches) {
+  const idx = allMatches.findIndex(m => m.matchNum === matchNum);
+  if (idx <= 0) return true;
+  for (let i = 0; i < idx; i++) {
+    if (!S.completedMatches.includes(allMatches[i].matchNum)) return false;
+  }
+  return true;
+}
+
+function selectMatch(matchNum) {
+  const matches = getBoard1Matches();
+  const idx = matches.findIndex(m => m.matchNum === matchNum);
+  if (idx < 0 || !isMatchUnlocked(matchNum, matches)) return;
+  S.matchIndex  = idx;
+  S.match       = matches[idx];
+  S.p1.name     = S.match.player1 || '';
+  S.p2.name     = S.match.player2 || '';
+  const cs1 = getPlayerCareerStats(S.p1.name);
+  const cs2 = getPlayerCareerStats(S.p2.name);
+  S.p1.avg3DA   = (cs1 && cs1.careerAvg   > 0) ? cs1.careerAvg   : 50;
+  S.p1.checkout = (cs1 && cs1.careerCheckout > 0) ? cs1.careerCheckout : 35;
+  S.p2.avg3DA   = (cs2 && cs2.careerAvg   > 0) ? cs2.careerAvg   : 50;
+  S.p2.checkout = (cs2 && cs2.careerCheckout > 0) ? cs2.careerCheckout : 35;
+  S.bullWinner  = 0;
+  S.p1Score     = 0;
+  S.p2Score     = 0;
+  S.legHistory  = [];
+  S.screen      = 'setup';
+  renderApp();
 }
 
 function saveJasonState() {
@@ -695,6 +726,73 @@ async function loadEventData() {
   } catch(_) {}
 }
 
+// ── RENDER: MATCH LIST ───────────────────────────────────
+function renderMatchList() {
+  const matches = getBoard1Matches();
+
+  const syncBadge = `
+    <div style="text-align:center;font-family:var(--font-display);font-size:0.75em;letter-spacing:0.1em;color:${S.syncStatus === 'connected' ? 'var(--green)' : 'var(--text-muted)'};margin-bottom:0.9em;">
+      ${S.syncStatus === 'connected' ? '\u25cf Denis connected' : '\u25cc Connecting to Denis\u2026'}
+    </div>`;
+
+  if (!matches.length) {
+    return `
+      <div style="margin-bottom:1em;">
+        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts \u00b7 Jason</div>
+        <h1>Board 1 Matches</h1>
+      </div>
+      ${syncBadge}
+      <div class="card"><div class="card-body" style="text-align:center;padding:2em;color:var(--text-muted);">No matches found \u2014 check event data.</div></div>`;
+  }
+
+  const rows = matches.map(m => {
+    const isDone   = S.completedMatches.includes(m.matchNum);
+    const unlocked = isMatchUnlocked(m.matchNum, matches);
+    const timeStr  = m.time ? ' \u00b7 ' + m.time : '';
+    const heading  = `<div style="font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;color:${isDone ? 'var(--green)' : (unlocked ? 'var(--orange)' : 'var(--text-muted)')};text-transform:uppercase;margin-bottom:0.25em;">Match ${m.matchNum}${timeStr}</div>`;
+    const names    = `<div style="font-size:0.95em;font-weight:700;">${m.player1} <span style="color:var(--text-muted);font-weight:400;font-size:0.85em;">vs</span> ${m.player2}</div>`;
+    if (isDone) {
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.85em 1em;border-bottom:1px solid var(--divider);opacity:0.6;">
+          <div>${heading}${names}</div>
+          <div style="font-family:var(--font-display);font-size:0.9em;color:var(--green);letter-spacing:0.06em;">\u2713 Done</div>
+        </div>`;
+    } else if (unlocked) {
+      return `
+        <button id="matchBtn${m.matchNum}" style="width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;padding:0.85em 1em;background:rgba(242,101,34,0.07);border:none;border-bottom:1px solid var(--divider);cursor:pointer;color:var(--white);transition:background 0.15s;" onmouseover="this.style.background='rgba(242,101,34,0.14)'" onmouseout="this.style.background='rgba(242,101,34,0.07)'">
+          <div>${heading}${names}</div>
+          <div style="font-family:var(--font-display);font-size:1.4em;color:var(--orange);">\u203a</div>
+        </button>`;
+    } else {
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.85em 1em;border-bottom:1px solid var(--divider);opacity:0.3;">
+          <div>${heading}${names}</div>
+          <div style="font-size:1em;">\uD83D\uDD12</div>
+        </div>`;
+    }
+  }).join('');
+
+  const allDone = matches.every(m => S.completedMatches.includes(m.matchNum));
+  return `
+    <div style="margin-bottom:1em;">
+      <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts \u00b7 Jason</div>
+      <h1>Board 1 Matches</h1>
+    </div>
+    <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
+    ${syncBadge}
+    <div class="card" style="overflow:hidden;">
+      <div class="card-header"><h2>Tap a match to begin</h2></div>
+      <div style="padding:0;">${rows}</div>
+    </div>
+    ${allDone ? `
+    <div class="card" style="border-color:rgba(76,175,80,0.4);background:rgba(76,175,80,0.05);">
+      <div class="card-body" style="text-align:center;padding:1.5em;">
+        <div style="font-family:var(--font-display);font-size:1.1em;color:var(--green);letter-spacing:0.06em;">\uD83C\uDFC6 All Board 1 Matches Complete!</div>
+      </div>
+    </div>` : ''}
+  `;
+}
+
 // ── RENDER: SETUP ─────────────────────────────────────────
 // ── PLAYER STATS PANEL (setup screen Section 2) ──────────
 function renderPlayerStatsPanel(playerNum, playerName, cs, ev) {
@@ -765,10 +863,14 @@ function renderSetup() {
   const upcoming      = board1Matches.slice(S.matchIndex + 1);
   const canStart      = S.p1.name && S.p2.name && S.bullWinner;
 
+  const _setupMatch = getBoard1Matches()[S.matchIndex] || null;
   return `
-    <div style="margin-bottom:1em;">
-      <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts · Jason</div>
-      <h1>Stream Odds &amp; Statistics</h1>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1em;">
+      <div>
+        <div style="font-family:var(--font-display);font-size:0.7em;letter-spacing:0.18em;color:var(--text-muted);text-transform:uppercase;">AADS Darts · Jason</div>
+        <h1 style="margin:0;">${_setupMatch ? 'Match ' + _setupMatch.matchNum + ' Setup' : 'Match Setup'}</h1>
+      </div>
+      <button id="backToListBtn" style="background:none;border:1px solid var(--divider);border-radius:8px;color:var(--text-muted);padding:0.45em 0.9em;font-family:var(--font-display);font-size:0.72em;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;">← Back</button>
     </div>
     <div style="height:2px;background:linear-gradient(90deg,var(--orange),var(--orange-glow));border-radius:2px;margin-bottom:1.2em;box-shadow:0 0 10px var(--orange);"></div>
 
@@ -1099,15 +1201,26 @@ function renderComplete() {
 // ── RENDER: MAIN ──────────────────────────────────────────
 function renderApp() {
   const app = document.getElementById('app');
-  if      (S.screen === 'setup')    app.innerHTML = renderSetup();
-  else if (S.screen === 'live')     app.innerHTML = renderLive();
-  else                              app.innerHTML = renderComplete();
+  if      (S.screen === 'matchList') app.innerHTML = renderMatchList();
+  else if (S.screen === 'setup')     app.innerHTML = renderSetup();
+  else if (S.screen === 'live')      app.innerHTML = renderLive();
+  else                               app.innerHTML = renderComplete();
   bindEvents();
 }
 
 // ── EVENT BINDING ─────────────────────────────────────────
 function bindEvents() {
+  if (S.screen === 'matchList') {
+    const matches = getBoard1Matches();
+    matches.forEach(m => {
+      const btn = document.getElementById('matchBtn' + m.matchNum);
+      if (btn) btn.onclick = () => selectMatch(m.matchNum);
+    });
+  }
+
   if (S.screen === 'setup') {
+    const backToList = document.getElementById('backToListBtn');
+    if (backToList) backToList.onclick = () => { S.screen = 'matchList'; renderApp(); };
     const editLastBtn = document.getElementById('editLastMatchBtn');
     if (editLastBtn) {
       editLastBtn.onclick = () => {
@@ -1140,3 +1253,85 @@ function bindEvents() {
         const saveBtn   = document.getElementById(`saveStats${playerNum}`);
         const cancelBtn = document.getElementById(`cancelStats${playerNum}`);
         const pName     = playerNum === 1 ? S.p1.name : S.p2.name;
+        if (editBtn) {
+          editBtn.onclick = () => { S.editingStatsFor = playerNum; renderApp(); };
+        }
+        if (saveBtn) {
+          saveBtn.onclick = () => {
+            const avg     = parseFloat(document.getElementById(`editAvg${playerNum}`).value)      || 0;
+            const chk     = parseFloat(document.getElementById(`editChk${playerNum}`).value)      || 0;
+            const matches = parseInt(document.getElementById(`editMatches${playerNum}`).value, 10) || 0;
+            const wins    = parseInt(document.getElementById(`editWins${playerNum}`).value, 10)    || 0;
+            const notes   = document.getElementById(`editNotes${playerNum}`).value.trim();
+            saveLocalPlayerStats(pName, { careerAvg: avg, careerCheckout: chk,
+                                          careerMatches: matches, careerMatchWins: wins, notes });
+            if (avg > 0) { if (playerNum === 1) S.p1.avg3DA   = avg;  else S.p2.avg3DA   = avg; }
+            if (chk > 0) { if (playerNum === 1) S.p1.checkout = chk;  else S.p2.checkout = chk; }
+            S.editingStatsFor = null;
+            renderApp();
+          };
+        }
+        if (cancelBtn) {
+          cancelBtn.onclick = () => { S.editingStatsFor = null; renderApp(); };
+        }
+      }
+      bindStatsPanelButtons(1);
+      bindStatsPanelButtons(2);
+
+      p1Avg.oninput = e => { S.p1.avg3DA   = parseFloat(e.target.value) || 50; };
+      document.getElementById('p2Avg').oninput  = e => { S.p2.avg3DA   = parseFloat(e.target.value) || 50; };
+      document.getElementById('p1Chk').oninput  = e => { S.p1.checkout = parseFloat(e.target.value) || 35; };
+      document.getElementById('p2Chk').oninput  = e => { S.p2.checkout = parseFloat(e.target.value) || 35; };
+      document.getElementById('legsToWin').onchange = e => { S.matchPoint = parseInt(e.target.value, 10); };
+      document.getElementById('bull1Btn').onclick = () => { S.bullWinner = 1; renderApp(); };
+      document.getElementById('bull2Btn').onclick = () => { S.bullWinner = 2; renderApp(); };
+      document.getElementById('startMatchBtn').onclick = () => {
+        if (!S.bullWinner) { alert('Select the bull winner before starting.'); return; }
+        S.p1Score = 0; S.p2Score = 0; S.legHistory = [];
+        S.screen = 'live';
+        pushToOverlay();
+        renderApp();
+      };
+    }
+  }
+
+  if (S.screen === 'live') {
+    document.getElementById('editSetupBtn').onclick = () => { S.screen = 'setup'; renderApp(); };
+  }
+
+  if (S.screen === 'complete') {
+    document.getElementById('newMatchBtn').onclick = () => {
+      if (S.match && !S.completedMatches.includes(S.match.matchNum)) {
+        S.completedMatches.push(S.match.matchNum);
+      }
+      saveJasonState();
+      S.screen = 'matchList'; S.p1Score = 0; S.p2Score = 0;
+      S.legHistory = []; S.bullWinner = 0; S.match = null;
+      renderApp();
+    };
+
+    const backBtn = document.getElementById('backToSetupBtn');
+    if (backBtn) {
+      backBtn.onclick = () => {
+        if (S.match && !S.completedMatches.includes(S.match.matchNum)) {
+          S.completedMatches.push(S.match.matchNum);
+        }
+        saveJasonState();
+        S.screen = 'matchList'; S.p1Score = 0; S.p2Score = 0;
+        S.legHistory = []; S.bullWinner = 0; S.match = null;
+        renderApp();
+      };
+    }
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────
+(async function init() {
+  loadJasonState();
+  await loadEventData();
+  connectToDenis();
+  renderApp();
+})();
+</script>
+</body>
+</html>
