@@ -416,7 +416,30 @@ function buildLegHistory(legs) {
 }
 
 function applyDenisData(data) {
-  if (!data || !S.match) return;
+  if (!data) return;
+
+  // ── Sync completedMatches: Denis is always the source of truth ──
+  const allMatches = getBoard1Matches();
+  const board1Nums = new Set(allMatches.map(m => m.matchNum));
+  const denisBoard1Done = (data.recentMatches || [])
+    .filter(r => r.matchNum && board1Nums.has(r.matchNum))
+    .map(r => r.matchNum);
+
+  const listChanged =
+    denisBoard1Done.length !== S.completedMatches.filter(n => board1Nums.has(n)).length ||
+    denisBoard1Done.some(n => !S.completedMatches.includes(n)) ||
+    S.completedMatches.some(n => board1Nums.has(n) && !denisBoard1Done.includes(n));
+
+  if (listChanged) {
+    S.completedMatches = denisBoard1Done;
+    saveJasonState();
+    if (S.screen === 'matchList') {
+      renderApp();
+      return;
+    }
+  }
+
+  if (!S.match) return;
 
   // ── Match complete ── Denis finished the match → go to complete screen
   const matchResult = (data.recentMatches || []).find(m => m.matchNum === S.match.matchNum);
