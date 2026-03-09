@@ -556,7 +556,7 @@ async function resetAndSync() {
       // Denis broadcasts liveMatchProgress + recentMatches in his PeerSync messages;
       // the event-data.json has currentPair / allPairs — reconstruct what we need
       denisData = {
-        recentMatches:     ed.recentMatches     || [],
+        recentMatches:     [],                          // ignore stale JSON data; only trust live PeerSync
         liveMatchProgress: ed.liveMatchProgress || null
       };
     }
