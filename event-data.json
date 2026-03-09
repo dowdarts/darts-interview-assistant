@@ -257,23 +257,23 @@
                        {
                            "name":  "Drake Berry",
                            "province":  "NS",
-                           "legsWon":  3,
-                           "legsLost":  3,
-                           "matchWins":  1,
-                           "matchLosses":  1
-                       },
-                       {
-                           "name":  "Dana Moss",
-                           "province":  "NB",
-                           "legsWon":  3,
-                           "legsLost":  0,
-                           "matchWins":  1,
+                           "legsWon":  6,
+                           "legsLost":  4,
+                           "matchWins":  2,
                            "matchLosses":  0
                        },
                        {
                            "name":  "Cory Wallace",
                            "province":  "NB",
-                           "legsWon":  0,
+                           "legsWon":  2,
+                           "legsLost":  3,
+                           "matchWins":  0,
+                           "matchLosses":  1
+                       },
+                       {
+                           "name":  "Dana Moss",
+                           "province":  "NB",
+                           "legsWon":  2,
                            "legsLost":  3,
                            "matchWins":  0,
                            "matchLosses":  1
@@ -297,28 +297,28 @@
                    ],
     "standingsB":  [
                        {
-                           "name":  "Wayne Champman",
-                           "province":  "NB",
-                           "legsWon":  3,
-                           "legsLost":  3,
-                           "matchWins":  1,
-                           "matchLosses":  1
-                       },
-                       {
                            "name":  "Jordan Boyd",
                            "province":  "NS",
-                           "legsWon":  2,
+                           "legsWon":  6,
+                           "legsLost":  4,
+                           "matchWins":  2,
+                           "matchLosses":  0
+                       },
+                       {
+                           "name":  "Wayne Champman",
+                           "province":  "NB",
+                           "legsWon":  5,
                            "legsLost":  3,
-                           "matchWins":  0,
+                           "matchWins":  1,
                            "matchLosses":  1
                        },
                        {
                            "name":  "Kevin Blanchard",
                            "province":  "PE",
-                           "legsWon":  1,
-                           "legsLost":  0,
-                           "matchWins":  1,
-                           "matchLosses":  0
+                           "legsWon":  2,
+                           "legsLost":  6,
+                           "matchWins":  0,
+                           "matchLosses":  2
                        },
                        {
                            "name":  "Don Higgins",
