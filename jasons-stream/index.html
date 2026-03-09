@@ -9,15 +9,15 @@
   <style>
     :root {
       --orange:      #F26522;
-      --orange-glow: #FF7A2F;
-      --deep-black:  #0D0D0D;
-      --card-black:  #141414;
-      --divider:     #2D2D2D;
+      --orange-glow: #FF8C42;
+      --deep-black:  #111111;
+      --card-black:  #1E1E1E;
+      --divider:     #3C3C3C;
       --white:       #FFFFFF;
-      --text-muted:  #888888;
-      --pink:        #e91e63;
-      --blue:        #2196f3;
-      --green:       #4caf50;
+      --text-muted:  #C0C0C0;
+      --pink:        #f06292;
+      --blue:        #64b5f6;
+      --green:       #66bb6a;
       --font-main:   'Roboto Condensed', 'Segoe UI', Arial, sans-serif;
       --font-display:'Oswald', 'Segoe UI', Arial, sans-serif;
     }
@@ -64,7 +64,7 @@
     }
     input, select {
       width: 100%; padding: 0.7em 0.9em;
-      background: #111; border: 1.5px solid var(--divider);
+      background: #2A2A2A; border: 1.5px solid var(--divider);
       border-radius: 10px; color: var(--white);
       font-family: var(--font-main); font-size: 1em;
       appearance: none; outline: none;
@@ -79,10 +79,10 @@
       background: var(--card-black);
       border-radius: 12px; border: 1px solid var(--divider);
       margin-bottom: 1em; overflow: hidden;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     .card-header {
-      background: linear-gradient(to bottom, #1f1f1f, #141414);
+      background: linear-gradient(to bottom, #2A2A2A, #1E1E1E);
       padding: 11px 16px; border-bottom: 2px solid var(--orange);
     }
     .card-body { padding: 0.9em 1em; }
@@ -206,7 +206,7 @@
     /* ── H2H cheat sheet ── */
     .h2h-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7em; }
     .h2h-player {
-      background: #111; border-radius: 10px;
+      background: #272727; border-radius: 10px;
       padding: 0.8em 0.9em; border: 1px solid var(--divider);
     }
     .h2h-name {
@@ -215,9 +215,9 @@
       color: var(--white); margin-bottom: 0.4em;
     }
     .h2h-stat {
-      font-size: 0.82em; color: var(--text-muted); margin-bottom: 0.2em;
+      font-size: 0.84em; color: var(--white); margin-bottom: 0.25em;
     }
-    .h2h-stat strong { color: var(--orange); }
+    .h2h-stat strong { color: var(--orange); font-weight: 700; }
 
     /* ── Narrative prompts ── */
     .narrative {
