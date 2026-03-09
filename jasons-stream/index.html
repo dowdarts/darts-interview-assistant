@@ -1069,7 +1069,46 @@ function renderLive() {
       </div>
     </div>
 
-    ${sec('④', 'Narrative Prompts')}
+    ${sec('④', 'Today &mdash; Event 4 Standings')}
+    <div class="card">
+      <div class="card-body">
+        <div class="h2h-grid">
+          <div class="h2h-player">
+            <div class="h2h-name" style="color:var(--orange);">${S.p1.name}</div>
+            ${p1Rec ? `
+              <div class="h2h-stat">Matches: <strong>${p1Rec.matchWins}W &ndash; ${p1Rec.matchLosses}L</strong></div>
+              <div class="h2h-stat">Legs Won: <strong>${p1Rec.legsWon}</strong>${p1Rec.legsLost !== undefined ? ` &nbsp;Lost: <strong>${p1Rec.legsLost}</strong>` : ''}</div>
+            ` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.85em;">No matches played yet</div>`}
+          </div>
+          <div class="h2h-player">
+            <div class="h2h-name" style="color:var(--green);">${S.p2.name}</div>
+            ${p2Rec ? `
+              <div class="h2h-stat">Matches: <strong>${p2Rec.matchWins}W &ndash; ${p2Rec.matchLosses}L</strong></div>
+              <div class="h2h-stat">Legs Won: <strong>${p2Rec.legsWon}</strong>${p2Rec.legsLost !== undefined ? ` &nbsp;Lost: <strong>${p2Rec.legsLost}</strong>` : ''}</div>
+            ` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.85em;">No matches played yet</div>`}
+          </div>
+        </div>
+        <div style="margin-top:0.9em;border-top:1px solid var(--divider);padding-top:0.75em;">
+          <div style="font-family:var(--font-display);font-size:0.65em;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5em;">Full Standings</div>
+          ${(() => {
+            const all = [...(eventData && eventData.standingsA ? eventData.standingsA : []), ...(eventData && eventData.standingsB ? eventData.standingsB : [])];
+            if (!all.length) return `<div style="color:var(--text-muted);font-size:0.82em;">No standings data</div>`;
+            return all.sort((a,b) => (b.matchWins||0)-(a.matchWins||0) || (b.legsWon||0)-(a.legsWon||0)).map((p,i) => {
+              const isP1 = p.name === S.p1.name;
+              const isP2 = p.name === S.p2.name;
+              const accent = isP1 ? 'var(--orange)' : isP2 ? 'var(--green)' : 'var(--white)';
+              return `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.3em 0;border-bottom:1px solid var(--divider);font-size:0.82em;${isP1||isP2?'font-weight:700;':''}" >
+                <span style="color:${accent};">${i+1}. ${p.name}${p.province ? ' <span style="font-size:0.8em;color:var(--text-muted);">('+p.province+')</span>' : ''}</span>
+                <span style="font-family:var(--font-display);color:var(--orange);letter-spacing:0.04em;">${p.matchWins||0}W&ndash;${p.matchLosses||0}L &nbsp; ${p.legsWon||0}lg</span>
+              </div>`;
+            }).join('');
+          })()}
+        </div>
+        <div style="text-align:right;font-family:var(--font-display);font-size:0.6em;color:var(--text-muted);margin-top:0.4em;">live from Denis · updates every 60s</div>
+      </div>
+    </div>
+
+    ${sec('⑤', 'Narrative Prompts')}
     <div class="card">
       <div class="card-body">
         ${narratives.map(n => `
@@ -1081,7 +1120,7 @@ function renderLive() {
       </div>
     </div>
 
-    ${sec('⑤', 'Upcoming Matches')}
+    ${sec('⑥', 'Upcoming Matches')}
     ${nextOpp ? `
     <div class="card" style="border-color:rgba(33,150,243,0.3);background:rgba(33,150,243,0.05);">
       <div class="card-body">
