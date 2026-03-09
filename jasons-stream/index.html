@@ -580,9 +580,18 @@ function getPlayerCareerStats(name) {
   const base  = CAREER_STATS[name] || null;
   const local = getLocalPlayerStats(name);
   if (!local) return base;
-  // Local manual override wins — merged on top of embedded stats
-  return { careerAvg: 0, careerCheckout: 0, careerMatches: 0, careerMatchWins: 0, notes: '',
-           ...(base || {}), ...local };
+  // Merge: local manual entries override base — but zero numeric values are ignored
+  // so old "Save with 0" entries don't wipe real embedded career stats
+  const merged = Object.assign(
+    { careerAvg: 0, careerCheckout: 0, careerMatches: 0, careerMatchWins: 0, notes: '' },
+    base || {}
+  );
+  if (local.careerAvg       > 0) merged.careerAvg       = local.careerAvg;
+  if (local.careerCheckout  > 0) merged.careerCheckout  = local.careerCheckout;
+  if (local.careerMatches   > 0) merged.careerMatches   = local.careerMatches;
+  if (local.careerMatchWins > 0) merged.careerMatchWins = local.careerMatchWins;
+  if (local.notes)               merged.notes           = local.notes;
+  return merged;
 }
 function getPlayerProvince(name) {
   if (!eventData) return null;

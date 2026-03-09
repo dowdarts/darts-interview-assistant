@@ -235,7 +235,19 @@ const GitHubSync = {
         player2Province: appState.roundRobin.playerProfiles?.[m.player2]?.province || null,
         scorekeeper: m.scorekeeper || 'TBD'
       })),
-      knockout: appState.roundRobin.knockout || null
+      knockout: appState.roundRobin.knockout || null,
+      playerStats: [
+        {name:'Drake Berry',     province:'NS',   careerAvg:72.42, careerCheckout:30.61, careerMatches:5,  careerMatchWins:4, notes:''},
+        {name:'Cory Wallace',    province:'NB',   careerAvg:61.45, careerCheckout:30.86, careerMatches:6,  careerMatchWins:5, notes:''},
+        {name:'Dana Moss',       province:'NB',   careerAvg:0,     careerCheckout:0,     careerMatches:0,  careerMatchWins:0, notes:''},
+        {name:'Dee Cormier',     province:'NB',   careerAvg:0,     careerCheckout:0,     careerMatches:0,  careerMatchWins:0, notes:''},
+        {name:'Colby Burke',     province:'NFLD', careerAvg:0,     careerCheckout:0,     careerMatches:0,  careerMatchWins:0, notes:''},
+        {name:'Wayne Champman',  province:'NB',   careerAvg:68.23, careerCheckout:24.84, careerMatches:7,  careerMatchWins:4, notes:''},
+        {name:'Jordan Boyd',     province:'NS',   careerAvg:0,     careerCheckout:0,     careerMatches:0,  careerMatchWins:0, notes:''},
+        {name:'Kevin Blanchard', province:'PE',   careerAvg:0,     careerCheckout:0,     careerMatches:0,  careerMatchWins:0, notes:''},
+        {name:'Don Higgins',     province:'NB',   careerAvg:69.30, careerCheckout:27.91, careerMatches:6,  careerMatchWins:3, notes:''},
+        {name:'Mark MacEachern', province:'PE',   careerAvg:56.84, careerCheckout:20.43, careerMatches:6,  careerMatchWins:1, notes:''}
+      ]
     };
   }
 };
