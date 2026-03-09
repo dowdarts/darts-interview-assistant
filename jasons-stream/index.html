@@ -535,21 +535,20 @@ function pushToOverlay(show = false) {
   };
   localStorage.setItem(STREAM_KEY, JSON.stringify(data));
   if (bc) try { bc.postMessage(data); } catch(_) {}
-  // PeerJS broadcast to display browser on any device
-  if (streamPeer && streamPeer.connections) {
-    Object.values(streamPeer.connections).forEach(conns => {
-      conns.forEach(conn => { try { if (conn.open) conn.send(data); } catch(_) {} });
-    });
-  }
-  updateSyncStatus(streamPeer ? '● live' : '○ no viewer');
+  // PeerJS broadcast — use manually maintained array (peer.connections is a Map in PeerJS v1.x)
+  const live = streamConns.filter(c => c.open);
+  live.forEach(conn => { try { conn.send(data); } catch(_) {} });
+  updateSyncStatus(live.length > 0 ? `● ${live.length} display${live.length > 1 ? 's' : ''} connected` : '○ no display connected');
 }
 
 // ── PEERJS HOST SETUP ─────────────────────────────────────
 let streamPeer = null;
+let streamConns = []; // manually tracked open connections (peer.connections is a Map in v1.x)
 
 function initStreamPeer() {
   if (typeof Peer === 'undefined') return;
   if (streamPeer && !streamPeer.destroyed) return;
+  streamConns = [];
 
   streamPeer = new Peer(STREAM_PEER_ID, { debug: 0 });
 
@@ -559,13 +558,20 @@ function initStreamPeer() {
 
   streamPeer.on('connection', (conn) => {
     conn.on('open', () => {
-      updateSyncStatus('● display connected');
+      streamConns.push(conn);
+      updateSyncStatus(`● ${streamConns.filter(c=>c.open).length} display connected`);
       // Send current state immediately so the display is up to date
       const cached = localStorage.getItem(STREAM_KEY);
       if (cached) try { conn.send(JSON.parse(cached)); } catch(_) {}
     });
-    conn.on('close', () => updateSyncStatus('○ display disconnected'));
-    conn.on('error', () => updateSyncStatus('○ display error'));
+    conn.on('close', () => {
+      streamConns = streamConns.filter(c => c !== conn);
+      updateSyncStatus(streamConns.filter(c=>c.open).length > 0 ? `● ${streamConns.filter(c=>c.open).length} display connected` : '○ display disconnected');
+    });
+    conn.on('error', () => {
+      streamConns = streamConns.filter(c => c !== conn);
+      updateSyncStatus('○ display error');
+    });
   });
 
   streamPeer.on('error', (err) => {
@@ -1463,6 +1469,13 @@ function bindEvents() {
       }
     } catch(_) {}
   }, 60000);
+
+  // Heartbeat: re-push current state every 5s so display recovers from any missed updates
+  setInterval(() => {
+    if (streamConns.filter(c => c.open).length > 0) {
+      pushToOverlay(false);
+    }
+  }, 5000);
 })();
 </script>
 </body>
