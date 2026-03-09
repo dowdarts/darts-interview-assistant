@@ -1126,8 +1126,9 @@ function renderLive() {
     </div>` : ''}
 
     <!-- Controls -->
-    <div class="row" style="margin-bottom:1.5em;">
+    <div class="row" style="margin-bottom:0.7em;">
       <button class="btn secondary" id="editSetupBtn" style="margin:0;">⚙ Setup</button>
+      <button class="btn" id="resetMatchBtn" style="margin:0;background:#1a1a1a;border:2px solid #c62828;color:#ef5350;">↺ Reset Match</button>
     </div>
   `;
 }
@@ -1297,6 +1298,13 @@ function bindEvents() {
 
   if (S.screen === 'live') {
     document.getElementById('editSetupBtn').onclick = () => { S.screen = 'setup'; renderApp(); };
+    document.getElementById('resetMatchBtn').onclick = () => {
+      if (!confirm('Reset this match? All scores and leg history will be cleared.')) return;
+      S.p1Score = 0; S.p2Score = 0; S.legHistory = [];
+      S.bullWinner = 0; S.bullConfirmed = false;
+      S.screen = 'setup';
+      renderApp();
+    };
   }
 
   if (S.screen === 'complete') {
