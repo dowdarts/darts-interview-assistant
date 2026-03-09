@@ -979,7 +979,7 @@ function renderSetup() {
   const totalMatches  = board1Matches.length;
   const currentMatch  = board1Matches[S.matchIndex] || null;
   const upcoming      = board1Matches.slice(S.matchIndex + 1);
-  const canStart      = S.p1.name && S.p2.name && S.bullWinner;
+  const canStart      = S.p1.name && S.p2.name;
 
   const _setupMatch = getBoard1Matches()[S.matchIndex] || null;
   return `
@@ -1073,24 +1073,9 @@ function renderSetup() {
       </div>
     </div>
 
-    <!-- Bull Winner -->
-    <div class="card">
-      <div class="card-header"><h2>3 · Bull Winner <span style="font-size:0.8em;font-weight:400;color:var(--text-muted);letter-spacing:0.04em;">(+8.6% live odds edge)</span></h2></div>
-      <div class="card-body">
-        <p style="color:var(--text-muted);font-size:0.85em;margin:0 0 0.8em;">Who won the bullseye? They throw Leg 1 and all odd-numbered legs.</p>
-        <div class="row">
-          <button class="btn bull-btn ${S.bullWinner === 1 ? 'active' : ''}" id="bull1Btn">
-            ${S.p1.name}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 1, 3, 5</span>
-          </button>
-          <button class="btn bull-btn ${S.bullWinner === 2 ? 'active' : ''}" id="bull2Btn">
-            ${S.p2.name}<br><span style="font-size:0.72em;font-weight:400;">Throws Legs 2, 4</span>
-          </button>
-        </div>
-        ${S.bullWinner ? `<div style="margin-top:0.7em;text-align:center;font-family:var(--font-display);font-size:0.78em;letter-spacing:0.06em;color:var(--orange);">✓ ${S.bullWinner === 1 ? S.p1.name : S.p2.name} has the bull — odds set to ${calculateLiveOdds()}% / ${100 - calculateLiveOdds()}%</div>` : ''}
-      </div>
-    </div>
-
-    <button class="btn ${canStart ? '' : 'disabled'}" id="startMatchBtn">🎥 Start Live Stream Scoring</button>
+    <button class="btn ${canStart ? '' : 'disabled'}" id="startMatchBtn" style="margin-top:0.4em;">
+      ${S.bullConfirmed ? '← Back to Live' : 'Next: Set Bull Winner →'}
+    </button>
     <a href="live-odds.html" target="_blank" class="obs-link">Open OBS Odds Overlay ↗</a>
     ` : ''}
 
@@ -1322,6 +1307,7 @@ function renderApp() {
   const app = document.getElementById('app');
   if      (S.screen === 'matchList') app.innerHTML = renderMatchList();
   else if (S.screen === 'setup')     app.innerHTML = renderSetup();
+  else if (S.screen === 'bull')      app.innerHTML = renderBull();
   else if (S.screen === 'live')      app.innerHTML = renderLive();
   else                               app.innerHTML = renderComplete();
   bindEvents();
@@ -1407,13 +1393,43 @@ function bindEvents() {
       document.getElementById('p1Chk').oninput  = e => { S.p1.checkout = parseFloat(e.target.value) || 35; };
       document.getElementById('p2Chk').oninput  = e => { S.p2.checkout = parseFloat(e.target.value) || 35; };
       document.getElementById('legsToWin').onchange = e => { S.matchPoint = parseInt(e.target.value, 10); };
-      document.getElementById('bull1Btn').onclick = () => { S.bullWinner = 1; renderApp(); };
-      document.getElementById('bull2Btn').onclick = () => { S.bullWinner = 2; renderApp(); };
       document.getElementById('startMatchBtn').onclick = () => {
-        if (!S.bullWinner) { alert('Select the bull winner before starting.'); return; }
+        if (S.bullConfirmed) {
+          // Bull already confirmed — go back to live
+          S.screen = 'live';
+          renderApp();
+          return;
+        }
+        // Go to bull winner selection screen
+        S.bullWinner = 0;
         S.p1Score = 0; S.p2Score = 0; S.legHistory = [];
-        S.screen = 'live';
+        S.screen = 'bull';
+        renderApp();
+      };
+    }
+  }
+
+  if (S.screen === 'bull') {
+    const backBtn = document.getElementById('backToBullSetupBtn');
+    if (backBtn) backBtn.onclick = () => { S.screen = 'setup'; renderApp(); };
+    const b1 = document.getElementById('bull1Btn');
+    const b2 = document.getElementById('bull2Btn');
+    if (b1) b1.onclick = () => { S.bullWinner = 1; renderApp(); };
+    if (b2) b2.onclick = () => { S.bullWinner = 2; renderApp(); };
+    const confirmBtn = document.getElementById('confirmBullBtn');
+    if (confirmBtn) {
+      confirmBtn.onclick = () => {
+        S.bullConfirmed = true;
+        // Notify Denis's app — unlocks his leg-winner buttons
+        if (typeof PeerSync !== 'undefined') {
+          PeerSync.sendToHost({
+            type: 'jasonBull',
+            matchNum:      S.match ? S.match.matchNum : null,
+            bullWinnerName: S.bullWinner === 1 ? S.p1.name : S.p2.name
+          });
+        }
         pushToOverlay();
+        S.screen = 'live';
         renderApp();
       };
     }

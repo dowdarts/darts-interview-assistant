@@ -16,6 +16,8 @@ const PeerSync = {
   _takingOver: false,
   _retryTimer: null,
   _adminBC: null,
+  _viewerConn: null,   // viewer's connection back to host
+  _onViewerData: null, // callback when host receives data from a viewer
 
   // ------------------------------------------------------------------
   // HOST — called by the interview app
@@ -99,6 +101,8 @@ const PeerSync = {
             this.connections = [];
             if (this._adminBC) { this._adminBC.close(); this._adminBC = null; }
             p.destroy();
+          } else if (this._onViewerData) {
+            this._onViewerData(msg);
           }
         });
         conn.on('close', () => {
@@ -292,6 +296,7 @@ const PeerSync = {
       p.on('open', () => {
         this.peer = p;
         const conn = p.connect(hostId, { reliable: true, serialization: 'json' });
+        this._viewerConn = conn;
 
         conn.on('open', () => {
           console.log('[PeerSync] Connected to host:', hostId);
@@ -305,6 +310,7 @@ const PeerSync = {
         });
 
         conn.on('close', () => {
+          if (this._viewerConn === conn) this._viewerConn = null;
           onStatus('disconnected');
         });
 
@@ -329,8 +335,21 @@ const PeerSync = {
     }
   },
 
+  /** Send a message from viewer back to the host */
+  sendToHost(data) {
+    if (this._viewerConn && this._viewerConn.open) {
+      try { this._viewerConn.send(data); } catch (e) {}
+    }
+  },
+
+  /** Register a callback on the HOST side to receive messages sent by viewers */
+  onViewerMessage(callback) {
+    this._onViewerData = callback;
+  },
+
   disconnectViewer() {
     if (this.peer && !this.peer.destroyed) this.peer.destroy();
+    this._viewerConn = null;
     this.peer = null;
     localStorage.removeItem('dartsViewerCode');
   }

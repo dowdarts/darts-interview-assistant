@@ -2469,6 +2469,10 @@ function renderRoundRobinMatch() {
       </div>
     </div>
     <div class="leg-badge">Leg ${state.currentLeg} of ${format?.totalLegs || 5}</div>
+    ${currentMatch.board === 1 && !state.editMode ? (state.bullWinnerName
+      ? `<div style="background:rgba(76,175,80,0.1);border:1.5px solid rgba(76,175,80,0.45);border-radius:10px;padding:0.5em 1em;margin-bottom:0.8em;text-align:center;font-family:var(--font-display);font-size:0.78em;letter-spacing:0.06em;color:#4caf50;">✔ Bull winner: <strong>${state.bullWinnerName}</strong> — confirmed by Jason</div>`
+      : `<div id="jasonBullWaiting" style="background:rgba(242,101,34,0.1);border:1.5px solid rgba(242,101,34,0.4);border-radius:10px;padding:0.8em 1em;margin-bottom:0.8em;text-align:center;font-family:var(--font-display);font-size:0.78em;letter-spacing:0.06em;color:var(--orange);">&#9201; Waiting for Jason to confirm the bull winner…</div>`
+    ) : ''}
     <div class="help-label-row"><label>Leg Winner</label><button class="help-btn" data-help-title="Leg Winner" data-help-body="Tap the name of the player who won this leg. A green ring confirms your pick. You must select a winner before confirming the leg.">?</button></div>
     <div class="row">
       <button class="button winner-btn" data-winner="${currentMatch.player1}">${currentMatch.player1}</button>
@@ -2494,9 +2498,15 @@ function renderRoundRobinMatch() {
     </div>
   `;
   
-  // Winner selection
+  // Winner selection — locked until Jason confirms bull winner on Board 1 matches
+  const bullLocked = currentMatch.board === 1 && !state.bullWinnerName && !state.editMode;
   div.querySelectorAll(".winner-btn").forEach(btn => {
+    if (bullLocked) {
+      btn.style.opacity = '0.35';
+      btn.style.pointerEvents = 'none';
+    }
     btn.onclick = () => {
+      if (bullLocked) return;
       selectedWinner = btn.dataset.winner;
       currentLeg.winner = selectedWinner;
       div.querySelectorAll(".winner-btn").forEach(b => b.classList.remove("selected"));
@@ -2567,8 +2577,13 @@ function renderRoundRobinMatch() {
     }
   };
 
-  // Next leg button with two-step confirmation
+  // Next leg button — also locked until Jason confirms bull on Board 1
   const nextLegBtn = div.querySelector("#nextLegBtn");
+  if (bullLocked) {
+    nextLegBtn.disabled = true;
+    nextLegBtn.style.opacity = '0.35';
+    nextLegBtn.title = 'Waiting for Jason to confirm the bull winner...';
+  }
   nextLegBtn.onclick = () => {
     if (!legConfirmed) {
       // First click: Confirm the leg
@@ -2630,6 +2645,7 @@ function renderRoundRobinMatch() {
       finishMatch();
     } else {
       state.currentLeg++;
+      saveRoundRobinState(); // broadcast leg update to Jason's stream app
       render();
     }
   }
@@ -3711,6 +3727,16 @@ function showAdminPasswordScreen() {
 
 function _startAdminHost() {
   if (!window.PeerSync) return;
+
+  // Handle messages sent back from viewers (e.g. Jason's bull confirmation)
+  PeerSync.onViewerMessage(msg => {
+    if (!msg || msg.type !== 'jasonBull') return;
+    if (!appState.roundRobin.currentMatchState) return;
+    appState.roundRobin.currentMatchState.bullWinnerName = msg.bullWinnerName || null;
+    // Re-render if already on the match entry screen to unlock winner buttons
+    if (appState.screen === 'roundRobinMatch') render();
+  });
+
   PeerSync.startHost(ADMIN_PEER_CODE)
     .then(code => {
       console.log('[App] Admin host ready, code:', code);
