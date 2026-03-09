@@ -290,9 +290,38 @@
       text-align: center;
       padding: 1.6em 0;
     }
+
+    /* ── Setup pin toggle button ── */
+    #pinBtn {
+      position: fixed;
+      top: 4px;
+      left: 8px;
+      z-index: 9999;
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      background: rgba(0,0,0,0.65);
+      border: 1px solid rgba(255,102,0,0.35);
+      border-radius: 3px;
+      padding: 2px 7px;
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+    #pinBtn.pin-active {
+      color: #FF6600;
+      border-color: #FF6600;
+      background: rgba(255,102,0,0.12);
+    }
   </style>
 </head>
 <body>
+
+<button id="pinBtn" onclick="togglePin()" title="Keep bar visible for OBS setup">📌 SETUP</button>
 
 <div class="overlay" id="overlay">
   <div class="waiting" id="waitingMsg">Waiting for stream controller…</div>
@@ -315,6 +344,7 @@ let hideTimer     = null;
 let breakTimeout  = null;
 let lastBreakLeg  = null;
 let builtOnce     = false; // panel DOM exists?
+let pinned        = false; // setup pin: keeps panel always visible
 
 // ── RENDER panel HTML (always hidden after build) ──────────
 function buildPanel(data) {
@@ -413,15 +443,42 @@ function showPanel(data) {
   isVisible  = true;
 
   // 6. Auto-hide 5 seconds after bar finishes animating (~1.2s)
+  // Skip if pinned (setup mode keeps bar visible)
   clearTimeout(hideTimer);
-  hideTimer = setTimeout(hidePanel, 5000);
+  if (!pinned) hideTimer = setTimeout(hidePanel, 5000);
 }
 
 // ── HIDE panel (slide back down) ───────────────────────────
 function hidePanel() {
+  if (pinned) return; // setup pin: stay visible
   const panel = document.getElementById('panel');
   if (panel) panel.classList.remove('panel-visible');
   isVisible = false;
+}
+
+// ── SETUP PIN toggle ──────────────────────────────────────
+function togglePin() {
+  pinned = !pinned;
+  const btn = document.getElementById('pinBtn');
+  if (pinned) {
+    btn.textContent = '📌 LIVE';
+    btn.classList.add('pin-active');
+    // If we have panel data, show it now
+    if (!builtOnce && currentData) buildPanel(currentData);
+    if (builtOnce) {
+      const panel = document.getElementById('panel');
+      if (panel) panel.classList.add('panel-visible');
+      isVisible = true;
+    }
+    clearTimeout(hideTimer);
+  } else {
+    btn.textContent = '📌 SETUP';
+    btn.classList.remove('pin-active');
+    // Slide bar back down
+    const panel = document.getElementById('panel');
+    if (panel) panel.classList.remove('panel-visible');
+    isVisible = false;
+  }
 }
 
 // ── BREAK OF THROW alert ───────────────────────────────────
