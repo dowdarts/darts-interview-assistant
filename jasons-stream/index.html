@@ -378,6 +378,7 @@ function selectMatch(matchNum) {
   S.p2Score     = 0;
   S.legHistory  = [];
   S.screen      = 'setup';
+  pushToOverlay();   // immediately update overlay with new match / UP NEXT state
   renderApp();
 }
 
@@ -508,12 +509,18 @@ function recordLegWin(winner) {
 
 // ── PUSH TO OBS OVERLAY ───────────────────────────────────
 function pushToOverlay() {
+  // Base (strength-gap only) probability — used in setup/UP NEXT state
+  const baseProb = Math.min(96, Math.max(4, Math.round(
+    50 + (S.p1.avg3DA - S.p2.avg3DA) * 1.5
+  )));
   const p1Prob = calculateLiveOdds();
   const data = {
+    phase:     S.screen,          // 'setup' | 'live' | 'complete'
     p1Name:    S.p1.name,
     p2Name:    S.p2.name,
     p1Prob,
     p2Prob:    100 - p1Prob,
+    baseProb,                     // pre-bull strength-gap odds
     p1Score:   S.p1Score,
     p2Score:   S.p2Score,
     matchPoint: S.matchPoint,

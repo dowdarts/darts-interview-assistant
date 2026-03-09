@@ -220,6 +220,42 @@
       text-align: center;
       padding: 1.6em 0;
     }
+
+    /* UP NEXT badge replaces live dot in setup phase */
+    .upnext-badge {
+      display: inline-block;
+      background: #FF6600;
+      color: #000;
+      font-family: 'Oswald', Arial, sans-serif;
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      margin-right: 6px;
+      vertical-align: middle;
+      position: relative;
+      top: -1px;
+    }
+
+    /* Dimmed bar fills in setup phase — show strength gap, not live odds */
+    .bar-fill-p1.setup-mode {
+      opacity: 0.45;
+      background: #FF6600;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bar-fill-p2.setup-mode {
+      opacity: 0.25;
+    }
+
+    .pct-label.setup-mode {
+      opacity: 0.5;
+    }
+
+    .score-chip.setup-mode {
+      opacity: 0;
+    }
   </style>
 </head>
 <body>
@@ -245,13 +281,21 @@ let breakTimeout  = null;
 // Build overlay HTML once data is available
 function renderOverlay(data) {
   const overlay    = document.getElementById('overlay');
-  const p1Prob     = Math.max(2, Math.min(98, data.p1Prob || 50));
-  const p2Prob     = 100 - p1Prob;
+  const isSetup    = data.phase === 'setup';
+  // Setup phase: show strength-gap base odds (dimmed). Live phase: show full live odds.
+  const dispProb   = isSetup
+    ? Math.max(4, Math.min(96, data.baseProb || 50))
+    : Math.max(2, Math.min(98, data.p1Prob  || 50));
+  const dispP2     = 100 - dispProb;
   const p1Name     = data.p1Name || 'Player 1';
   const p2Name     = data.p2Name || 'Player 2';
   const p1Score    = data.p1Score || 0;
   const p2Score    = data.p2Score || 0;
   const matchLabel = data.matchNum ? 'Match ' + data.matchNum : 'Board 1';
+  const setupClass = isSetup ? ' setup-mode' : '';
+  const centerBadge = isSetup
+    ? `<span class="upnext-badge">UP NEXT</span>${matchLabel} · BULL UP`
+    : `<span class="live-dot"></span>${matchLabel} · LIVE ODDS`;
 
   overlay.innerHTML = `
     <div class="panel">
@@ -259,21 +303,21 @@ function renderOverlay(data) {
       <div class="main-row">
         <div class="player-block p1-block">
           <span class="player-name p1-name">${p1Name}</span>
-          <span class="score-chip p1-score" id="scoreP1">${p1Score}</span>
+          <span class="score-chip p1-score${setupClass}" id="scoreP1">${p1Score}</span>
         </div>
         <div class="odds-core">
           <div class="bar-track">
-            <div class="bar-fill-p1" id="fillP1" style="width:${p1Prob}%;"></div>
-            <div class="bar-fill-p2" id="fillP2"></div>
+            <div class="bar-fill-p1${setupClass}" id="fillP1" style="width:${dispProb}%;"></div>
+            <div class="bar-fill-p2${setupClass}" id="fillP2"></div>
           </div>
           <div class="meta-row">
-            <span class="pct-label p1-pct" id="pct1">${p1Prob}%</span>
-            <span class="match-label"><span class="live-dot"></span>${matchLabel} · LIVE ODDS</span>
-            <span class="pct-label p2-pct" id="pct2">${p2Prob}%</span>
+            <span class="pct-label p1-pct${setupClass}" id="pct1">${dispProb}%</span>
+            <span class="match-label">${centerBadge}</span>
+            <span class="pct-label p2-pct${setupClass}" id="pct2">${dispP2}%</span>
           </div>
         </div>
         <div class="player-block p2-block">
-          <span class="score-chip p2-score" id="scoreP2">${p2Score}</span>
+          <span class="score-chip p2-score${setupClass}" id="scoreP2">${p2Score}</span>
           <span class="player-name p2-name">${p2Name}</span>
         </div>
       </div>
@@ -322,18 +366,23 @@ function triggerBreakAlert(breakData) {
 }
 
 // Process any incoming data object
+let lastPhase = null;
+
 function handleData(data) {
   if (!data || data.timestamp === lastTimestamp) return;
   lastTimestamp = data.timestamp;
 
-  const waitMsg = document.getElementById('waitingMsg');
-  if (waitMsg) {
-    // First time receiving data — build the full overlay
+  const waitMsg  = document.getElementById('waitingMsg');
+  const phaseChanged = data.phase !== lastPhase;
+  lastPhase = data.phase;
+
+  if (waitMsg || phaseChanged) {
+    // First data ever, or phase changed (e.g. setup→live, complete→setup) — full re-render
     renderOverlay(data);
     return;
   }
 
-  // Already rendered — just update bar and scores
+  // Already rendered in same phase — just update bar and scores
   updateBar(data);
 }
 
