@@ -790,61 +790,19 @@ function renderMatchList() {
 // ── PLAYER STATS PANEL (setup screen Section 2) ──────────
 function renderPlayerStatsPanel(playerNum, playerName, cs, ev) {
   const hasCareer = cs && (cs.careerAvg > 0 || cs.careerMatches > 0 || cs.notes);
-  const isEditing = S.editingStatsFor === playerNum;
   const color     = playerNum === 1 ? 'var(--pink)' : 'var(--blue)';
   const province  = ev && ev.province ? `<br><span style="font-size:0.68em;color:var(--text-muted);">${ev.province}</span>` : '';
-  const todayLine = ev
-    ? `<div class="h2h-stat" style="margin-top:0.4em;">Today: <strong>${ev.matchWins}W–${ev.matchLosses}L · ${ev.legsWon} legs</strong></div>`
-    : '';
 
-  let statsHtml;
-  if (isEditing) {
-    const def = cs || { careerAvg: 0, careerCheckout: 0, careerMatches: 0, careerMatchWins: 0, notes: '' };
-    statsHtml = `
-      <div style="margin-top:0.5em;">
-        <div class="row" style="gap:0.4em;margin-bottom:0.3em;">
-          <div style="flex:1;">
-            <label style="font-size:0.7em;margin-bottom:0.2em;">3-Dart Avg</label>
-            <input type="number" id="editAvg${playerNum}" value="${def.careerAvg}" min="0" max="200" step="0.5" style="padding:0.3em 0.5em;font-size:0.9em;">
-          </div>
-          <div style="flex:1;">
-            <label style="font-size:0.7em;margin-bottom:0.2em;">Checkout %</label>
-            <input type="number" id="editChk${playerNum}" value="${def.careerCheckout}" min="0" max="100" style="padding:0.3em 0.5em;font-size:0.9em;">
-          </div>
-        </div>
-        <div class="row" style="gap:0.4em;margin-bottom:0.3em;">
-          <div style="flex:1;">
-            <label style="font-size:0.7em;margin-bottom:0.2em;">Career Matches</label>
-            <input type="number" id="editMatches${playerNum}" value="${def.careerMatches}" min="0" style="padding:0.3em 0.5em;font-size:0.9em;">
-          </div>
-          <div style="flex:1;">
-            <label style="font-size:0.7em;margin-bottom:0.2em;">Career Wins</label>
-            <input type="number" id="editWins${playerNum}" value="${def.careerMatchWins}" min="0" style="padding:0.3em 0.5em;font-size:0.9em;">
-          </div>
-        </div>
-        <input type="text" id="editNotes${playerNum}" value="${def.notes || ''}" placeholder="Scouting notes (optional)" style="margin-bottom:0.4em;font-size:0.85em;">
-        <div class="row" style="gap:0.4em;">
-          <button class="btn" id="saveStats${playerNum}" style="flex:1;font-size:0.8em;padding:0.4em 0.6em;">💾 Save</button>
-          <button class="btn" id="cancelStats${playerNum}" style="flex:1;font-size:0.8em;padding:0.4em 0.6em;background:#111;border-color:var(--divider);color:var(--text-muted);">Cancel</button>
-        </div>
-      </div>`;
-  } else {
-    const careerBlock = hasCareer ? `
-      <div class="h2h-stat">Career Avg: <strong>${cs.careerAvg}</strong></div>
-      <div class="h2h-stat">Career Checkout: <strong>${cs.careerCheckout}%</strong></div>
-      ${cs.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W – ${cs.careerMatches - cs.careerMatchWins}L</strong></div>` : ''}
-      ${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}
-    ` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.8em;">No career stats on file</div>`;
-    const editLabel = hasCareer ? '✏ Edit Stats' : '+ Add Stats';
-    statsHtml = `
-      ${careerBlock}
-      <button id="editStats${playerNum}Btn" style="margin-top:0.45em;font-size:0.72em;padding:0.25em 0.6em;background:rgba(255,255,255,0.05);border:1px solid var(--divider);border-radius:6px;color:var(--text-muted);cursor:pointer;letter-spacing:0.05em;font-family:var(--font-display);">${editLabel}</button>`;
-  }
+  const statsHtml = hasCareer ? `
+    <div class="h2h-stat">Career Avg: <strong>${cs.careerAvg}</strong></div>
+    <div class="h2h-stat">Career Checkout: <strong>${cs.careerCheckout}%</strong></div>
+    ${cs.careerMatches > 0 ? `<div class="h2h-stat">Career: <strong>${cs.careerMatchWins}W – ${cs.careerMatches - cs.careerMatchWins}L</strong></div>` : ''}
+    ${cs.notes ? `<div class="h2h-stat" style="color:var(--orange);font-style:italic;">${cs.notes}</div>` : ''}
+  ` : `<div class="h2h-stat" style="color:var(--text-muted);font-style:italic;font-size:0.8em;">No career stats on file</div>`;
 
   return `<div class="h2h-player">
     <div class="h2h-name" style="color:${color};">${playerName}${province}</div>
     ${statsHtml}
-    ${todayLine}
   </div>`;
 }
 
@@ -931,12 +889,6 @@ function renderSetup() {
             <input type="number" id="p2Chk" value="${S.p2.checkout}" min="0" max="100">
           </div>
         </div>
-        <label>Match Format</label>
-        <select id="legsToWin">
-          <option value="2" ${S.matchPoint === 2 ? 'selected' : ''}>Best of 3 (first to 2)</option>
-          <option value="3" ${S.matchPoint === 3 ? 'selected' : ''}>Best of 5 (first to 3) ✦ default</option>
-          <option value="4" ${S.matchPoint === 4 ? 'selected' : ''}>Best of 7 (first to 4)</option>
-        </select>
       </div>
     </div>
 
@@ -1274,42 +1226,10 @@ function bindEvents() {
     // Stat inputs only present when there's a current match
     const p1Avg = document.getElementById('p1Avg');
     if (p1Avg) {
-      // Career stats edit / save / cancel buttons
-      function bindStatsPanelButtons(playerNum) {
-        const editBtn   = document.getElementById(`editStats${playerNum}Btn`);
-        const saveBtn   = document.getElementById(`saveStats${playerNum}`);
-        const cancelBtn = document.getElementById(`cancelStats${playerNum}`);
-        const pName     = playerNum === 1 ? S.p1.name : S.p2.name;
-        if (editBtn) {
-          editBtn.onclick = () => { S.editingStatsFor = playerNum; renderApp(); };
-        }
-        if (saveBtn) {
-          saveBtn.onclick = () => {
-            const avg     = parseFloat(document.getElementById(`editAvg${playerNum}`).value)      || 0;
-            const chk     = parseFloat(document.getElementById(`editChk${playerNum}`).value)      || 0;
-            const matches = parseInt(document.getElementById(`editMatches${playerNum}`).value, 10) || 0;
-            const wins    = parseInt(document.getElementById(`editWins${playerNum}`).value, 10)    || 0;
-            const notes   = document.getElementById(`editNotes${playerNum}`).value.trim();
-            saveLocalPlayerStats(pName, { careerAvg: avg, careerCheckout: chk,
-                                          careerMatches: matches, careerMatchWins: wins, notes });
-            if (avg > 0) { if (playerNum === 1) S.p1.avg3DA   = avg;  else S.p2.avg3DA   = avg; }
-            if (chk > 0) { if (playerNum === 1) S.p1.checkout = chk;  else S.p2.checkout = chk; }
-            S.editingStatsFor = null;
-            renderApp();
-          };
-        }
-        if (cancelBtn) {
-          cancelBtn.onclick = () => { S.editingStatsFor = null; renderApp(); };
-        }
-      }
-      bindStatsPanelButtons(1);
-      bindStatsPanelButtons(2);
-
       p1Avg.oninput = e => { S.p1.avg3DA   = parseFloat(e.target.value) || 50; };
       document.getElementById('p2Avg').oninput  = e => { S.p2.avg3DA   = parseFloat(e.target.value) || 50; };
       document.getElementById('p1Chk').oninput  = e => { S.p1.checkout = parseFloat(e.target.value) || 35; };
       document.getElementById('p2Chk').oninput  = e => { S.p2.checkout = parseFloat(e.target.value) || 35; };
-      document.getElementById('legsToWin').onchange = e => { S.matchPoint = parseInt(e.target.value, 10); };
       document.getElementById('startMatchBtn').onclick = () => {
         if (S.bullConfirmed) {
           // Bull already confirmed — go back to live
