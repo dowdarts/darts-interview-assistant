@@ -538,7 +538,9 @@ function triggerBreakAlert(breakData) {
 
 // ── HANDLE incoming data ───────────────────────────────────
 function handleData(data) {
-  if (!data || data.timestamp === lastTimestamp) return;
+  // Only process data newer than what we've already shown — prevents stale
+  // localStorage data on the display device from reverting to an old match
+  if (!data || data.timestamp <= lastTimestamp) return;
   lastTimestamp = data.timestamp;
   currentData   = data;
 
@@ -551,29 +553,6 @@ function handleData(data) {
     else buildPanel(data);  // build DOM silently so it's ready
   }
 }
-
-// ── STORAGE / BROADCAST listeners (same-device fallback) ─
-function readFromStorage() {
-  try {
-    const raw = localStorage.getItem(STREAM_KEY);
-    if (raw) handleData(JSON.parse(raw));
-  } catch(_) {}
-}
-
-try {
-  const bc = new BroadcastChannel('aads_stream');
-  bc.onmessage = (e) => { if (e.data) handleData(e.data); };
-} catch(_) {}
-
-window.addEventListener('storage', (e) => {
-  if (e.key === STREAM_KEY && e.newValue) {
-    try { handleData(JSON.parse(e.newValue)); } catch(_) {}
-  }
-});
-
-// Polling fallback — 500ms for OBS Chromium contexts
-setInterval(readFromStorage, 500);
-readFromStorage();
 </script>
 </body>
 </html>
