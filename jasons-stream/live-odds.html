@@ -344,6 +344,7 @@
 </div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="../peer-sync.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════
 //  AADS Live Odds — OBS Browser Source Overlay
@@ -352,8 +353,8 @@
 //  Animates bar from previous odds → new odds on each pop-up.
 // ══════════════════════════════════════════════════════════
 
-const STREAM_KEY     = 'AADS_STREAM_DATA';
-const STREAM_PEER_ID = 'aads-jason-stream-v1';
+const STREAM_KEY  = 'AADS_STREAM_DATA';
+const STREAM_CODE = '407830';
 let lastTimestamp = 0;
 let prevP1Prob    = 50;   // bar's last displayed position
 let currentData   = null; // most recent silent-update data
@@ -478,53 +479,21 @@ function hidePanel() {
 }
 
 // ── TOKEN PANEL toggle ────────────────────────────────────
-// (removed — no token needed with PeerJS)
+// (removed — no token needed with PeerSync)
 
-// ── PEERJS HOST — display owns the fixed ID, controller connects to us ──────
+// ── PEERJS VIEWER (via PeerSync) ──────────────────────────
 function initDisplayPeer() {
-  if (typeof Peer === 'undefined') return;
-  const peer = new Peer(STREAM_PEER_ID, { debug: 0 });
+  if (typeof PeerSync === 'undefined') return;
+  const wm = document.getElementById('waitingMsg');
 
-  peer.on('open', () => {
-    const wm = document.getElementById('waitingMsg');
-    if (wm) wm.textContent = 'Waiting for stream controller…';
-  });
-
-  peer.on('connection', (conn) => {
-    conn.on('open', () => {
-      const wm = document.getElementById('waitingMsg');
+  PeerSync.connectAsViewer(STREAM_CODE, handleData, (status) => {
+    if (status === 'connected') {
       if (wm) wm.style.display = 'none';
-    });
-
-    conn.on('data', (data) => {
-      if (data) handleData(data);
-    });
-
-    conn.on('close', () => {
-      const wm = document.getElementById('waitingMsg');
-      if (wm) { wm.textContent = 'Controller disconnected — reconnecting…'; wm.style.display = ''; }
-    });
-
-    conn.on('error', () => {
-      const wm = document.getElementById('waitingMsg');
-      if (wm) { wm.textContent = 'Connection error — waiting for controller…'; wm.style.display = ''; }
-    });
-  });
-
-  peer.on('error', (err) => {
-    if (err.type === 'unavailable-id') {
-      // Another display tab already holds the ID — just receive via localStorage fallback
-      console.warn('Display ID already taken; using storage fallback only.');
+    } else if (status === 'disconnected' || status === 'error') {
+      if (wm) { wm.textContent = 'Waiting for stream controller…'; wm.style.display = ''; }
+      // Auto-reconnect after 3s
+      setTimeout(initDisplayPeer, 3000);
     }
-    // For other errors, destroy and retry after 5s
-    if (err.type !== 'unavailable-id') {
-      if (!peer.destroyed) peer.destroy();
-      setTimeout(initDisplayPeer, 5000);
-    }
-  });
-
-  peer.on('disconnected', () => {
-    if (!peer.destroyed) peer.reconnect();
   });
 }
 initDisplayPeer();

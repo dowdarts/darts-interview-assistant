@@ -294,6 +294,7 @@
   </div>
 </div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="../peer-sync.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════
 //  AADS Stream Controller — Jason's Live Broadcast Tool
@@ -305,8 +306,7 @@ const STATE_KEY      = 'AADS_JASON_STATE';
 const RAW_URL        = 'https://raw.githubusercontent.com/dowdarts/darts-interview-assistant/main/event-data.json';
 const LOCAL_URL      = '../event-data.json';
 
-// PeerJS peer ID for cross-device relay — fixed so display always knows where to connect
-const STREAM_PEER_ID = 'aads-jason-stream-v1';
+const STREAM_CODE = '407830'; // fixed pairing code — display must use the same
 
 let eventData = null;
 let bc = null;
@@ -535,76 +535,24 @@ function pushToOverlay(show = false) {
   };
   localStorage.setItem(STREAM_KEY, JSON.stringify(data));
   if (bc) try { bc.postMessage(data); } catch(_) {}
-  // PeerJS — send to display if connected
-  if (streamConn && streamConn.open) {
-    try { streamConn.send(data); } catch(_) {}
-  }
+  // PeerSync broadcast to display
+  PeerSync.broadcast(data);
 }
 
-// ── PEERJS CLIENT — controller connects to the display ────────────────────
-let streamPeer = null;
-let streamConn = null; // single connection to the display
-
+// ── PEERJS HOST (via PeerSync) ────────────────────────────
 function initStreamPeer() {
-  if (typeof Peer === 'undefined') return;
-  if (streamPeer && !streamPeer.destroyed) return;
-
-  updateSyncStatus('○ connecting to display…');
-  streamPeer = new Peer(null, { debug: 0 }); // anonymous — display owns the fixed ID
-
-  streamPeer.on('open', () => {
-    connectToDisplay();
-  });
-
-  streamPeer.on('error', () => {
-    if (!streamPeer.destroyed) { streamPeer.destroy(); streamPeer = null; }
-    updateSyncStatus('○ retrying…');
-    setTimeout(initStreamPeer, 4000);
-  });
-
-  streamPeer.on('disconnected', () => {
-    if (streamPeer && !streamPeer.destroyed) streamPeer.reconnect();
-  });
-}
-
-function connectToDisplay() {
-  if (!streamPeer || streamPeer.destroyed) return;
-  updateSyncStatus('○ waiting for display…');
-
-  const conn = streamPeer.connect(STREAM_PEER_ID, { reliable: true, serialization: 'json' });
-  let opened = false;
-
-  // If display isn't up yet, retry after 5s
-  const timeout = setTimeout(() => {
-    if (!opened) {
-      if (!conn.open) conn.close();
-      updateSyncStatus('○ display not found — retrying…');
-      setTimeout(connectToDisplay, 3000);
-    }
-  }, 5000);
-
-  conn.on('open', () => {
-    opened = true;
-    clearTimeout(timeout);
-    streamConn = conn;
-    updateSyncStatus('● display connected');
-    // Push current state immediately
-    const cached = localStorage.getItem(STREAM_KEY);
-    if (cached) try { conn.send(JSON.parse(cached)); } catch(_) {}
-  });
-
-  conn.on('close', () => {
-    clearTimeout(timeout);
-    streamConn = null;
-    updateSyncStatus('○ display disconnected — retrying…');
-    setTimeout(connectToDisplay, 3000);
-  });
-
-  conn.on('error', () => {
-    clearTimeout(timeout);
-    streamConn = null;
-    updateSyncStatus('○ display error — retrying…');
-    setTimeout(connectToDisplay, 3000);
+  if (typeof PeerSync === 'undefined') return;
+  updateSyncStatus('○ starting…');
+  PeerSync.startHost(STREAM_CODE).then(() => {
+    updateSyncStatus('○ waiting for display (code: ' + STREAM_CODE + ')');
+    // Poll connection count every 2s to update status
+    setInterval(() => {
+      const n = PeerSync.connectedViewers();
+      updateSyncStatus(n > 0 ? '● display connected' : '○ waiting for display (code: ' + STREAM_CODE + ')');
+    }, 2000);
+  }).catch(() => {
+    updateSyncStatus('⚠ peer error — retrying…');
+    setTimeout(initStreamPeer, 5000);
   });
 }
 
@@ -1488,7 +1436,7 @@ function bindEvents() {
 
   // Heartbeat: re-push current state every 5s so display recovers after reconnect
   setInterval(() => {
-    if (streamConn && streamConn.open) pushToOverlay(false);
+    if (PeerSync.connectedViewers() > 0) pushToOverlay(false);
   }, 5000);
 })();
 </script>
