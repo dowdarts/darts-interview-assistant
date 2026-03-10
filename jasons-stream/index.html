@@ -535,60 +535,76 @@ function pushToOverlay(show = false) {
   };
   localStorage.setItem(STREAM_KEY, JSON.stringify(data));
   if (bc) try { bc.postMessage(data); } catch(_) {}
-  // PeerJS broadcast — use manually maintained array (peer.connections is a Map in PeerJS v1.x)
-  const live = streamConns.filter(c => c.open);
-  live.forEach(conn => { try { conn.send(data); } catch(_) {} });
-  updateSyncStatus(live.length > 0 ? `● ${live.length} display${live.length > 1 ? 's' : ''} connected` : '○ no display connected');
+  // PeerJS — send to display if connected
+  if (streamConn && streamConn.open) {
+    try { streamConn.send(data); } catch(_) {}
+  }
 }
 
-// ── PEERJS HOST SETUP ─────────────────────────────────────
+// ── PEERJS CLIENT — controller connects to the display ────────────────────
 let streamPeer = null;
-let streamConns = []; // manually tracked open connections (peer.connections is a Map in v1.x)
+let streamConn = null; // single connection to the display
 
 function initStreamPeer() {
   if (typeof Peer === 'undefined') return;
   if (streamPeer && !streamPeer.destroyed) return;
-  streamConns = [];
 
-  streamPeer = new Peer(STREAM_PEER_ID, { debug: 0 });
+  updateSyncStatus('○ connecting to display…');
+  streamPeer = new Peer(null, { debug: 0 }); // anonymous — display owns the fixed ID
 
   streamPeer.on('open', () => {
-    updateSyncStatus('○ waiting for display');
+    connectToDisplay();
   });
 
-  streamPeer.on('connection', (conn) => {
-    conn.on('open', () => {
-      streamConns.push(conn);
-      updateSyncStatus(`● ${streamConns.filter(c=>c.open).length} display connected`);
-      // Send current state immediately so the display is up to date
-      const cached = localStorage.getItem(STREAM_KEY);
-      if (cached) try { conn.send(JSON.parse(cached)); } catch(_) {}
-    });
-    conn.on('close', () => {
-      streamConns = streamConns.filter(c => c !== conn);
-      updateSyncStatus(streamConns.filter(c=>c.open).length > 0 ? `● ${streamConns.filter(c=>c.open).length} display connected` : '○ display disconnected');
-    });
-    conn.on('error', () => {
-      streamConns = streamConns.filter(c => c !== conn);
-      updateSyncStatus('○ display error');
-    });
-  });
-
-  streamPeer.on('error', (err) => {
-    if (err.type === 'unavailable-id') {
-      // Another controller tab is open — retry with timestamp suffix
-      if (streamPeer) { streamPeer.destroy(); streamPeer = null; }
-      const fallbackId = STREAM_PEER_ID + '-' + Date.now().toString(36);
-      streamPeer = new Peer(fallbackId, { debug: 0 });
-      streamPeer.on('open', () => updateSyncStatus('⚠ reload display to reconnect'));
-    } else {
-      updateSyncStatus('⚠ peer error: ' + err.type);
-    }
+  streamPeer.on('error', () => {
+    if (!streamPeer.destroyed) { streamPeer.destroy(); streamPeer = null; }
+    updateSyncStatus('○ retrying…');
+    setTimeout(initStreamPeer, 4000);
   });
 
   streamPeer.on('disconnected', () => {
-    updateSyncStatus('○ reconnecting…');
     if (streamPeer && !streamPeer.destroyed) streamPeer.reconnect();
+  });
+}
+
+function connectToDisplay() {
+  if (!streamPeer || streamPeer.destroyed) return;
+  updateSyncStatus('○ waiting for display…');
+
+  const conn = streamPeer.connect(STREAM_PEER_ID, { reliable: true, serialization: 'json' });
+  let opened = false;
+
+  // If display isn't up yet, retry after 5s
+  const timeout = setTimeout(() => {
+    if (!opened) {
+      if (!conn.open) conn.close();
+      updateSyncStatus('○ display not found — retrying…');
+      setTimeout(connectToDisplay, 3000);
+    }
+  }, 5000);
+
+  conn.on('open', () => {
+    opened = true;
+    clearTimeout(timeout);
+    streamConn = conn;
+    updateSyncStatus('● display connected');
+    // Push current state immediately
+    const cached = localStorage.getItem(STREAM_KEY);
+    if (cached) try { conn.send(JSON.parse(cached)); } catch(_) {}
+  });
+
+  conn.on('close', () => {
+    clearTimeout(timeout);
+    streamConn = null;
+    updateSyncStatus('○ display disconnected — retrying…');
+    setTimeout(connectToDisplay, 3000);
+  });
+
+  conn.on('error', () => {
+    clearTimeout(timeout);
+    streamConn = null;
+    updateSyncStatus('○ display error — retrying…');
+    setTimeout(connectToDisplay, 3000);
   });
 }
 
@@ -1470,11 +1486,9 @@ function bindEvents() {
     } catch(_) {}
   }, 60000);
 
-  // Heartbeat: re-push current state every 5s so display recovers from any missed updates
+  // Heartbeat: re-push current state every 5s so display recovers after reconnect
   setInterval(() => {
-    if (streamConns.filter(c => c.open).length > 0) {
-      pushToOverlay(false);
-    }
+    if (streamConn && streamConn.open) pushToOverlay(false);
   }, 5000);
 })();
 </script>

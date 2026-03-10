@@ -480,26 +480,18 @@ function hidePanel() {
 // ── TOKEN PANEL toggle ────────────────────────────────────
 // (removed — no token needed with PeerJS)
 
-// ── PEERJS VIEWER ─────────────────────────────────────────
-function initViewerPeer() {
+// ── PEERJS HOST — display owns the fixed ID, controller connects to us ──────
+function initDisplayPeer() {
   if (typeof Peer === 'undefined') return;
-  const peer = new Peer(null, { debug: 0 });
-  let connected = false;
-
-  function retry(ms) {
-    if (!peer.destroyed) peer.destroy();
-    setTimeout(initViewerPeer, ms || 3000);
-  }
+  const peer = new Peer(STREAM_PEER_ID, { debug: 0 });
 
   peer.on('open', () => {
-    const conn = peer.connect(STREAM_PEER_ID, { reliable: true, serialization: 'json' });
+    const wm = document.getElementById('waitingMsg');
+    if (wm) wm.textContent = 'Waiting for stream controller…';
+  });
 
-    // If conn.on('open') never fires (controller not up yet), retry after 8s
-    const connTimeout = setTimeout(() => { if (!connected) retry(3000); }, 8000);
-
+  peer.on('connection', (conn) => {
     conn.on('open', () => {
-      connected = true;
-      clearTimeout(connTimeout);
       const wm = document.getElementById('waitingMsg');
       if (wm) wm.style.display = 'none';
     });
@@ -509,22 +501,33 @@ function initViewerPeer() {
     });
 
     conn.on('close', () => {
-      clearTimeout(connTimeout);
-      retry(3000);
+      const wm = document.getElementById('waitingMsg');
+      if (wm) { wm.textContent = 'Controller disconnected — reconnecting…'; wm.style.display = ''; }
     });
 
     conn.on('error', () => {
-      clearTimeout(connTimeout);
-      retry(3000);
+      const wm = document.getElementById('waitingMsg');
+      if (wm) { wm.textContent = 'Connection error — waiting for controller…'; wm.style.display = ''; }
     });
   });
 
-  // peer-unavailable fires here when the controller isn't running yet
-  peer.on('error', () => {
-    retry(3000);
+  peer.on('error', (err) => {
+    if (err.type === 'unavailable-id') {
+      // Another display tab already holds the ID — just receive via localStorage fallback
+      console.warn('Display ID already taken; using storage fallback only.');
+    }
+    // For other errors, destroy and retry after 5s
+    if (err.type !== 'unavailable-id') {
+      if (!peer.destroyed) peer.destroy();
+      setTimeout(initDisplayPeer, 5000);
+    }
+  });
+
+  peer.on('disconnected', () => {
+    if (!peer.destroyed) peer.reconnect();
   });
 }
-initViewerPeer();
+initDisplayPeer();
 
 // ── SETUP PIN toggle ──────────────────────────────────────
 function togglePin() {
