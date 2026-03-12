@@ -616,9 +616,39 @@
       font-weight: 900;
       text-align: center;
     }
+
+    /* ---- Cue Light ---- */
+    #cue-light {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 10000;
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      display: none;
+    }
+    #cue-light.cue-go {
+      display: block;
+      background: #00cc44;
+      box-shadow: 0 0 28px 8px rgba(0,204,68,0.55);
+    }
+    #cue-light.cue-standby {
+      display: block;
+      background: #e00;
+      box-shadow: 0 0 28px 8px rgba(220,0,0,0.55);
+      animation: cue-blink 2s step-start infinite;
+    }
+    @keyframes cue-blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
   </style>
 </head>
 <body>
+  <!-- Cue light: fixed overlay, persists across all tab rotations -->
+  <div id="cue-light"></div>
+
   <div class="screen" id="app">
     <div class="header">
       <div class="logo">AADS Darts</div>
@@ -633,6 +663,18 @@
     let eventData = null;
     const VIEWS = ['current', 'schedule', 'standings'];
     let viewIndex = 0; // cycles through VIEWS
+
+    // -------------------------------------------------------
+    // CUE LIGHT
+    // -------------------------------------------------------
+    function applyCueLight(state) {
+      const el = document.getElementById('cue-light');
+      if (!el) return;
+      el.className = '';
+      if (state === 'go')      el.className = 'cue-go';
+      else if (state === 'standby') el.className = 'cue-standby';
+      // 'off' → no class → display:none via CSS
+    }
 
     // Normalize data so the TV display works with both old and new event-data.json formats
     function normalizeEventData(data) {
@@ -1035,6 +1077,11 @@
         });
 
         conn.on('data', (data) => {
+          // Cue light control
+          if (data && data.type === 'cueLight') {
+            applyCueLight(data.state);
+            return;
+          }
           // Handle reset broadcast from admin app
           if (data && data.type === 'reset') {
             eventData = normalizeEventData({});

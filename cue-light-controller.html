@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AADS Cue Light Controller</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    :root {
+      --orange: #F26522;
+      --deep-black: #0D0D0D;
+      --card-black: #171717;
+      --divider: #2A2A2A;
+      --font: 'Barlow Condensed', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--deep-black);
+      color: #fff;
+      font-family: var(--font);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      gap: 1.5rem;
+    }
+
+    .header {
+      text-align: center;
+    }
+    .brand {
+      font-size: 0.8em;
+      letter-spacing: 0.22em;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 0.3em;
+    }
+    .title {
+      font-size: 2.4em;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #fff;
+    }
+
+    /* ---- Status badge ---- */
+    #status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      background: var(--card-black);
+      border: 1px solid var(--divider);
+      border-radius: 30px;
+      padding: 0.45em 1.2em;
+      font-size: 0.95em;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #888;
+      transition: color 0.3s, border-color 0.3s;
+    }
+    #status-badge .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #555;
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    #status-badge.connected { color: #00cc44; border-color: #00cc44; }
+    #status-badge.connected .dot { background: #00cc44; }
+    #status-badge.connecting { color: var(--orange); border-color: var(--orange); }
+    #status-badge.connecting .dot { background: var(--orange); animation: pulse 1s ease-in-out infinite; }
+    #status-badge.disconnected { color: #e00; border-color: #e00; }
+    #status-badge.disconnected .dot { background: #e00; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+
+    /* ---- Cue buttons ---- */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .cue-btn {
+      width: 100%;
+      padding: 1.3em 1em;
+      border: none;
+      border-radius: 18px;
+      font-family: var(--font);
+      font-size: 2em;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+      border: 3px solid transparent;
+      transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .cue-btn:active { transform: scale(0.97); }
+
+    /* START — green */
+    #btn-start {
+      background: #00cc44;
+      color: #000;
+    }
+    #btn-start.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 4px rgba(0,204,68,0.4);
+    }
+    #btn-start.dim { opacity: 0.38; }
+
+    /* STANDBY — red */
+    #btn-standby {
+      background: #e00000;
+      color: #fff;
+    }
+    #btn-standby.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 4px rgba(220,0,0,0.4);
+    }
+    #btn-standby.dim { opacity: 0.38; }
+
+    /* OFF — gray */
+    #btn-off {
+      background: #333;
+      color: #aaa;
+    }
+    #btn-off.active {
+      border-color: #fff;
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.15);
+    }
+    #btn-off.dim { opacity: 0.38; }
+
+    .btn-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    #btn-start .btn-icon  { background: #000; }
+    #btn-standby .btn-icon { background: #fff; }
+    #btn-off .btn-icon    { background: #555; }
+
+    /* ---- Pair input (hidden once connected) ---- */
+    #pair-section {
+      width: 100%;
+      max-width: 380px;
+      background: var(--card-black);
+      border: 1px solid var(--divider);
+      border-radius: 18px;
+      padding: 1.4em 1.4em 1.2em;
+      text-align: center;
+    }
+    #pair-section h3 {
+      font-size: 1em;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 0.8em;
+    }
+    #pair-input {
+      width: 100%;
+      background: #111;
+      border: 2px solid var(--orange);
+      color: #fff;
+      padding: 0.6em;
+      border-radius: 10px;
+      font-size: 1.8em;
+      font-family: monospace;
+      font-weight: 900;
+      letter-spacing: 0.3em;
+      text-align: center;
+      text-transform: uppercase;
+      outline: none;
+      margin-bottom: 0.8em;
+    }
+    #pair-btn {
+      width: 100%;
+      background: var(--orange);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 0.7em;
+      font-family: var(--font);
+      font-size: 1.1em;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    #pair-error {
+      margin-top: 0.6em;
+      font-size: 0.85em;
+      color: #e53935;
+      min-height: 1.2em;
+    }
+
+    #change-code-btn {
+      background: none;
+      border: none;
+      color: #555;
+      font-family: var(--font);
+      font-size: 0.85em;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-top: 0.2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand">AADS Darts</div>
+    <div class="title">Cue Light</div>
+  </div>
+
+  <div id="status-badge" class="disconnected">
+    <span class="dot"></span>
+    <span id="status-text">Not connected</span>
+  </div>
+
+  <!-- Pairing section — hidden once a code is saved -->
+  <div id="pair-section">
+    <h3>Enter Pairing Code</h3>
+    <input id="pair-input" type="text" maxlength="6" placeholder="AADS40" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button id="pair-btn">Connect</button>
+    <div id="pair-error"></div>
+  </div>
+
+  <!-- Cue light buttons -->
+  <div class="btn-group">
+    <button class="cue-btn" id="btn-start">
+      <span class="btn-icon"></span> Start
+    </button>
+    <button class="cue-btn" id="btn-standby">
+      <span class="btn-icon"></span> Standby
+    </button>
+    <button class="cue-btn" id="btn-off">
+      <span class="btn-icon"></span> Off
+    </button>
+  </div>
+
+  <button id="change-code-btn">Change pairing code</button>
+
+  <script src="peer-sync.js"></script>
+  <script>
+    const STORAGE_KEY = 'dartsViewerCode';
+    let _currentState = null; // 'go' | 'standby' | 'off' | null
+
+    // ---- Status badge ----
+    function setStatus(cls, text) {
+      const badge = document.getElementById('status-badge');
+      badge.className = cls;
+      document.getElementById('status-text').textContent = text;
+    }
+
+    // ---- Button visual state ----
+    function activateBtn(id) {
+      ['btn-start', 'btn-standby', 'btn-off'].forEach(b => {
+        const el = document.getElementById(b);
+        el.classList.remove('active', 'dim');
+        if (b === id) el.classList.add('active');
+        else          el.classList.add('dim');
+      });
+    }
+
+    function resetBtns() {
+      ['btn-start', 'btn-standby', 'btn-off'].forEach(b => {
+        const el = document.getElementById(b);
+        el.classList.remove('active', 'dim');
+      });
+    }
+
+    // ---- Send cue light command ----
+    function sendCue(state) {
+      _currentState = state;
+      activateBtn(state === 'go' ? 'btn-start' : state === 'standby' ? 'btn-standby' : 'btn-off');
+      PeerSync.sendToHost({ type: 'cueLight', state });
+    }
+
+    // ---- Button wiring ----
+    document.getElementById('btn-start').addEventListener('click',   () => sendCue('go'));
+    document.getElementById('btn-standby').addEventListener('click', () => sendCue('standby'));
+    document.getElementById('btn-off').addEventListener('click',     () => sendCue('off'));
+
+    // ---- Pairing ----
+    function showPairSection(show) {
+      document.getElementById('pair-section').style.display = show ? '' : 'none';
+      document.getElementById('change-code-btn').style.display = show ? 'none' : '';
+    }
+
+    function connect(code) {
+      code = code.trim().toUpperCase();
+      if (code.length < 4) {
+        document.getElementById('pair-error').textContent = 'Enter the code shown in the interview app.';
+        return;
+      }
+      document.getElementById('pair-error').textContent = '';
+      setStatus('connecting', 'Connecting…');
+
+      PeerSync.connectAsViewer(
+        code,
+        (data) => {
+          // We only receive relayed data here — no cue state needed on this device
+        },
+        (statusStr) => {
+          if (statusStr === 'connected') {
+            localStorage.setItem(STORAGE_KEY, code);
+            setStatus('connected', 'Connected — ' + code);
+            showPairSection(false);
+          } else if (statusStr === 'connecting') {
+            setStatus('connecting', 'Connecting…');
+          } else if (statusStr === 'disconnected') {
+            setStatus('disconnected', 'Disconnected');
+            resetBtns();
+          } else if (statusStr === 'error') {
+            setStatus('disconnected', 'Error — check code');
+            document.getElementById('pair-error').textContent = 'Could not connect. Check the code and try again.';
+            showPairSection(true);
+          }
+        }
+      );
+    }
+
+    document.getElementById('pair-btn').addEventListener('click', () => {
+      connect(document.getElementById('pair-input').value);
+    });
+    document.getElementById('pair-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') connect(document.getElementById('pair-input').value);
+      document.getElementById('pair-input').value = document.getElementById('pair-input').value.toUpperCase();
+    });
+    document.getElementById('pair-input').addEventListener('input', () => {
+      document.getElementById('pair-input').value = document.getElementById('pair-input').value.toUpperCase();
+    });
+
+    document.getElementById('change-code-btn').addEventListener('click', () => {
+      showPairSection(true);
+      document.getElementById('pair-input').value = '';
+      document.getElementById('pair-input').focus();
+      setStatus('disconnected', 'Not connected');
+      resetBtns();
+    });
+
+    // ---- Auto-connect on load ----
+    window.addEventListener('load', () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        document.getElementById('pair-input').value = saved;
+        showPairSection(false);
+        connect(saved);
+      } else {
+        showPairSection(true);
+        setTimeout(() => document.getElementById('pair-input').focus(), 200);
+      }
+    });
+  </script>
+</body>
+</html>
