@@ -618,15 +618,20 @@
     }
 
     /* ---- Cue Light ---- */
-    #cue-light {
+    #cue-wrap {
       position: fixed;
-      bottom: 24px;
+      top: 24px;
       right: 24px;
       z-index: 10000;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    #cue-light {
       width: 120px;
       height: 120px;
       border-radius: 50%;
-      display: block;
+      flex-shrink: 0;
       background: #555;
       box-shadow: 0 0 18px 4px rgba(80,80,80,0.4);
     }
@@ -643,11 +648,26 @@
       0%, 100% { opacity: 1; }
       50%       { opacity: 0.15; }
     }
+    #cue-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      display: none;
+    }
+    #cue-label.cue-go   { display: block; color: #00cc44; }
+    #cue-label.cue-standby { display: block; color: #ff4444; animation: cue-blink 2s step-start infinite; }
   </style>
 </head>
 <body>
   <!-- Cue light: fixed overlay, persists across all tab rotations -->
-  <div id="cue-light"></div>
+  <div id="cue-wrap">
+    <div id="cue-light"></div>
+    <div id="cue-label"></div>
+  </div>
 
   <div class="screen" id="app">
     <div class="header">
@@ -668,12 +688,19 @@
     // CUE LIGHT
     // -------------------------------------------------------
     function applyCueLight(state) {
-      const el = document.getElementById('cue-light');
+      const el    = document.getElementById('cue-light');
+      const label = document.getElementById('cue-label');
       if (!el) return;
       el.className = '';
-      if (state === 'go')           el.className = 'cue-go';
-      else if (state === 'standby') el.className = 'cue-standby';
-      // 'off' → no class → shows grey (default style)
+      if (label) label.className = '';
+      if (state === 'go') {
+        el.className    = 'cue-go';
+        if (label) { label.className = 'cue-go'; label.textContent = 'Bull Up!'; }
+      } else if (state === 'standby') {
+        el.className    = 'cue-standby';
+        if (label) { label.className = 'cue-standby'; label.textContent = 'Stand By'; }
+      }
+      // 'off' → no class → grey light, no label
     }
 
     // Normalize data so the TV display works with both old and new event-data.json formats
