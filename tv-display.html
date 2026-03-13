@@ -624,7 +624,9 @@
       right: 24px;
       z-index: 10000;
       display: flex;
+      flex-direction: row;
       align-items: center;
+      justify-content: flex-end;
       gap: 14px;
     }
     #cue-light {
@@ -665,8 +667,8 @@
 <body>
   <!-- Cue light: fixed overlay, persists across all tab rotations -->
   <div id="cue-wrap">
-    <div id="cue-light"></div>
     <div id="cue-label"></div>
+    <div id="cue-light"></div>
   </div>
 
   <div class="screen" id="app">
