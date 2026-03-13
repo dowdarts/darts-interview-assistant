@@ -3715,9 +3715,9 @@ function _startAdminHost() {
   PeerSync.startHost(ADMIN_PEER_CODE)
     .then(code => {
       console.log('[App] Admin host ready, code:', code);
-      // Relay cue light commands from controller device to all TV displays
+      // Relay cue light and announcement commands from controller device to all TV displays
       PeerSync.onViewerMessage(msg => {
-        if (msg && msg.type === 'cueLight') PeerSync.broadcast(msg);
+        if (msg && (msg.type === 'cueLight' || msg.type === 'announcement')) PeerSync.broadcast(msg);
       });
       // Push current event state immediately so TV displays get live data on connect
       saveRoundRobinState();
