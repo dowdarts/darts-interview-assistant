@@ -701,9 +701,9 @@
       left: 0;
       right: 0;
       z-index: 9998;
-      padding: 0.6em 2em 1.2em;
-      background: linear-gradient(to top, rgba(0,0,0,0.92) 80%, transparent);
-      display: flex;
+      padding: 0.6em 2em 1.8em;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 70%, transparent);
+      display: none;
       align-items: flex-end;
       justify-content: center;
       opacity: 0;
@@ -815,7 +815,15 @@
       if (!overlay || !el) return;
       if (_ccDismissTimer) { clearTimeout(_ccDismissTimer); _ccDismissTimer = null; }
       el.textContent = text;
-      overlay.classList.add('cc-visible');
+      // Set display first, then use double rAF so the browser lays it out
+      // before the opacity transition fires (transition won't work on display:none elements)
+      overlay.style.display = 'flex';
+      overlay.classList.remove('cc-visible');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          overlay.classList.add('cc-visible');
+        });
+      });
       // Auto-dismiss after 30 seconds if not manually cleared
       _ccDismissTimer = setTimeout(() => clearAnnouncement(), 30000);
     }
@@ -825,6 +833,10 @@
       if (!overlay) return;
       overlay.classList.remove('cc-visible');
       if (_ccDismissTimer) { clearTimeout(_ccDismissTimer); _ccDismissTimer = null; }
+      // Hide element after fade-out transition completes
+      setTimeout(() => {
+        if (!overlay.classList.contains('cc-visible')) overlay.style.display = 'none';
+      }, 550);
     }
 
     // -------------------------------------------------------
