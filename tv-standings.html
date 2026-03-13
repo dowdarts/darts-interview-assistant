@@ -284,9 +284,38 @@
             0%, 100% { opacity: 1; }
             50%       { opacity: 0.35; }
         }
+
+        /* ---- Cue Light ---- */
+        #cue-light {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10000;
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            display: none;
+        }
+        #cue-light.cue-go {
+            display: block;
+            background: #00cc44;
+            box-shadow: 0 0 28px 8px rgba(0,204,68,0.55);
+        }
+        #cue-light.cue-standby {
+            display: block;
+            background: #e00;
+            box-shadow: 0 0 28px 8px rgba(220,0,0,0.55);
+            animation: cue-blink 2s step-start infinite;
+        }
+        @keyframes cue-blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0; }
+        }
     </style>
 </head>
 <body>
+    <!-- Cue light: fixed overlay, controlled by cue-light-controller.html -->
+    <div id="cue-light"></div>
     <div class="container">
         <header class="main-header">
             <img src="AADS OFFIAL LOGO.png" alt="AADS Logo" class="aads-logo" onerror="this.style.display='none'">
@@ -440,6 +469,18 @@
         // -------------------------------------------------------
         // PAIRING CODE CONNECTION (no GitHub token needed)
         // -------------------------------------------------------
+        // -------------------------------------------------------
+        // CUE LIGHT
+        // -------------------------------------------------------
+        function applyCueLight(state) {
+            const el = document.getElementById('cue-light');
+            if (!el) return;
+            el.className = '';
+            if (state === 'go')       el.className = 'cue-go';
+            else if (state === 'standby') el.className = 'cue-standby';
+            // 'off' → no class → display:none via CSS
+        }
+
         const ADMIN_PEER_CODE = 'AADS40'; // Fixed code — interview app always hosts here
         let _peerConnected = false;
         let _pollingInterval = null;
@@ -490,6 +531,11 @@
                 });
 
                 conn.on('data', (data) => {
+                    // Cue light control
+                    if (data && data.type === 'cueLight') {
+                        applyCueLight(data.state);
+                        return;
+                    }
                     // Handle reset broadcast from admin app
                     if (data && data.type === 'reset') {
                         eventData = {
