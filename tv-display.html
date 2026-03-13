@@ -700,7 +700,7 @@
       bottom: 0;
       left: 0;
       right: 0;
-      z-index: 9998;
+      z-index: 999999;
       padding: 0.6em 2em 1.8em;
       background: linear-gradient(to top, rgba(0,0,0,0.95) 70%, transparent);
       display: flex;
@@ -708,10 +708,7 @@
       justify-content: center;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.5s ease;
-    }
-    #cc-overlay.cc-visible {
-      opacity: 1;
+      transition: opacity 0.4s ease;
     }
     #cc-text {
       font-family: 'Barlow Condensed', sans-serif;
@@ -815,7 +812,7 @@
       if (!overlay || !el) return;
       if (_ccDismissTimer) { clearTimeout(_ccDismissTimer); _ccDismissTimer = null; }
       el.textContent = text;
-      overlay.classList.add('cc-visible');
+      overlay.style.opacity = '1';
       // Auto-dismiss after 30 seconds if not manually cleared
       _ccDismissTimer = setTimeout(() => clearAnnouncement(), 30000);
     }
@@ -823,7 +820,7 @@
     function clearAnnouncement() {
       const overlay = document.getElementById('cc-overlay');
       if (!overlay) return;
-      overlay.classList.remove('cc-visible');
+      overlay.style.opacity = '0';
       if (_ccDismissTimer) { clearTimeout(_ccDismissTimer); _ccDismissTimer = null; }
     }
 
