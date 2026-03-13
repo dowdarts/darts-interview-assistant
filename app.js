@@ -558,6 +558,8 @@ function showTokenModal() {
           }
           <div style="font-size:0.75em;color:#5a8a5a;margin-top:0.5em;">TV displays connected: <b style="color:#4caf50;" id="viewerCount">${PeerSync.connectedViewers()}</b></div>
           <div style="font-size:0.72em;color:#4a7a4a;margin-top:0.4em;font-family:var(--font-display);letter-spacing:0.04em;">✓ TV displays auto-connect — no code entry needed</div>
+          <button id="reconnectBtn" style="margin-top:0.9em;width:100%;background:linear-gradient(135deg,#0d200d,#163016);border:1.5px solid #4caf50;color:#4caf50;border-radius:10px;padding:0.65em;font-family:var(--font-display);font-size:0.85em;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;font-weight:700;">⟳ Reconnect &amp; Push to TV</button>
+          <div id="reconnectStatus" style="margin-top:0.4em;font-size:0.78em;min-height:1.1em;text-align:center;font-family:var(--font-display);letter-spacing:0.04em;color:#5a8a5a;"></div>
         </div>
       </div>
 
@@ -625,6 +627,27 @@ function showTokenModal() {
       }
     }
   }, 1000);
+
+  // -------- Reconnect button handler --------
+  const reconnectBtn = overlay.querySelector('#reconnectBtn');
+  const reconnectStatus = overlay.querySelector('#reconnectStatus');
+  if (reconnectBtn) {
+    reconnectBtn.onclick = () => {
+      reconnectBtn.disabled = true;
+      reconnectBtn.style.opacity = '0.6';
+      reconnectStatus.style.color = '#ffa726';
+      reconnectStatus.textContent = 'Reconnecting…';
+      _startAdminHost();
+      setTimeout(() => {
+        saveRoundRobinState();
+        reconnectStatus.style.color = '#4caf50';
+        reconnectStatus.textContent = '✓ Reconnected — data pushed to TV';
+        reconnectBtn.disabled = false;
+        reconnectBtn.style.opacity = '1';
+        setTimeout(() => { if (reconnectStatus) reconnectStatus.textContent = ''; }, 4000);
+      }, 1200);
+    };
+  }
 
   // -------- GitHub token handlers --------
   const input = overlay.querySelector('#tokenInput');
