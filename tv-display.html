@@ -623,25 +623,25 @@
       bottom: 24px;
       right: 24px;
       z-index: 10000;
-      width: 74px;
-      height: 74px;
+      width: 120px;
+      height: 120px;
       border-radius: 50%;
-      display: none;
+      display: block;
+      background: #555;
+      box-shadow: 0 0 18px 4px rgba(80,80,80,0.4);
     }
     #cue-light.cue-go {
-      display: block;
       background: #00cc44;
-      box-shadow: 0 0 28px 8px rgba(0,204,68,0.55);
+      box-shadow: 0 0 40px 14px rgba(0,204,68,0.65);
     }
     #cue-light.cue-standby {
-      display: block;
       background: #e00;
-      box-shadow: 0 0 28px 8px rgba(220,0,0,0.55);
+      box-shadow: 0 0 40px 14px rgba(220,0,0,0.65);
       animation: cue-blink 2s step-start infinite;
     }
     @keyframes cue-blink {
       0%, 100% { opacity: 1; }
-      50%       { opacity: 0; }
+      50%       { opacity: 0.15; }
     }
   </style>
 </head>
@@ -671,9 +671,9 @@
       const el = document.getElementById('cue-light');
       if (!el) return;
       el.className = '';
-      if (state === 'go')      el.className = 'cue-go';
+      if (state === 'go')           el.className = 'cue-go';
       else if (state === 'standby') el.className = 'cue-standby';
-      // 'off' → no class → display:none via CSS
+      // 'off' → no class → shows grey (default style)
     }
 
     // Normalize data so the TV display works with both old and new event-data.json formats
